@@ -13,5 +13,8 @@ case class TSEntry[T]
       None
 
   def size(): Int = 1
+  
+  /** Convert this entry to a value */
+  lazy val toVal = TSValue(value, validity)
       
 }
