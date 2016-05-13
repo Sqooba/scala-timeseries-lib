@@ -1,6 +1,6 @@
 package ch.poney
 
-class TSEntry[T]
+case class TSEntry[T]
     (timestamp: Long,  
      value: T,  
      validity: Long) 
@@ -14,5 +14,4 @@ class TSEntry[T]
 
   def size(): Int = 1
       
-  
 }

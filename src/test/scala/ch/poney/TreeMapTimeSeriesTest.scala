@@ -1,13 +1,13 @@
 package ch.poney
 
-import org.scalatest.junit.AssertionsForJUnit
+import org.scalatest.junit.JUnitSuite
 import org.junit.Assert._
 import org.junit.Test
 import ch.poney.immutable.TreeMapTimeSeries
 import scala.collection.immutable.TreeMap
 import ch.poney.immutable.TreeMapTimeSeries
 
-class TreeMapTimeSeriesTest {
+class TreeMapTimeSeriesTest extends JUnitSuite {
   
   @Test def testTreeMapTSReads() {
     // Check empty case...

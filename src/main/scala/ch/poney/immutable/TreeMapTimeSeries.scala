@@ -15,7 +15,6 @@ class TreeMapTimeSeries[T]
         data.get(m.lastKey)
           .filter(_.validFor(m.lastKey, t))
           .map(_.value)
-   
   }
 
   def size(): Int = data.size
