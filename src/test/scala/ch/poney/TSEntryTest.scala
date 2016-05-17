@@ -2,6 +2,7 @@ package ch.poney
 
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
+import ch.poney.immutable.TSEntry
 
 class TSEntryTest extends JUnitSuite {
   @Test def testTSentry() {

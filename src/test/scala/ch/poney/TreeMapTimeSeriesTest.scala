@@ -6,6 +6,7 @@ import org.junit.Test
 import ch.poney.immutable.TreeMapTimeSeries
 import scala.collection.immutable.TreeMap
 import ch.poney.immutable.TreeMapTimeSeries
+import ch.poney.immutable.TSValue
 
 class TreeMapTimeSeriesTest extends JUnitSuite {
   
