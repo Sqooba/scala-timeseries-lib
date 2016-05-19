@@ -9,7 +9,7 @@ case class TSEntry[T]
      extends TimeSeries[T] {
   
   def at(t: Long): Option[T] = 
-    if (t >= timestamp && t <= timestamp + validity) 
+    if (t >= timestamp && t < definedUntil) 
       Some(value)
     else 
       None
@@ -31,6 +31,17 @@ case class TSEntry[T]
       EmptyTimeSeries()
     else // Entry needs to have its validity adapted.
       trimEntryRight(at)
+      
+  /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws 
+   *  if 'at' is before the entry's timestamp. */
+  def trimEntryRight(at: Long) =
+    if (at <= timestamp) // Trim before or exactly on value start: result is empty.
+      throw new IllegalArgumentException(
+          s"Attempting to trim right at $at before entry's domain has started ($definedUntil)")
+    else if (at >= definedUntil) // No effect, return this instance
+      this
+    else // Entry needs to have its validity adapted.
+      TSEntry(timestamp, value, at - timestamp)
   
   /** Move this entry's timestamp to 'at' and shorten the validity accordingly,
    *  if this entry is defined at 'at'. */
@@ -49,18 +60,7 @@ case class TSEntry[T]
     else if (at <= timestamp) // Trim before or exactly on value start, right side remains unchanged
       this
     else // Entry needs to have its timestamp and validity adapted.
-      TSEntry(at, value, definedUntil - at)
-      
-  /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws 
-   *  if 'at' is before the entry's timestamp. */
-  def trimEntryRight(at: Long) =
-    if (at <= timestamp) // Trim before or exactly on value start: result is empty.
-      throw new IllegalArgumentException(
-          s"Attempting to trim right at $at before entry's domain has started ($definedUntil)")
-    else if (at >= definedUntil) // No effect, return this instance
-      this
-    else // Entry needs to have its validity adapted.
-      TSEntry(timestamp, value, at - timestamp)
+      TSEntry(at, value, definedUntil)
   
   def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
   
