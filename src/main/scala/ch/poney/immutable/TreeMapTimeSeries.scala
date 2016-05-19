@@ -3,7 +3,7 @@ package ch.poney.immutable
 import ch.poney.TimeSeries
 import scala.collection.immutable.TreeMap
 
-class TreeMapTimeSeries[T]
+case class TreeMapTimeSeries[T]
   (data: TreeMap[Long, TSValue[T]])
   extends TimeSeries[T] {
   
@@ -20,33 +20,45 @@ class TreeMapTimeSeries[T]
 
   def defined(t: Long): Boolean = at(t).isDefined
 
-  def trimLeft(at: Long): TimeSeries[T] = {
+  def trimLeft(at: Long): TimeSeries[T] = 
     data.to(at).lastOption
       .map(TSEntry(_)) match {// Get the last entry on the left of the trim spot
       case Some(entry) => 
-        if (entry.defined(at)) 
+        if (entry.defined(at)) {
           // If it's still valid, we need to save the part right from the trim spot
-          new TreeMapTimeSeries(data.from(at) + (at -> entry.trimEntryLeft(at).toVal))
-        else
+          TreeMapTimeSeries(data.from(at) + (at -> entry.trimEntryLeft(at).toVal))
+        } else {
           // If it's not valid anymore, we can safely forget about it.
-          new TreeMapTimeSeries(data.from(at))
+          data.from(at) match {
+            // Check if there actually is anything left right of the split point
+            case m: Map[_,_] =>
+              if (m.isEmpty)
+                EmptyTimeSeries()
+              else
+                TreeMapTimeSeries(m);
+            }
+        }
       case None => // Nothing to trim, return as is. 
         this
     }
-  }
 
-  def trimRight(at: Long): TimeSeries[T] = {
-    data.to(at) match {
+  def trimRight(at: Long): TimeSeries[T] =
+    // cut at 'at' - 1, as any entry located at exactly 'at' would need to be trimmed away as well.
+    data.to(at - 1) match {
       case m: Map[_,_] if m.isEmpty => // Nothing to return 
         EmptyTimeSeries()
-      case m: Map[_,_] if m.size == data.size => 
-        // No entries to remove, but the last one might need a trim.
-        new TreeMapTimeSeries(
+      case m: Map[_,_] =>
+        // Potentially entries to remove. Trim the last element before the split and return it along
+        // all the previous elements.
+          TreeMapTimeSeries(
             data.to(m.lastKey - 1) + TSEntry(m.last).trimEntryRight(at).toMapTuple)
     }
-  }
+    
+}
+
+object TreeMapTimeSeries {
   
+  def apply[T](elems: (Long, TSValue[T])*): TreeMapTimeSeries[T] = 
+    new TreeMapTimeSeries(TreeMap(elems:_*))
   
-  
-   
 }

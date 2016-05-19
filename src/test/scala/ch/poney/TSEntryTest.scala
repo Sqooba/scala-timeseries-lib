@@ -80,4 +80,13 @@ class TSEntryTest extends JUnitSuite {
       tse.trimEntryLeft(11)
     }
   }
+  
+  @Test def testSplit() {
+    val tse = TSEntry(0, "", 10)
+    assert(tse.split(0) == (EmptyTimeSeries(), tse))
+    assert(tse.split(1) == (tse.trimEntryRight(1), tse.trimEntryLeft(1)))
+    assert(tse.split(5) == (tse.trimEntryRight(5), tse.trimEntryLeft(5)))
+    assert(tse.split(9) == (tse.trimEntryRight(9), tse.trimEntryLeft(9)))
+    assert(tse.split(10) == (tse,EmptyTimeSeries()))
+  }
 }
