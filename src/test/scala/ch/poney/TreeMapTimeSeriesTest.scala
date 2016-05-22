@@ -23,15 +23,15 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     assert(1 == single.size)
     assert(!single.at(-1).isDefined)
     assert(single.at(0).isDefined)
-    assert(single.at(10).isDefined)
-    assert(!single.at(11).isDefined)
+    assert(single.at(9).isDefined)
+    assert(!single.at(10).isDefined)
     
     // With two entries
     val double = 
       new TreeMapTimeSeries(
           TreeMap(
-              0L -> TSValue("Hi", 9), 
-              10L -> TSValue("Ho", 9)))
+              0L -> TSValue("Hi", 10), 
+              10L -> TSValue("Ho", 10)))
     assert(2 == double.size)
     assert(!double.at(-1).isDefined)
     assert(double.at(0).get == "Hi")
@@ -39,6 +39,129 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     assert(double.at(10).get == "Ho")
     assert(double.at(19).get == "Ho")
     assert(!double.at(20).isDefined)
+  }
+  
+  @Test def testDefined() {
+   
+    val double = 
+      TreeMapTimeSeries(
+              0L -> TSValue("Hi", 10), 
+              20L -> TSValue("Ho", 10))
+
+    assert(!double.defined(-1))
+    assert(double.defined(0))
+    assert(double.defined(9))
+    assert(!double.defined(10))
+    
+    assert(!double.defined(19))
+    assert(double.defined(20))
+    assert(double.defined(29))
+    assert(!double.defined(30))
+  }
+  
+  @Test def testTrimLeft() {
+    
+    // Check empty case...
+    assert(TreeMapTimeSeries().trimLeft(0) == EmptyTimeSeries())
+    
+    // With one entry
+    val single = 
+      TreeMapTimeSeries(
+        1L -> TSValue("Hi", 10))
+        
+    assert(single.trimLeft(1) == single)
+    assert(single.trimLeft(2) ==  
+      TreeMapTimeSeries( 2L -> TSValue("Hi", 9)))
+      
+    assert(single.trimLeft(10) ==  
+      TreeMapTimeSeries( 10L -> TSValue("Hi", 1)))
+      
+    assert(single.trimLeft(11) ==  EmptyTimeSeries())
+    assert(single.trimLeft(12) ==  EmptyTimeSeries())
+    
+    // With two entries
+    val double = 
+      TreeMapTimeSeries(
+              1L -> TSValue("Hi", 10), 
+              11L -> TSValue("Ho", 10))
+              
+    assert(double.trimLeft(1) == double)
+    assert(double.trimLeft(2) ==  
+      TreeMapTimeSeries(
+          2L -> TSValue("Hi", 9),
+          11L -> TSValue("Ho", 10)))
+      
+    assert(double.trimLeft(10) ==  
+      TreeMapTimeSeries( 
+          10L -> TSValue("Hi", 1),
+          11L -> TSValue("Ho", 10)))
+      
+    assert(double.trimLeft(11) ==  
+      TreeMapTimeSeries( 
+          11L -> TSValue("Ho", 10)))
+          
+    assert(double.trimLeft(12) ==  
+      TreeMapTimeSeries( 
+          12L -> TSValue("Ho", 9)))
+          
+    assert(double.trimLeft(20) ==  
+      TreeMapTimeSeries( 
+          20L -> TSValue("Ho", 1)))
+          
+   assert(double.trimLeft(21) ==  EmptyTimeSeries())
+   assert(double.trimLeft(22) ==  EmptyTimeSeries())
+  }
+  
+  @Test def testTrimRight() {
+        // Check empty case...
+    assert(TreeMapTimeSeries().trimRight(0) == EmptyTimeSeries())
+    
+    // With one entry
+    val single = 
+      TreeMapTimeSeries(
+        1L -> TSValue("Hi", 10))
+        
+    assert(single.trimRight(11) == single)
+    assert(single.trimRight(10) ==  
+      TreeMapTimeSeries( 1L -> TSValue("Hi", 9)))
+      
+    assert(single.trimRight(2) ==  
+      TreeMapTimeSeries( 1L -> TSValue("Hi", 1)))
+      
+    assert(single.trimRight(1) ==  EmptyTimeSeries())
+    assert(single.trimRight(0) ==  EmptyTimeSeries())
+    
+    // With two entries
+    val double = 
+      TreeMapTimeSeries(
+              1L -> TSValue("Hi", 10), 
+              11L -> TSValue("Ho", 10))
+              
+    assert(double.trimRight(21) == double)
+    assert(double.trimRight(20) ==  
+      TreeMapTimeSeries(
+          1L -> TSValue("Hi", 10),
+          11L -> TSValue("Ho", 9)))
+      
+    assert(double.trimRight(12) ==  
+      TreeMapTimeSeries( 
+          1L -> TSValue("Hi", 10),
+          11L -> TSValue("Ho", 1)))
+      
+    assert(double.trimRight(11) ==  
+      TreeMapTimeSeries( 
+          1L -> TSValue("Hi", 10)))
+          
+    assert(double.trimRight(10) ==  
+      TreeMapTimeSeries( 
+          1L -> TSValue("Hi", 9)))
+          
+    assert(double.trimRight(2) ==  
+      TreeMapTimeSeries( 
+          1L -> TSValue("Hi", 1)))
+          
+   assert(double.trimRight(1) ==  EmptyTimeSeries())
+   assert(double.trimRight(0) ==  EmptyTimeSeries())
   }
   
   @Test def testSplit() {

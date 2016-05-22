@@ -58,7 +58,10 @@ case class TreeMapTimeSeries[T]
 
 object TreeMapTimeSeries {
   
-  def apply[T](elems: (Long, TSValue[T])*): TreeMapTimeSeries[T] = 
-    new TreeMapTimeSeries(TreeMap(elems:_*))
+  def apply[T](elems: (Long, TSValue[T])*): TimeSeries[T] = 
+    if (elems.isEmpty)
+      EmptyTimeSeries()
+    else 
+      new TreeMapTimeSeries(TreeMap(elems:_*))
   
 }

@@ -9,8 +9,8 @@ class TSValueTest extends JUnitSuite {
   @Test def test() {
     assert(!TSValue("",10).validAt(valueTime=0, atTime= -1))
     assert(TSValue("",10).validAt(valueTime=0, atTime= 0))
-    assert(TSValue("",10).validAt(valueTime=0, atTime= 10))
-    assert(!TSValue("",10).validAt(valueTime=0, atTime= 11))
+    assert(TSValue("",10).validAt(valueTime=0, atTime= 9))
+    assert(!TSValue("",10).validAt(valueTime=0, atTime= 10))
   }
   
   @Test def testToEntry() {

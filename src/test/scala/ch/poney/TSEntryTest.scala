@@ -58,26 +58,26 @@ class TSEntryTest extends JUnitSuite {
   }
   
   @Test def testTrimLeft() {
-    val tse = TSEntry(0, "", 10)
-    assert(tse.trimLeft(-1) == tse)
+    val tse = TSEntry(1, "", 10)
     assert(tse.trimLeft(0) == tse)
-    assert(tse.trimLeft(1) == TSEntry(1, "", 10))
-    assert(tse.trimLeft(9) == TSEntry(9, "", 10))
-    assert(tse.trimLeft(10) == EmptyTimeSeries())
+    assert(tse.trimLeft(1) == tse)
+    assert(tse.trimLeft(2) == TSEntry(2, "", 9))
+    assert(tse.trimLeft(10) == TSEntry(10, "", 1))
     assert(tse.trimLeft(11) == EmptyTimeSeries())
+    assert(tse.trimLeft(12) == EmptyTimeSeries())
   }
   
   @Test def testTrimEntryLeft() {
-    val tse = TSEntry(0, "", 10)
-    assert(tse.trimEntryLeft(-1) == tse)
+    val tse = TSEntry(1, "", 10)
     assert(tse.trimEntryLeft(0) == tse)
-    assert(tse.trimEntryLeft(1) == TSEntry(1, "", 10))
-    assert(tse.trimEntryLeft(9) == TSEntry(9, "", 10))
-    intercept[IllegalArgumentException] {
-      tse.trimEntryLeft(10)
-    }
+    assert(tse.trimEntryLeft(1) == tse)
+    assert(tse.trimEntryLeft(2) == TSEntry(2, "", 9))
+    assert(tse.trimEntryLeft(10) == TSEntry(10, "", 1))
     intercept[IllegalArgumentException] {
       tse.trimEntryLeft(11)
+    }
+    intercept[IllegalArgumentException] {
+      tse.trimEntryLeft(12)
     }
   }
   

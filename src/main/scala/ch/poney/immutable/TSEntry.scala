@@ -60,7 +60,7 @@ case class TSEntry[T]
     else if (at <= timestamp) // Trim before or exactly on value start, right side remains unchanged
       this
     else // Entry needs to have its timestamp and validity adapted.
-      TSEntry(at, value, definedUntil)
+      TSEntry(at, value, definedUntil - at)
   
   def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
   
