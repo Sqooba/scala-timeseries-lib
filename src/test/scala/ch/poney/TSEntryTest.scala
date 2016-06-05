@@ -89,4 +89,8 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.split(9) == (tse.trimEntryRight(9), tse.trimEntryLeft(9)))
     assert(tse.split(10) == (tse,EmptyTimeSeries()))
   }
+  
+  @Test def testMergeEntries() {
+    ???
+  }
 }
