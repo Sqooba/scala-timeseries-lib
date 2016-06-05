@@ -8,3 +8,8 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - It's fun
   - There seems to be no library doing something like that out there
   - I wanted to write some Scala again.
+
+## TODOS
+  - updatable timeseries (ala immutable collection, or mutable collection style)
+  - compression (at least for strict equality)
+  - slicing
