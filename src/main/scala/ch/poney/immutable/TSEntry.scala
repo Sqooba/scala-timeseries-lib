@@ -66,6 +66,11 @@ case class TSEntry[T]
   
   /** the last moment where this entry is valid, non-inclusive */
   def definedUntil(): Long = timestamp + validity
+  
+  /** return true if this and the other entry have an overlapping domain of definition.
+   *  False if the domains are only contiguous.*/
+  def overlaps[O](other: TSEntry[O]) : Boolean = 
+    this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
       
 }
 
@@ -74,7 +79,7 @@ object TSEntry {
   def apply[T](tValTup: (Long, TSValue[T])): TSEntry[T] = 
     TSEntry(tValTup._1, tValTup._2.value, tValTup._2.validity)
     
-    /** Merge two overlapping TSEntries and return the result as an
+  /** Merge two overlapping TSEntries and return the result as an
    *  ordered sequence of TSEntries. 
    *  
    *  Assumes the two entries have at least an overlapping domain of definition.
@@ -82,32 +87,36 @@ object TSEntry {
    *  This method returns a Seq containing one to three TSEntries defining a timeseries valid from
    *  first.timestamp to max(first.validUntil, second.validUntil).
    *    - one entry if first and second share the exact same domain
-   *    - two entries if first and second share one bound of their domain
+   *    - two entries if first and second share one bound of their domain, 
+   *      or if the domains do not overlap
    *    - three entries if the domains overlap without sharing a bound
+   *    
+   *  If the passed merge operator is commutative, then the 'merge' function is commutative as well.
+   *  (merge(op)(E_a,E_b) == merge(op)(E_b,E_a) only if op(a,b) == op(b,a))
    */
-  def mergeEntries[A,B,R]
+  def merge[A,B,R]
     (op: (Option[A], Option[B]) => Option[R])
     (a: TSEntry[A], b: TSEntry[B])
     : Seq[TSEntry[R]] = 
     {    
       // Handle first 'partial' definition 
       (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
-      case (from, to) if from == to => Seq.empty // a and b start at the same time. Nothing to do
-      case (from, to) => 
+      case (from, to) if (from != to) => 
         // Compute the result of the merge operation for a partially defined input (either A or B is undefined for this segment)
         mergeValues(op)(a,b)(from,to)
+      case _ => Seq.empty // a and b start at the same time. Nothing to do
       }
     } ++ {  
       // Merge the two values over the overlapping domain of definition of a and b.
       (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
-      case (from, to) if from > to => throw new IllegalArgumentException("Entries' domain of definition must overlap.")
-      case (from, to) => mergeValues(op)(a,b)(from,to)
+      case (from, to) if (from < to) => mergeValues(op)(a,b)(from,to)
+      case _ => Seq.empty;
       }
     } ++ {
       // Handle trailing 'partial' definition
       (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
-        case (from, to) if from == to => Seq.empty; // Entries end at the same time, nothing to do.
-        case (from, to) => mergeValues(op)(a,b)(from,to)
+        case (from, to) if (from != to) => mergeValues(op)(a,b)(from,to)
+        case _ => Seq.empty; // Entries end at the same time, nothing to do.
       }
     }
   
@@ -115,10 +124,25 @@ object TSEntry {
    *  create an entry valid until 'until' from the result, if the merge operation is defined
    *  for the input.
    */
-  def mergeValues[A, B, R]
+  private def mergeValues[A, B, R]
     (op: (Option[A], Option[B]) => Option[R])
     (a: TSEntry[A], b: TSEntry[B])
     (at: Long, until: Long)
     : Seq[TSEntry[R]] = 
       op(a.at(at), b.at(at)).map(TSEntry(at, _ , until - at)).toSeq
+      
+  def mergeEithers[L, R, O]
+    (op: (Option[L], Option[R]) => Option[O])
+    (a: Either[TSEntry[L], TSEntry[R]], b: Either[TSEntry[L], TSEntry[R]])
+    (at: Long, until: Long) =
+      a match {
+        case Left(lTse) => b match {
+          case Right(rTse) => merge(op)(lTse, rTse)
+          case  _ => throw new IllegalArgumentException("Can't pass two Left eithers!")
+        }
+        case Right(rTse) => b match {
+          case Left(lTse) => merge(op)(lTse, rTse)
+          case _ => throw new IllegalArgumentException("Can't pass two Right eithers!")
+        }
+      }
 }
