@@ -101,8 +101,6 @@ object TSEntry {
     
   /** Merge two overlapping TSEntries and return the result as an
    *  ordered sequence of TSEntries. 
-   *  
-   *  Assumes the two entries have at least an overlapping domain of definition.
    *    
    *  This method returns a Seq containing one to three TSEntries defining a timeseries valid from
    *  first.timestamp to max(first.validUntil, second.validUntil).
@@ -118,30 +116,43 @@ object TSEntry {
     (a: TSEntry[A], b: TSEntry[B])
     (op: (Option[A], Option[B]) => Option[R])
     : Seq[TSEntry[R]] = 
-    {    
-      // Handle first 'partial' definition 
-      (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
-      case (from, to) if (from != to) => 
-        // Compute the result of the merge operation for a partially defined input (either A or B is undefined for this segment)
-        mergeValues(a,b)(from,to)(op)
-      case _ => Seq.empty // a and b start at the same time. Nothing to do
+      if(!a.overlaps(b)) {
+        // TODO apply operator to each and care about ordering.
+          a +: 
+          emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq :+ 
+          b
+      } else {
+        {    
+          // Handle first 'partial' definition
+          (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
+          case (from, to) if (from != to) => 
+            // Compute the result of the merge operation for a partially defined input (either A or B is undefined for this segment)
+            mergeValues(a,b)(from, to)(op)
+          case _ => Seq.empty // a and b start at the same time. Nothing to do
+          }
+        } ++ {  
+          // Merge the two values over the overlapping domain of definition of a and b.
+          (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
+          case (from, to) if (from < to) => mergeValues(a,b)(from,to)(op)
+          case _ => Seq.empty;
+          }
+        } ++ {
+          // Handle trailing 'partial' definition
+          (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
+            case (from, to) if (from != to) => mergeValues(a,b)(from, to)(op)
+            case _ => Seq.empty; // Entries end at the same time, nothing to do.
+          }
+        }
       }
-    } ++ {  
-      // Merge the two values over the overlapping domain of definition of a and b.
-      (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
-      case (from, to) if (from < to) => mergeValues(a,b)(from,to)(op)
-      case _ => Seq.empty;
-      }
-    } ++ {
-      // Handle trailing 'partial' definition
-      (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
-        case (from, to) if (from != to) => mergeValues(a,b)(from,to)(op)
-        case _ => Seq.empty; // Entries end at the same time, nothing to do.
-      }
-    }
+      
+  private def emptyApply[A,B,R]
+    (from: Long, to: Long)
+    (op: (Option[A], Option[B]) => Option[R])
+    : Optional[TSEntry[R]] =
+      op(None, None).map(TSEntry(from, _, to - from))
   
-    /** Merge two TSEntries each containing an Either[A,B]
-     *  Simply calls the normal merge function after determining which of the entries contains what type. */
+  /** Merge two TSEntries each containing an Either[A,B]
+   *  Simply calls the normal merge function after determining which of the entries contains what type. */
   def mergeEithers[A,B,R]
     (a: TSEntry[Either[A,B]], b: TSEntry[Either[A,B]])
     (op: (Option[A], Option[B]) => Option[R])

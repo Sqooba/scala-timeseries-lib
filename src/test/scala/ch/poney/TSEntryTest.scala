@@ -154,9 +154,8 @@ class TSEntryTest extends JUnitSuite {
     assert(r7(1) == TSEntry(6, 5.0, 5))
     assert(r7(2) == TSEntry(11, 3.0, 5))
     
-    // Finally, check that non-overlapping entries lead to a seq containing them
+    // Finally, check that non-overlapping entries lead to a seq containing them as-is.
     // obviously not overlapping:
-    
     val r8 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10))(op)
     assert(r8.size == 2)
     assert(r8(0) == TSEntry(1, 2.0, 10))
