@@ -1,6 +1,8 @@
 package ch.poney
 
 import ch.poney.immutable.TSEntry
+import scala.util.Left
+import scala.annotation.tailrec
 
 trait TimeSeries[T] {
   
@@ -64,10 +66,44 @@ object TimeSeries {
    *  
    *  Assumes a and b to be ORDERED!
    */
-  def merge[A,B,C]
-    (op: (Option[A], Option[B]) => Option[C])
+  def mergeEntries[A,B,C]
     (a: Seq[TSEntry[A]])
     (b: Seq[TSEntry[B]])
-    : Seq[TSEntry[C]] = ???
+    (op: (Option[A], Option[B]) => Option[C])
+    : Seq[TSEntry[C]] = {
+    mergeEithers(Seq.empty)((a.map(_.toLeftEntry[B]) ++ b.map(_.toRightEntry[A])).sortBy(_.timestamp))(op)
+  }
+  
+  @tailrec
+  def mergeEithers[A,B,C]
+    (done: Seq[TSEntry[C]]) // 
+    (remaining: Seq[TSEntry[Either[A,B]]])
+    (op: (Option[A], Option[B]) => Option[C])
+    : Seq[TSEntry[C]] = 
+      remaining match {
+        case Seq() => // Nothing remaining, we are done -> return the merged Seq 
+          done 
+        case Seq(head, remaining @_*) => 
+          // Take the head and all entries with which it overlaps and merge them.
+          // Remaining entries are merged via a recursive call
+          val (toMerge, nextRound) = 
+            remaining.span(_.timestamp < head.definedUntil()) match {
+            case (vals @_ :+ last, r) if last.defined(head.definedUntil) =>  
+              // we need to add the part that is defined after the head to the 'nextRound' entries
+              (vals :+ last, last.trimEntryLeft(head.definedUntil) +: r)
+            case t: Any => t
+          }
+          // Check if there was some empty space between the last 'done' entry and the first remaining
+          val filling = done.lastOption match {
+            case Some(TSEntry(ts, valE, d)) => 
+              if (ts + d == head.timestamp) // Continuous domain, no filling to do
+                Seq.empty
+              else
+                op(None,None).map(TSEntry(ts + d, _, head.timestamp)).toSeq
+            case _ => Seq.empty
+          }
+          // Add the freshly merged entries to the previously done ones, call to self with the remaining entries.
+          mergeEithers(done ++ filling ++ TSEntry.mergeSingleToMultiple(head, toMerge)(op))(nextRound)(op)
+      }
   
 }
