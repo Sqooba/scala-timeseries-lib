@@ -159,20 +159,53 @@ class TSEntryTest extends JUnitSuite {
     val r8 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10))(op)
     assert(r8.size == 2)
     assert(r8(0) == TSEntry(1, 2.0, 10))
-    assert(r8(1) == TSEntry(2, 3.0, 10))
+    assert(r8(1) == TSEntry(12, 3.0, 10))
     
     // contiguous but not overlapping: remain untouched as well
     val r9 =  TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(11, 3.0, 10))(op)
     assert(r9.size == 2)
     assert(r9(0) == TSEntry(1, 2.0, 10))
-    assert(r9(1) == TSEntry(2, 3.0, 10))
+    assert(r9(1) == TSEntry(11, 3.0, 10))
   }
   
   @Test def testTrimLeftNRight() {
-    ???
+    val t = TSEntry(1, "Hi", 10)
+    
+    // No effect
+    assert(TSEntry(1, "Hi", 10) == t.trimEntryLeftNRight(0, 12))
+    assert(TSEntry(1, "Hi", 10) == t.trimEntryLeftNRight(1, 11))
+    
+    // Check left and right sides
+    assert(TSEntry(1, "Hi", 4) == t.trimEntryLeftNRight(1, 5))
+    assert(TSEntry(5, "Hi", 6) == t.trimEntryLeftNRight(5, 11))
+    
+    // Check both
+    assert(TSEntry(3, "Hi", 6) == t.trimEntryLeftNRight(3, 9))
+    
+    // Check exceptions.
+    
+    // Outside of bounds
+    intercept[IllegalArgumentException] {
+      t.trimEntryLeftNRight(12, 15)
+    }
+    intercept[IllegalArgumentException] {
+      t.trimEntryLeftNRight(0, 1)
+    }
+    
+    // Same or inverted values
+    intercept[IllegalArgumentException] {
+      t.trimEntryLeftNRight(6, 6)
+    }
+    intercept[IllegalArgumentException] {
+      t.trimEntryLeftNRight(9, 3)
+    }
+    
   }
   
   @Test def testOverlaps() {
-    ???
+    assert(TSEntry(0, "", 10).overlaps(TSEntry(9, "", 10)))
+    assert(TSEntry(9, "", 10).overlaps(TSEntry(0, "", 10)))
+    assert(!TSEntry(0, "", 10).overlaps(TSEntry(10, "", 10)))
+    assert(!TSEntry(10, "", 10).overlaps(TSEntry(0, "", 10)))
   }
 }

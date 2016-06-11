@@ -91,6 +91,9 @@ case class TSEntry[T]
   def toLeftEntry[O]: TSEntry[Either[T, O]] = TSEntry(timestamp, Left[T,O](value), validity)
   
   def toRightEntry[O]: TSEntry[Either[O, T]] = TSEntry(timestamp, Right[O,T](value), validity)
+  
+  /** Map value contained in this timeseries using the passed function */
+  def map[O](f: T => O) = TSEntry(timestamp, f(value), validity)
       
 }
 
@@ -106,50 +109,68 @@ object TSEntry {
    *  first.timestamp to max(first.validUntil, second.validUntil).
    *    - one entry if first and second share the exact same domain
    *    - two entries if first and second share one bound of their domain, 
-   *      or if the domains do not overlap
    *    - three entries if the domains overlap without sharing a bound
    *    
    *  If the passed merge operator is commutative, then the 'merge' function is commutative as well.
    *  (merge(op)(E_a,E_b) == merge(op)(E_b,E_a) only if op(a,b) == op(b,a))
    */
-  def merge[A,B,R]
+  def mergeOverlapping[A,B,R]
     (a: TSEntry[A], b: TSEntry[B])
     (op: (Option[A], Option[B]) => Option[R])
-    : Seq[TSEntry[R]] = 
-      if(!a.overlaps(b)) {
-        // TODO apply operator to each and care about ordering.
-          a +: 
-          emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq :+ 
-          b
-      } else {
-        {    
-          // Handle first 'partial' definition
-          (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
-          case (from, to) if (from != to) => 
-            // Compute the result of the merge operation for a partially defined input (either A or B is undefined for this segment)
-            mergeValues(a,b)(from, to)(op)
-          case _ => Seq.empty // a and b start at the same time. Nothing to do
-          }
-        } ++ {  
-          // Merge the two values over the overlapping domain of definition of a and b.
-          (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
-          case (from, to) if (from < to) => mergeValues(a,b)(from,to)(op)
-          case _ => Seq.empty;
-          }
-        } ++ {
-          // Handle trailing 'partial' definition
-          (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
-            case (from, to) if (from != to) => mergeValues(a,b)(from, to)(op)
-            case _ => Seq.empty; // Entries end at the same time, nothing to do.
-          }
+    : Seq[TSEntry[R]] =
+      {    
+        // Handle first 'partial' definition
+        (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
+        case (from, to) if (from != to) => 
+          // Compute the result of the merge operation for a partially defined input (either A or B is undefined for this segment)
+          mergeValues(a,b)(from, to)(op)
+        case _ => Seq.empty // a and b start at the same time. Nothing to do
+        }
+      } ++ {  
+        // Merge the two values over the overlapping domain of definition of a and b.
+        (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
+        case (from, to) if (from < to) => mergeValues(a,b)(from,to)(op)
+        case _ => throw new IllegalArgumentException("This function cannot merge non-overlapping entries.")
+        }
+      } ++ {
+        // Handle trailing 'partial' definition
+        (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
+          case (from, to) if (from != to) => mergeValues(a,b)(from, to)(op)
+          case _ => Seq.empty; // Entries end at the same time, nothing to do.
         }
       }
+  
+  /** Merge two entries that have a disjoint domain. 
+   *  The merge operator will be applied to each individually */
+  def mergeDisjointDomain[A,B,R]
+    (a: TSEntry[A], b: TSEntry[B])
+    (op: (Option[A], Option[B]) => Option[R])
+    : Seq[TSEntry[R]] =
+          { op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++ 
+            emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++ 
+            op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
+          }.sortBy(_.timestamp)
       
   private def emptyApply[A,B,R]
     (from: Long, to: Long)
     (op: (Option[A], Option[B]) => Option[R])
-    : Optional[TSEntry[R]] =
-      op(None, None).map(TSEntry(from, _, to - from))
+    : Option[TSEntry[R]] =
+      if(from == to)
+        None
+      else
+        op(None, None).map(TSEntry(from, _, to - from))
+      
+  /** Merge two entries.
+   *  The domain covered by the returned entries (including a potential discontinuities)
+   *  will be between min(a.timestamp, b.timestamp) and max(a.definedUntil, b.definedUntil) */
+  def merge[A,B,R]
+    (a: TSEntry[A], b: TSEntry[B])
+    (op: (Option[A], Option[B]) => Option[R])
+    : Seq[TSEntry[R]] = 
+      if(!a.overlaps(b))
+         mergeDisjointDomain(a, b)(op)
+      else 
+         mergeOverlapping(a,b)(op)
   
   /** Merge two TSEntries each containing an Either[A,B]
    *  Simply calls the normal merge function after determining which of the entries contains what type. */
@@ -159,9 +180,9 @@ object TSEntry {
     : Seq[TSEntry[R]] =
       (a,b) match {
       case (TSEntry(tsA, Left(valA), dA), TSEntry(tsB, Right(valB), dB)) => 
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
+        mergeOverlapping(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
       case (TSEntry(tsB, Right(valB), dB), TSEntry(tsA, Left(valA), dA)) =>
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
+        mergeOverlapping(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
       case _ => throw new IllegalArgumentException(s"Can't pass two entries with same sided-eithers: $a, $b")
       }
   
