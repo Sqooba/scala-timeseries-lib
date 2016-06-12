@@ -13,10 +13,10 @@ case class TSEntry[T]
   def size(): Int = 1
   
   /** Convert this entry to a value */
-  lazy val toVal = TSValue(value, validity)
+  val toVal = TSValue(value, validity)
   
   /** Convert this entry to a time->TSVal tuple to be added to a map */
-  lazy val toMapTuple = (timestamp -> toVal)
+  val toMapTuple = (timestamp -> toVal)
   
   /** Shorten this entry's validity if it exceed 'at'. No effect otherwise.
    *  
