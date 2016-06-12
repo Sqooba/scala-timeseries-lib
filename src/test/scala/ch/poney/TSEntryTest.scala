@@ -8,6 +8,15 @@ import ch.poney.immutable.EmptyTimeSeries
 
 class TSEntryTest extends JUnitSuite {
   
+  // Simple summing operator
+  def plus(aO: Option[Double], bO: Option[Double]) = 
+    (aO, bO) match {
+      case (Some(a), Some(b)) => Some(a+b)
+      case (Some(a), None) => aO
+      case (None, Some(b)) => bO
+      case _ => None
+    }
+  
   @Test def testAt() {
     assert(!TSEntry(0, "", 10).at(-1).isDefined)
     assert(TSEntry(0, "", 10).at(0) == Some(""))
@@ -90,84 +99,6 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.split(10) == (tse,EmptyTimeSeries()))
   }
   
-  @Test def testMergeEntriesSimpleOp() {
-    
-    //Simple summing operator when both entries are defined. 
-    def op(aO: Option[Double], bO: Option[Double]) = 
-      (aO, bO) match {
-        case (Some(a), Some(b)) => Some(a+b)
-        case (Some(a), None) => aO
-        case (None, Some(b)) => bO
-        case _ => None
-      }
-    
-    // For two exactly overlapping entries,
-    // result contains a single entry
-    val r1 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(1, 3.0, 10))(op)
-    assert(r1.size == 1)
-    assert(r1(0) == TSEntry(1, 5.0, 10))   
-    
-    // Entries don't start at the same time, but have the same end of validity
-    val a = TSEntry(1, 2.0, 10)
-    val b = TSEntry(6, 3.0, 5)
-    assert(a.definedUntil() == b.definedUntil())
-    
-    // Result should contain two entries: first a, valid until b starts, then the sum.
-    val r2 = TSEntry.merge(a,b)(op) 
-    assert(r2.size == 2)
-    assert(r2(0) == TSEntry(1, 2.0, 5))
-    assert(r2(1) == TSEntry(6, 5.0, 5))
-    
-    // Should be the same if we inverse the inputs...
-    val r3 = TSEntry.merge(b,a)(op) 
-    assert(r3.size == 2)
-    assert(r3(0) == TSEntry(1, 2.0, 5))
-    assert(r3(1) == TSEntry(6, 5.0, 5))
-    
-    // Entries start at the same time, but have different end of validity
-    val a4 = TSEntry(1, 2.0, 10)
-    val b4 = TSEntry(1, 3.0, 5)
-    val r4 = TSEntry.merge(a4,b4)(op)
-    assert(r4.size == 2)
-    assert(r4(0) == TSEntry(1, 5.0, 5))
-    assert(r4(1) == TSEntry(6, 2.0, 5))
-    
-    val r5 = TSEntry.merge(b4,a4)(op)
-    assert(r5.size == 2)
-    assert(r5(0) == TSEntry(1, 5.0, 5))
-    assert(r5(1) == TSEntry(6, 2.0, 5))
-    
-    // Two overlapping entries that don't share bounds for their domain of definition:
-    // Should result in three different TSEntries
-    val a6 = TSEntry(1, 2.0, 10)
-    val b6 = TSEntry(6, 3.0, 10)
-    val r6 = TSEntry.merge(a6, b6)(op)
-    assert(r6.size == 3)
-    assert(r6(0) == TSEntry(1, 2.0, 5))
-    assert(r6(1) == TSEntry(6, 5.0, 5))
-    assert(r6(2) == TSEntry(11, 3.0, 5))
-    
-    // Same for inverted input...
-    val r7 = TSEntry.merge(b6, a6)(op)
-    assert(r7.size == 3)
-    assert(r7(0) == TSEntry(1, 2.0, 5))
-    assert(r7(1) == TSEntry(6, 5.0, 5))
-    assert(r7(2) == TSEntry(11, 3.0, 5))
-    
-    // Finally, check that non-overlapping entries lead to a seq containing them as-is.
-    // obviously not overlapping:
-    val r8 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10))(op)
-    assert(r8.size == 2)
-    assert(r8(0) == TSEntry(1, 2.0, 10))
-    assert(r8(1) == TSEntry(12, 3.0, 10))
-    
-    // contiguous but not overlapping: remain untouched as well
-    val r9 =  TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(11, 3.0, 10))(op)
-    assert(r9.size == 2)
-    assert(r9(0) == TSEntry(1, 2.0, 10))
-    assert(r9(1) == TSEntry(11, 3.0, 10))
-  }
-  
   @Test def testTrimLeftNRight() {
     val t = TSEntry(1, "Hi", 10)
     
@@ -175,7 +106,9 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(1, "Hi", 10) == t.trimEntryLeftNRight(0, 12))
     assert(TSEntry(1, "Hi", 10) == t.trimEntryLeftNRight(1, 11))
     
-    // Check left and right sides
+    // Check left and right sides.
+    assert(TSEntry(2, "Hi", 9) == t.trimEntryLeftNRight(2, 20))
+    assert(TSEntry(1, "Hi", 9) == t.trimEntryLeftNRight(0, 10))
     assert(TSEntry(1, "Hi", 4) == t.trimEntryLeftNRight(1, 5))
     assert(TSEntry(5, "Hi", 6) == t.trimEntryLeftNRight(5, 11))
     
@@ -208,4 +141,169 @@ class TSEntryTest extends JUnitSuite {
     assert(!TSEntry(0, "", 10).overlaps(TSEntry(10, "", 10)))
     assert(!TSEntry(10, "", 10).overlaps(TSEntry(0, "", 10)))
   }
+  
+  @Test def testMergeEntriesSimpleOp() {
+    
+    // For two exactly overlapping entries,
+    // result contains a single entry
+    val r1 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(1, 3.0, 10))(plus)
+    assert(r1.size == 1)
+    assert(r1(0) == TSEntry(1, 5.0, 10))   
+    
+    // Entries don't start at the same time, but have the same end of validity
+    val a = TSEntry(1, 2.0, 10)
+    val b = TSEntry(6, 3.0, 5)
+    assert(a.definedUntil() == b.definedUntil())
+    
+    // Result should contain two entries: first a, valid until b starts, then the sum.
+    val r2 = TSEntry.merge(a,b)(plus) 
+    assert(r2.size == 2)
+    assert(r2(0) == TSEntry(1, 2.0, 5))
+    assert(r2(1) == TSEntry(6, 5.0, 5))
+    
+    // Should be the same if we inverse the inputs...
+    val r3 = TSEntry.merge(b,a)(plus) 
+    assert(r3.size == 2)
+    assert(r3(0) == TSEntry(1, 2.0, 5))
+    assert(r3(1) == TSEntry(6, 5.0, 5))
+    
+    // Entries start at the same time, but have different end of validity
+    val a4 = TSEntry(1, 2.0, 10)
+    val b4 = TSEntry(1, 3.0, 5)
+    val r4 = TSEntry.merge(a4,b4)(plus)
+    assert(r4.size == 2)
+    assert(r4(0) == TSEntry(1, 5.0, 5))
+    assert(r4(1) == TSEntry(6, 2.0, 5))
+    
+    val r5 = TSEntry.merge(b4,a4)(plus)
+    assert(r5.size == 2)
+    assert(r5(0) == TSEntry(1, 5.0, 5))
+    assert(r5(1) == TSEntry(6, 2.0, 5))
+    
+    // Two overlapping entries that don't share bounds for their domain of definition:
+    // Should result in three different TSEntries
+    val a6 = TSEntry(1, 2.0, 10)
+    val b6 = TSEntry(6, 3.0, 10)
+    val r6 = TSEntry.merge(a6, b6)(plus)
+    assert(r6.size == 3)
+    assert(r6(0) == TSEntry(1, 2.0, 5))
+    assert(r6(1) == TSEntry(6, 5.0, 5))
+    assert(r6(2) == TSEntry(11, 3.0, 5))
+    
+    // Same for inverted input...
+    val r7 = TSEntry.merge(b6, a6)(plus)
+    assert(r7.size == 3)
+    assert(r7(0) == TSEntry(1, 2.0, 5))
+    assert(r7(1) == TSEntry(6, 5.0, 5))
+    assert(r7(2) == TSEntry(11, 3.0, 5))
+    
+    // Finally, check that non-overlapping entries lead to a seq containing them as-is.
+    // obviously not overlapping:
+    val r8 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10))(plus)
+    assert(r8.size == 2)
+    assert(r8(0) == TSEntry(1, 2.0, 10))
+    assert(r8(1) == TSEntry(12, 3.0, 10))
+    
+    // contiguous but not overlapping: remain untouched as well
+    val r9 =  TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(11, 3.0, 10))(plus)
+    assert(r9.size == 2)
+    assert(r9(0) == TSEntry(1, 2.0, 10))
+    assert(r9(1) == TSEntry(11, 3.0, 10))
+  }
+  
+  @Test def mergeEithersSimpleOp() {
+    // Overlapping
+    val ao = TSEntry(1, 2.0, 10).toLeftEntry[Double]
+    val bo = TSEntry(6, 3.0, 10).toRightEntry[Double]
+  
+    assert(TSEntry.mergeEithers(ao, bo)(plus) == 
+      Seq(TSEntry(1, 2.0, 5), TSEntry(6, 5.0, 5), TSEntry(11, 3.0, 5)))
+  
+    assert(TSEntry.mergeEithers(bo, ao)(plus) == 
+      Seq(TSEntry(1, 2.0, 5), TSEntry(6, 5.0, 5), TSEntry(11, 3.0, 5)))
+  
+    // Contiguous
+    val ac = TSEntry(1, 2.0, 10).toLeftEntry[Double]
+    val bc = TSEntry(11, 3.0, 10).toRightEntry[Double]
+  
+    assert(TSEntry.mergeEithers(ac, bc)(plus) == 
+      Seq(TSEntry(1, 2.0, 10), TSEntry(11, 3.0, 10)))
+  
+    assert(TSEntry.mergeEithers(bc, ac)(plus) == 
+      Seq(TSEntry(1, 2.0, 10), TSEntry(11, 3.0, 10)))
+  
+    // Completely separate
+      
+    val as = TSEntry(1, 2.0, 10).toLeftEntry[Double]
+    val bs = TSEntry(12, 3.0, 10).toRightEntry[Double]
+  
+    assert(TSEntry.mergeEithers(as, bs)(plus) == 
+      Seq(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10)))
+  
+    assert(TSEntry.mergeEithers(bs, as)(plus) == 
+      Seq(TSEntry(1, 2.0, 10), TSEntry(12, 3.0, 10)))
+  
+  }
+  
+  @Test def mergeSingleToMultipleSimpleOp() {
+    // Simple case, merging to a single entry wholly contained in the domain
+    val s1 = TSEntry(1, 2.0, 20)
+    val m1 = Seq(TSEntry(5, 1.0, 10))
+    
+    assert(TSEntry.mergeSingleToMultiple(s1.toLeftEntry[Double], m1.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 10), TSEntry(15, 2.0, 6)))
+    
+    assert(TSEntry.mergeSingleToMultiple(s1.toRightEntry[Double], m1.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 10), TSEntry(15, 2.0, 6)))
+    
+    // Merging with a single entry that exceeds the single's domain both before and after
+    val s2 = TSEntry(5, 2.0, 10)
+    val m2 = Seq(TSEntry(1, 1.0, 20))
+    
+    assert(TSEntry.mergeSingleToMultiple(s2.toLeftEntry[Double], m2.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(5, 3.0, 10)))
+    assert(TSEntry.mergeSingleToMultiple(s2.toRightEntry[Double], m2.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(5, 3.0, 10)))  
+    
+    // Merging with two entries wholly contained in the single's domain
+    val s3 = TSEntry(1, 2.0, 20)
+    val m3 = Seq(TSEntry(5, 1.0, 5), TSEntry(10, 2.0, 5))
+    
+    assert(TSEntry.mergeSingleToMultiple(s3.toLeftEntry[Double], m3.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 4.0, 5), TSEntry(15, 2.0, 6)))
+      
+    assert(TSEntry.mergeSingleToMultiple(s3.toRightEntry[Double], m3.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 4.0, 5), TSEntry(15, 2.0, 6)))
+      
+    val s4 = TSEntry(1, 2.0, 20)
+    val m4 = Seq(TSEntry(5, 1.0, 5), TSEntry(11, 2.0, 5))
+    
+    assert(TSEntry.mergeSingleToMultiple(s4.toLeftEntry[Double], m4.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 2.0, 1), TSEntry(11, 4.0, 5), TSEntry(16, 2.0, 5)))
+      
+    assert(TSEntry.mergeSingleToMultiple(s4.toRightEntry[Double], m4.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 2.0, 1), TSEntry(11, 4.0, 5), TSEntry(16, 2.0, 5)))
+    
+    // Merge with three entries, the first and last one exceeding the single's domain
+    val s5 = TSEntry(1, 2.0, 20)
+    val m5 = Seq(TSEntry(0, 1.0, 5), TSEntry(5, 2.0, 5), TSEntry(16, 3.0, 10))
+    
+    assert(TSEntry.mergeSingleToMultiple(s5.toLeftEntry[Double], m5.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 3.0, 4), TSEntry(5, 4.0, 5), TSEntry(10, 2.0, 6), TSEntry(16, 5.0, 5)))
+      
+    assert(TSEntry.mergeSingleToMultiple(s5.toRightEntry[Double], m5.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 3.0, 4), TSEntry(5, 4.0, 5), TSEntry(10, 2.0, 6), TSEntry(16, 5.0, 5)))
+    
+    // Merge with four entries, the first and last one being completely outside of the single's domain
+    val s6 = TSEntry(1, 2.0, 20)
+    val m6 = Seq(TSEntry(-10, -1.0, 11), TSEntry(0, 1.0, 5), TSEntry(6, 2.0, 5), TSEntry(16, 3.0, 10), TSEntry(21, 4.0, 10))
+    
+    assert(TSEntry.mergeSingleToMultiple(s6.toLeftEntry[Double], m6.map(_.toRightEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 3.0, 4), TSEntry(5, 2.0, 1), TSEntry(6, 4.0, 5), TSEntry(11, 2.0, 5), TSEntry(16, 5.0, 5)))
+      
+    assert(TSEntry.mergeSingleToMultiple(s6.toRightEntry[Double], m6.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(TSEntry(1, 3.0, 4), TSEntry(5, 2.0, 1), TSEntry(6, 4.0, 5), TSEntry(11, 2.0, 5), TSEntry(16, 5.0, 5)))
+  }
+ 
+  
 }

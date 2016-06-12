@@ -73,10 +73,9 @@ case class TSEntry[T]
       else if(l <= timestamp && r >= definedUntil)
         this
       else {
-        val start = Math.max(timestamp, l) 
-        TSEntry(start, value, Math.min(validity, r - start))
-      }
-        
+        val start = Math.max(timestamp, l)
+        TSEntry(start, value, Math.min(definedUntil, r) - start)
+      }      
   
   def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
   
@@ -114,7 +113,7 @@ object TSEntry {
    *  If the passed merge operator is commutative, then the 'merge' function is commutative as well.
    *  (merge(op)(E_a,E_b) == merge(op)(E_b,E_a) only if op(a,b) == op(b,a))
    */
-  def mergeOverlapping[A,B,R]
+  protected def mergeOverlapping[A,B,R]
     (a: TSEntry[A], b: TSEntry[B])
     (op: (Option[A], Option[B]) => Option[R])
     : Seq[TSEntry[R]] =
@@ -142,15 +141,18 @@ object TSEntry {
   
   /** Merge two entries that have a disjoint domain. 
    *  The merge operator will be applied to each individually */
-  def mergeDisjointDomain[A,B,R]
+  protected def mergeDisjointDomain[A,B,R]
     (a: TSEntry[A], b: TSEntry[B])
     (op: (Option[A], Option[B]) => Option[R])
     : Seq[TSEntry[R]] =
-          { op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++ 
-            emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++ 
-            op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
-          }.sortBy(_.timestamp)
-      
+      if (a.overlaps(b))
+        throw new IllegalArgumentException("Function cannot be applied to overlapping entries.")
+      else
+        { op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++ 
+          emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++ 
+          op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
+        }.sortBy(_.timestamp)
+  
   private def emptyApply[A,B,R]
     (from: Long, to: Long)
     (op: (Option[A], Option[B]) => Option[R])
@@ -180,9 +182,9 @@ object TSEntry {
     : Seq[TSEntry[R]] =
       (a,b) match {
       case (TSEntry(tsA, Left(valA), dA), TSEntry(tsB, Right(valB), dB)) => 
-        mergeOverlapping(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
+        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
       case (TSEntry(tsB, Right(valB), dB), TSEntry(tsA, Left(valA), dA)) =>
-        mergeOverlapping(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
+        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
       case _ => throw new IllegalArgumentException(s"Can't pass two entries with same sided-eithers: $a, $b")
       }
   
@@ -193,21 +195,26 @@ object TSEntry {
     (single: TSEntry[Either[A,B]], others: Seq[TSEntry[Either[A,B]]])
     (op: (Option[A], Option[B]) => Option[R])
     : Seq[TSEntry[R]] =
-    others match {
-            case Seq() => Seq.empty
-            case Seq(alone) => mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
-            case _ =>
-              // Take care of the potentially undefined domain before the 'others'
-              mergeEitherToNone(single)(single.timestamp, others.head.timestamp)(op) ++ 
-              // Merge the others to the single entry, including potential undefined spaces between them
-              others.map(_.trimEntryLeftNRight(single.timestamp, single.definedUntil))
-                            // Group by pairs of entries to be able to trim the single one to the relevant domain 
-                            // for the individual merges  
-                            .sliding(2)
-                            .flatMap(p => mergeEithers(single.trimEntryLeftNRight(p.head.timestamp, p.last.timestamp), p.head)(op)) ++
-              // Take care of the potentially undefined domain after the others. 
-              mergeEitherToNone(single)(others.last.definedUntil, single.definedUntil)(op)
-          }
+    others.collect{ 
+        // Retain only entries overlapping with 'single', and constraint them to the 'single' domain.
+        case e: TSEntry[_] if(single.overlaps(e)) => 
+          e.trimEntryLeftNRight(single.timestamp, single.definedUntil)
+      } match {
+        // Merge remaining constrained entries
+        case Seq() => Seq.empty
+        case Seq(alone) => mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
+        case toMerge: Seq[_] =>
+          // Take care of the potentially undefined domain before the 'others'
+          mergeEitherToNone(single)(single.timestamp, toMerge.head.timestamp)(op) ++ 
+          // Merge the others to the single entry, including potential undefined spaces between them.
+          // Group by pairs of entries to be able to trim the single one to the relevant domain
+          // for the individual merges   
+          toMerge.sliding(2)
+                 .flatMap(p => 
+                   mergeEithers(single.trimEntryLeftNRight(p.head.timestamp, p.last.timestamp), p.head)(op)) ++
+          // Take care of the last entry and the potentially undefined domain after it and the end of the single one.
+          mergeEithers(toMerge.last, single.trimEntryLeft(toMerge.last.timestamp))(op)
+    }
   
   /** Convenience function to merge the values present in the entries at time 'at' and
    *  create an entry valid until 'until' from the result, if the merge operation is defined
