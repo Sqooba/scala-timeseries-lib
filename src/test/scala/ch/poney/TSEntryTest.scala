@@ -305,5 +305,30 @@ class TSEntryTest extends JUnitSuite {
       Seq(TSEntry(1, 3.0, 4), TSEntry(5, 2.0, 1), TSEntry(6, 4.0, 5), TSEntry(11, 2.0, 5), TSEntry(16, 5.0, 5)))
   }
  
+  @Test def testMergeEitherToNoneSimpleOp() {
+    val t = TSEntry(1, 1.0, 10)
+    
+    assert(TSEntry.mergeEitherToNone(t.toLeftEntry[Double])(plus) ==
+      Some(TSEntry(1, 1.0, 10)))
+      assert(TSEntry.mergeEitherToNone(t.toRightEntry[Double])(plus) ==
+      Some(TSEntry(1, 1.0, 10)))
+  }
+  
+  @Test def testMergeEitherToNoneComplexOp() {
+    // Operator... 
+    // - returning the first (left) operand if the right one is undefined
+    // - returning None otherwise.
+    def op(aO: Option[String], bO: Option[String]) = 
+      (aO, bO) match {
+        case (Some(a), None) => aO
+        case (None, Some(b)) => None
+      }
+    val t = TSEntry(1, "Hi", 10)
+    
+    assert(TSEntry.mergeEitherToNone(t.toLeftEntry[String])(op) ==
+      Some(TSEntry(1, "Hi", 10)))
+      
+    assert(TSEntry.mergeEitherToNone(t.toRightEntry[String])(op) == None)  
+  }
   
 }

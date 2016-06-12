@@ -8,7 +8,11 @@ case class TSEntry[T]
      validity: Long) 
      extends TimeSeries[T] {
   
-  def at(t: Long): Option[T] = TSEntry.valueAt(timestamp, value, validity)(t)
+  def at(t: Long): Option[T] =
+    if (timestamp <= t && t < timestamp + validity)
+      Some(value)
+    else 
+      None
 
   def size(): Int = 1
   
@@ -205,7 +209,7 @@ object TSEntry {
         case Seq(alone) => mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
         case toMerge: Seq[_] =>
           // Take care of the potentially undefined domain before the 'others'
-          mergeEitherToNone(single)(single.timestamp, toMerge.head.timestamp)(op) ++ 
+          mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++ 
           // Merge the others to the single entry, including potential undefined spaces between them.
           // Group by pairs of entries to be able to trim the single one to the relevant domain
           // for the individual merges   
@@ -215,6 +219,17 @@ object TSEntry {
           // Take care of the last entry and the potentially undefined domain after it and the end of the single one.
           mergeEithers(toMerge.last, single.trimEntryLeft(toMerge.last.timestamp))(op)
     }
+  
+  /** Merge the provided entry to a None on the domain spawned by [from, until[*/
+  private def mergeDefinedEmptyDomain[A, B, R]
+    (e: TSEntry[Either[A,B]])
+    (from: Long, until: Long)
+    (op: (Option[A], Option[B]) => Option[R])
+    : Seq[TSEntry[R]] =
+      if(from == until)
+        Seq.empty
+      else
+        mergeEitherToNone(e.trimEntryLeftNRight(from, until))(op).toSeq
   
   /** Convenience function to merge the values present in the entries at time 'at' and
    *  create an entry valid until 'until' from the result, if the merge operation is defined
@@ -226,27 +241,14 @@ object TSEntry {
     : Seq[TSEntry[R]] = 
       op(a.at(at), b.at(at)).map(TSEntry(at, _ , until - at)).toSeq
       
-  /** Merge the provided entry to a None */
+  /** Merge the provided entry to a None, using the specified operator*/
   def mergeEitherToNone[A, B, R]
     (e: TSEntry[Either[A,B]])
-    (at: Long, until: Long)
     (op: (Option[A], Option[B]) => Option[R])
-    : Seq[TSEntry[R]] =
-      if(at == until)
-        Seq.empty
-      else 
+    : Option[TSEntry[R]] =
         {e match {
-          case TSEntry(t, Left(valA), d) => op(valueAt(t, valA, d)(at), None)
-          case TSEntry(t, Right(valB), d) => op(None, valueAt(t, valB, d)(at))
-        }}.map(TSEntry(at, _, until - at)).toSeq
-  
-  /** 
-   *  For an entry starting at time t with the given validity, return 'value'
-   *  if 'at' is within the domain of definition.*/
-  private def valueAt[T](t: Long, value: T, validity: Long)(at: Long) =
-    if (t <= at && at < t + validity)
-      Some(value)
-    else 
-      None
+          case TSEntry(t, Left(valA), d) => op(Some(valA), None)
+          case TSEntry(t, Right(valB), d) => op(None, Some(valB))
+        }}.map(TSEntry(e.timestamp, _, e.validity))
       
 }
