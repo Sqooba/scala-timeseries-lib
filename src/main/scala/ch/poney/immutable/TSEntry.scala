@@ -205,7 +205,7 @@ object TSEntry {
           e.trimEntryLeftNRight(single.timestamp, single.definedUntil)
       } match {
         // Merge remaining constrained entries
-        case Seq() => Seq.empty
+        case Seq() => mergeEitherToNone(single)(op).toSeq
         case Seq(alone) => mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
         case toMerge: Seq[_] =>
           // Take care of the potentially undefined domain before the 'others'

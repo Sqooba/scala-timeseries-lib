@@ -246,6 +246,16 @@ class TSEntryTest extends JUnitSuite {
   }
   
   @Test def mergeSingleToMultipleSimpleOp() {
+    // Single to empty case
+    val s0 = TSEntry(1, 2.0, 20)
+    val m0 = Seq.empty[TSEntry[Double]]
+    
+    assert(TSEntry.mergeSingleToMultiple(s0.toLeftEntry[Double], m0.map(_.toRightEntry[Double]))(plus) ==
+      Seq(s0))
+    
+    assert(TSEntry.mergeSingleToMultiple(s0.toRightEntry[Double], m0.map(_.toLeftEntry[Double]))(plus) ==
+      Seq(s0))
+    
     // Simple case, merging to a single entry wholly contained in the domain
     val s1 = TSEntry(1, 2.0, 20)
     val m1 = Seq(TSEntry(5, 1.0, 10))
