@@ -17,4 +17,5 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def trimRight(at: Long): TimeSeries[T] = EmptyTimeSeries()
   
+  def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries()
 }

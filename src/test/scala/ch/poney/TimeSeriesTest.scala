@@ -59,7 +59,7 @@ class TimeSeriesTest extends JUnitSuite {
     // Merge with four entries, the first and last one being completely outside of the single's domain
     val s6 = Seq(TSEntry(1, 2.0, 20))
     val m6 = Seq(TSEntry(-10, -1.0, 10), TSEntry(0, 1.0, 5), TSEntry(6, 2.0, 5), TSEntry(16, 3.0, 10), TSEntry(26, 4.0, 10))
-    println(6)
+    
     assert(TimeSeries.mergeEntries(s6)(m6)(plus) ==
       Seq(TSEntry(-10, -1, 10), TSEntry(0, 1.0, 1), TSEntry(1, 3.0, 4), TSEntry(5, 2.0, 1), TSEntry(6, 4.0, 5), TSEntry(11, 2.0, 5), TSEntry(16, 5.0, 5), TSEntry(21, 3.0, 5), TSEntry(26, 4.0, 10)))
       

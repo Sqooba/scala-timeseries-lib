@@ -184,4 +184,18 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     assert(tri.split(30) == (tri,EmptyTimeSeries()))
     assert(tri.split(31) == (tri,EmptyTimeSeries()))
   }
+  
+  @Test def testMap() {
+    val tri = 
+       TreeMapTimeSeries(
+              0L -> TSValue("Hi", 10), 
+              10L -> TSValue("Ho", 10),
+              20L -> TSValue("Hu", 10))
+              
+    val up = tri.map(s => s.toUpperCase())
+    assert(3 == up.size())
+    assert(up.at(0) == Some("HI"))
+    assert(up.at(10) == Some("HO"))
+    assert(up.at(20) == Some("HU"))
+  }
 }

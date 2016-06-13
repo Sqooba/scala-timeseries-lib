@@ -54,6 +54,8 @@ case class TreeMapTimeSeries[T]
             data.to(m.lastKey - 1) + TSEntry(m.last).trimEntryRight(at).toMapTuple)
     }
     
+  def map[O](f: T => O): TimeSeries[O] =
+    new TreeMapTimeSeries(data.map(t => (t._1, t._2.map(f))))
 }
 
 object TreeMapTimeSeries {

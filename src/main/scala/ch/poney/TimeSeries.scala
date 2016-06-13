@@ -30,6 +30,10 @@ trait TimeSeries[T] {
   
   /** True if this time series is defined at 'at'. Ie, at('at') would return Some[T] */
   def defined(at: Long): Boolean
+  
+  /** Map the values within the time series. 
+   *  Timestamps and validities of entries remain unchanged*/
+  def map[O](f: T => O): TimeSeries[O]
 }
 
 object TimeSeries {
@@ -86,8 +90,6 @@ object TimeSeries {
         case Seq(head, remaining @_*) => 
           // Take the head and all entries with which it overlaps and merge them.
           // Remaining entries are merged via a recursive call
-          println(s"done: $done, todo: $todo")
-          println(s"head: $head, remaining: $remaining")
           val (toMerge, nextRound) = 
             remaining.span(_.timestamp < head.definedUntil()) match {
             case (vals :+ last, r) if last.defined(head.definedUntil) =>
@@ -95,7 +97,6 @@ object TimeSeries {
               (vals :+ last, last.trimEntryLeft(head.definedUntil) +: r)
             case t: Any => t
           }
-          println(s"toMerge: $toMerge, nextRound: $nextRound")
           // Check if there was some empty space between the last 'done' entry and the first remaining
           val filling = done.lastOption match {
             case Some(TSEntry(ts, valE, d)) => 
@@ -106,7 +107,6 @@ object TimeSeries {
             case _ => Seq.empty
           }
           val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
-          println(s"filling: $filling, lastMerge: $p")
           // Add the freshly merged entries to the previously done ones, call to self with the remaining entries.
           mergeEithers(done ++ filling ++ TSEntry.mergeSingleToMultiple(head, toMerge)(op))(nextRound)(op)
       }

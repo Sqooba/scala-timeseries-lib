@@ -22,4 +22,5 @@ case class TSValue[T](value: T, validity: Long) {
     else 
       TSValue(value, trimAt - forTime)
       
+  def map[O](f: T => O) = TSValue(f(value), validity)
 }
