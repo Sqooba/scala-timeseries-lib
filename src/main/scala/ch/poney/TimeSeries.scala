@@ -77,22 +77,25 @@ object TimeSeries {
   @tailrec
   def mergeEithers[A,B,C]
     (done: Seq[TSEntry[C]]) // 
-    (remaining: Seq[TSEntry[Either[A,B]]])
+    (todo: Seq[TSEntry[Either[A,B]]])
     (op: (Option[A], Option[B]) => Option[C])
     : Seq[TSEntry[C]] = 
-      remaining match {
+      todo match {
         case Seq() => // Nothing remaining, we are done -> return the merged Seq 
           done 
         case Seq(head, remaining @_*) => 
           // Take the head and all entries with which it overlaps and merge them.
           // Remaining entries are merged via a recursive call
+          println(s"done: $done, todo: $todo")
+          println(s"head: $head, remaining: $remaining")
           val (toMerge, nextRound) = 
             remaining.span(_.timestamp < head.definedUntil()) match {
-            case (vals @_ :+ last, r) if last.defined(head.definedUntil) =>  
+            case (vals :+ last, r) if last.defined(head.definedUntil) =>
               // we need to add the part that is defined after the head to the 'nextRound' entries
               (vals :+ last, last.trimEntryLeft(head.definedUntil) +: r)
             case t: Any => t
           }
+          println(s"toMerge: $toMerge, nextRound: $nextRound")
           // Check if there was some empty space between the last 'done' entry and the first remaining
           val filling = done.lastOption match {
             case Some(TSEntry(ts, valE, d)) => 
@@ -102,6 +105,8 @@ object TimeSeries {
                 op(None,None).map(TSEntry(ts + d, _, head.timestamp)).toSeq
             case _ => Seq.empty
           }
+          val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
+          println(s"filling: $filling, lastMerge: $p")
           // Add the freshly merged entries to the previously done ones, call to self with the remaining entries.
           mergeEithers(done ++ filling ++ TSEntry.mergeSingleToMultiple(head, toMerge)(op))(nextRound)(op)
       }
