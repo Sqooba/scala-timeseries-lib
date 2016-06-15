@@ -341,4 +341,13 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry.mergeEitherToNone(t.toRightEntry[String])(op) == None)  
   }
   
+  @Test def testValidityValidation() {
+    intercept[IllegalArgumentException] {
+      TSEntry(10, "Duh", -1)
+    }
+    intercept[IllegalArgumentException] {
+      TSEntry(10, "Duh", 0)
+    }
+  }
+  
 }

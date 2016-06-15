@@ -8,6 +8,8 @@ case class TSEntry[T]
      validity: Long) 
      extends TimeSeries[T] {
   
+  if(validity <= 0) throw new IllegalArgumentException("Validity must be strictly positive")
+ 
   def at(t: Long): Option[T] =
     if (timestamp <= t && t < timestamp + validity)
       Some(value)
