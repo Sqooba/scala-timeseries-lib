@@ -4,7 +4,7 @@ import ch.poney.immutable.TSEntry
 import scala.util.Left
 import scala.annotation.tailrec
 
-trait TimeSeries[T] {
+trait TimeSeries[+T] {
   
   /** The value valid at time 't' if there is one.*/
   def at(t: Long): Option[T]
@@ -75,9 +75,18 @@ object TimeSeries {
     (b: Seq[TSEntry[B]])
     (op: (Option[A], Option[B]) => Option[C])
     : Seq[TSEntry[C]] = {
+    // TODO : sortyBy really required? More efficient options?
     mergeEithers(Seq.empty)((a.map(_.toLeftEntry[B]) ++ b.map(_.toRightEntry[A])).sortBy(_.timestamp))(op)
   }
   
+  /** Merge a sequence composed of entries containing Eithers.
+   *  
+   *  Entries of Eithers of a same kind (Left or Right) cannot overlap. 
+   *  
+   *  Overlapping entries will be split where necessary and their values passed to the 
+   *  operator to be merged. Left and Right entries are passed as the first and second argument
+   *  of the merge operator, respectively. 
+   */
   @tailrec
   def mergeEithers[A,B,C]
     (done: Seq[TSEntry[C]]) // 
