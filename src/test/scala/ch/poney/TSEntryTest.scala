@@ -306,7 +306,7 @@ class TSEntryTest extends JUnitSuite {
     
     // Merge with four entries, the first and last one being completely outside of the single's domain
     val s6 = TSEntry(1, 2.0, 20)
-    val m6 = Seq(TSEntry(-10, -1.0, 10), TSEntry(10, 1.0, 5), TSEntry(6, 2.0, 5), TSEntry(16, 3.0, 10), TSEntry(26, 4.0, 10))
+    val m6 = Seq(TSEntry(-10, -1.0, 10), TSEntry(1, 1.0, 4), TSEntry(6, 2.0, 5), TSEntry(16, 3.0, 10), TSEntry(26, 4.0, 10))
     
     assert(TSEntry.mergeSingleToMultiple(s6.toLeftEntry[Double], m6.map(_.toRightEntry[Double]))(plus) ==
       Seq(TSEntry(1, 3.0, 4), TSEntry(5, 2.0, 1), TSEntry(6, 4.0, 5), TSEntry(11, 2.0, 5), TSEntry(16, 5.0, 5)))
