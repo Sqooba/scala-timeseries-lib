@@ -1,7 +1,7 @@
 # tslib -- a lightweight time series library
 
 ## Why 
-I've had to handle time-series like data in Java recently, which turned out to be slightly frustrating due to Java's limitations. 
+I've had to handle time-series like data in Java recently, which turned out to be ~~slightly~~ really frustrating.
 
 Having some spare time and wanting to see what I could come up with in Scala, I decided to build a small time series library. Additional reasons are:
 
