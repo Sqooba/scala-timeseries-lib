@@ -15,3 +15,4 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - slicing
   - check if sorting of sequences for merges is required/efficient
   - decent tests for non-trivial merge operators
+  - default Seq implementation (and the one that is imported) is mutable -> consider the implications and see if we can easily fix this by 'import scala.collection.immutable.Seq' everywhere required.
