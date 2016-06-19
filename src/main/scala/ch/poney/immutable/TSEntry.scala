@@ -3,8 +3,8 @@ package ch.poney.immutable
 import ch.poney.TimeSeries
 
 case class TSEntry[T]
-    (timestamp: Long,  
-     value: T,  
+    (timestamp: Long,   
+     value: T,   
      validity: Long) 
      extends TimeSeries[T] {
   
@@ -99,6 +99,8 @@ case class TSEntry[T]
   
   /** Map value contained in this timeseries using the passed function */
   def map[O](f: T => O) = TSEntry(timestamp, f(value), validity)
+
+  def toSeq: Seq[TSEntry[T]] = Seq(this)
       
 }
 
@@ -106,6 +108,9 @@ object TSEntry {
   /** Build a TSEntry from a tuple containing the a TSValue and the time at which it starts.*/
   def apply[T](tValTup: (Long, TSValue[T])): TSEntry[T] = 
     TSEntry(tValTup._1, tValTup._2.value, tValTup._2.validity)
+    
+  def apply[T](tup: (Long, T, Long)): TSEntry[T] =
+    TSEntry(tup._1, tup._2, tup._3)
     
   /** Merge two overlapping TSEntries and return the result as an
    *  ordered sequence of TSEntries. 

@@ -1,6 +1,8 @@
 package ch.poney.immutable
 
 case class TSValue[T](value: T, validity: Long) {
+  
+  if(validity <= 0) throw new IllegalArgumentException("Validity must be strictly positive")
 
   /** True if this TSValue is valid at the provided 'atTime' if it is stored at 'key'*/
   def validAt(valueTime: Long, atTime: Long): Boolean = 

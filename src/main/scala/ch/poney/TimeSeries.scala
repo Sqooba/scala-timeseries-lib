@@ -4,7 +4,7 @@ import ch.poney.immutable.TSEntry
 import scala.util.Left
 import scala.annotation.tailrec
 
-trait TimeSeries[+T] {
+trait TimeSeries[T] {
   
   /** The value valid at time 't' if there is one.*/
   def at(t: Long): Option[T]
@@ -34,6 +34,8 @@ trait TimeSeries[+T] {
   /** Map the values within the time series. 
    *  Timestamps and validities of entries remain unchanged*/
   def map[O](f: T => O): TimeSeries[O]
+  
+  def toSeq: Seq[TSEntry[T]]
 }
 
 object TimeSeries {

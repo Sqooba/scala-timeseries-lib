@@ -56,6 +56,8 @@ case class TreeMapTimeSeries[T]
     
   def map[O](f: T => O): TimeSeries[O] =
     new TreeMapTimeSeries(data.map(t => (t._1, t._2.map(f))))
+
+  def toSeq: Seq[TSEntry[T]] = data.map(e => TSEntry(e)).toSeq
 }
 
 object TreeMapTimeSeries {
