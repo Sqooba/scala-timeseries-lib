@@ -8,14 +8,17 @@ import ch.poney.TimeSeries
  * Useful for working on time series like data when no random access is required,
  * as any method requiring some sort of lookup will only run in linear time.
  */
-class VectorTimeSeries[T]
+case class VectorTimeSeries[T]
   (data: Vector[TSEntry[T]]) // data needs to be SORTED -> TODO: private constructor?
   extends TimeSeries[T] {
   
   /** Linear search for the last element in the time series where the timestamp is less 
    *  or equal to the specified time. */
   def at(t: Long): Option[T] = 
-    data(data.lastIndexWhere(_.timestamp <= t)).at(t)
+    data.lastIndexWhere(_.timestamp <= t) match {
+    case -1 => None
+    case i: Int => data(i).at(t)
+  }
 
   /** Linear search for the last element in the time series where the timestamp is less 
    *  or equal to the specified time, and returns whether it is valid at time 't' or not. */  
@@ -26,37 +29,54 @@ class VectorTimeSeries[T]
 
   def size(): Int = data.size
 
-  def trimLeft(t: Long): TimeSeries[T] = 
-    if(data.isEmpty) EmptyTimeSeries()
+  def trimLeft(t: Long): TimeSeries[T] =
+    // Check obvious shortcuts
+    if(data.isEmpty) 
+      EmptyTimeSeries()
+    else if(data.head.timestamp >= t)
+      this
+    else if(data.size == 1) 
+      data.head.trimLeft(t)
     else
-      // TODO: check first and last entry for trivial cases before proceeding?
       data.lastIndexWhere(_.timestamp <= t) match { 
         case -1 => EmptyTimeSeries() // No index where condition holds.
-        case i: Int => data.splitAt(i - 1) match {
-          case (drop, keep) => drop.last match {
-            case e: TSEntry[T] if e.defined(t) => new VectorTimeSeries(e.trimEntryLeft(t) +: keep)
+        //case 0 => data.head.trimLeft(t) // Condition holds on first element
+        case i: Int => data.splitAt(i) match {
+          case (drop, keep) => keep.head match {
+            case e: TSEntry[T] if e.defined(t) => new VectorTimeSeries(e.trimEntryLeft(t) +: keep.tail)
             case _ => new VectorTimeSeries(keep)
           }
       }
     }
 
   def trimRight(t: Long): TimeSeries[T] =
-    if(data.isEmpty) EmptyTimeSeries()
+    if(data.isEmpty) 
+      EmptyTimeSeries()
+    else if(data.size == 1)
+      data.head.trimRight(t)
     else
-      // TODO: check first and last entry for trivial cases before proceeding?
+      // TODO: check last entry for trivial cases before proceeding?
       data.lastIndexWhere(_.timestamp <= t) match { 
         case -1 => EmptyTimeSeries() // No index where condition holds.
+        case 0 => data.head.trimRight(t) //First element: trim and return it.  
         case i: Int => data.splitAt(i - 1)  match { 
             // First of the last elements is valid and may need trimming. Others can be forgotten.
             case (noChange, lastAndDrop) => 
               new VectorTimeSeries(noChange :+ lastAndDrop.head.trimEntryRight(t))
           }
       }
+
+  def toSeq: Seq[TSEntry[T]] = data
+  
 }
 
 object VectorTimeSeries {
   
-  def apply[T](elems: TSEntry[T]*): VectorTimeSeries[T] =
+  def ofEntries[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
+    // TODO: Expect entries to be sorted and just check?
     new VectorTimeSeries(Vector(elems.sortBy(_.timestamp):_*))
+  
+  def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
+    ofEntries(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)));
   
 }
