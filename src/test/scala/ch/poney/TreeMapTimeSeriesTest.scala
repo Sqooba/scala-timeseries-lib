@@ -165,7 +165,6 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   }
   
   @Test def testSplit() {
-    // With two entries
     val tri = 
        TreeMapTimeSeries(
               0L -> TSValue("Hi", 10), 

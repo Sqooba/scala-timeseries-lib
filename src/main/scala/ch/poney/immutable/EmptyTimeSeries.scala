@@ -19,5 +19,5 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
   
   def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries()
   
-  def toSeq: Seq[TSEntry[T]] = Seq()
+  def entries: Seq[TSEntry[T]] = Seq()
 }

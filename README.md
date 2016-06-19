@@ -17,3 +17,5 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - decent tests for non-trivial merge operators
   - default Seq implementation (and the one that is imported) is mutable -> consider the implications and see if we can easily fix this by 'import scala.collection.immutable.Seq' everywhere required.
   - input validation when applying. Check entries sorted (for the vector TS) and without overlap.
+  - Have empty time series always be represented by an EmptyTimeSeries. (Ie, wrapping an empty vector or map with a vector/treemap time-series should not happen)
+  - Generic tests for any kind of TS implementation

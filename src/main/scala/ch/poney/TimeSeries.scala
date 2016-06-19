@@ -35,7 +35,8 @@ trait TimeSeries[T] {
    *  Timestamps and validities of entries remain unchanged*/
   def map[O](f: T => O): TimeSeries[O]
   
-  def toSeq: Seq[TSEntry[T]]
+  /** Return a Seq of the TSEntries representing this time series.*/
+  def entries: Seq[TSEntry[T]]
 }
 
 object TimeSeries {

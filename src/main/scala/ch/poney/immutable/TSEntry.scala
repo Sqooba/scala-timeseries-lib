@@ -100,7 +100,7 @@ case class TSEntry[T]
   /** Map value contained in this timeseries using the passed function */
   def map[O](f: T => O) = TSEntry(timestamp, f(value), validity)
 
-  def toSeq: Seq[TSEntry[T]] = Seq(this)
+  def entries: Seq[TSEntry[T]] = Seq(this)
       
 }
 
