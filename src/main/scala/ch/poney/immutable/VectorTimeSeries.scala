@@ -16,9 +16,9 @@ case class VectorTimeSeries[T]
    *  or equal to the specified time. */
   def at(t: Long): Option[T] = 
     data.lastIndexWhere(_.timestamp <= t) match {
-    case -1 => None
-    case i: Int => data(i).at(t)
-  }
+      case -1 => None
+      case i: Int => data(i).at(t)
+    }
 
   /** Linear search for the last element in the time series where the timestamp is less 
    *  or equal to the specified time, and returns whether it is valid at time 't' or not. */  
@@ -50,7 +50,7 @@ case class VectorTimeSeries[T]
               else
                 new VectorTimeSeries(keep.tail)
           }
-      }
+        }
     }
 
   def trimRight(t: Long): TimeSeries[T] =

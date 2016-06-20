@@ -85,6 +85,7 @@ class VectorTimeSeriesTest extends JUnitSuite  {
     assert(discon2.defined(12))
     assert(discon2.defined(21))
     assert(!discon2.defined(22))
+
   }
   
   @Test def testTrimLeftContiguous() {
