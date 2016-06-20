@@ -101,6 +101,32 @@ case class TSEntry[T]
   def map[O](f: T => O) = TSEntry(timestamp, f(value), validity)
 
   def entries: Seq[TSEntry[T]] = Seq(this)
+  
+  /** Append the other entry to this one.
+   *  Any part of this entry that is defined for t > other.timestamp will be overwritten,
+   *  either by 'other' or by nothing if 'others's validity does not reach t.
+   *  
+   *  Ie, if 'other' has a timestamp before this value, only 'other' is returned. */
+  def appendEntry(other: TSEntry[T]): Seq[TSEntry[T]] = 
+    if(other.timestamp <= timestamp)
+      Seq(other)
+    else
+      Seq(this.trimEntryRight(other.timestamp), other)
+  
+  /** Prepend the other entry to this one.
+   *  Any part of this entry that is defined at t < other.definedUntil will be overwritten by the 
+   *  other entry, or not be defined if t < other.timestamp */
+  def prependEntry(other: TSEntry[T]): Seq[TSEntry[T]] = 
+    if(other.timestamp >= definedUntil) // Complete overwrite, return the other.
+      Seq(other)
+    else if (other.definedUntil < definedUntil) // Something from this entry to be kept after the prepended one
+      Seq(other, this.trimEntryLeft(other.definedUntil))
+    else //the prepended entry completely overwrites the present one.
+      Seq(other) 
+        
+        
+    
+  
       
 }
 

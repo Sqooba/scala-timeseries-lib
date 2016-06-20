@@ -142,6 +142,57 @@ class TSEntryTest extends JUnitSuite {
     assert(!TSEntry(10, "", 10).overlaps(TSEntry(0, "", 10)))
   }
   
+  @Test def testAppendEntry() {
+    val tse = TSEntry(1, "Hi", 10)
+    
+    // Append without overwrite 
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(12, "Ho", 10)))
+      
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(11, "Ho", 10)))
+    
+    // With partial overwrite
+    assert(Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(10, "Ho", 10)))
+      
+    assert(Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(2, "Ho", 10)))
+      
+    // Complete overwrite
+    assert(Seq(TSEntry(1, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(1, "Ho", 10)))
+      
+    assert(Seq(TSEntry(0, "Ho", 10)) == 
+      tse.appendEntry(TSEntry(0, "Ho", 10)))
+      
+  }
+  
+  @Test def prependEntry() {
+    val tse = TSEntry(11, "Ho", 10)
+    
+    // Prepend without overwrite 
+    assert(Seq(TSEntry(0, "Hi", 10), TSEntry(11, "Ho", 10)) == 
+      tse.prependEntry(TSEntry(0, "Hi", 10)))
+      
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == 
+      tse.prependEntry(TSEntry(1, "Hi", 10)))
+    
+    // With partial overwrite
+    assert(Seq(TSEntry(2, "Hi", 10), TSEntry(12, "Ho", 9)) == 
+      tse.prependEntry(TSEntry(2, "Hi", 10)))
+      
+    assert(Seq(TSEntry(10, "Hi", 10), TSEntry(20, "Ho", 1)) == 
+      tse.prependEntry(TSEntry(10, "Hi", 10)))
+      
+    // Complete overwrite
+    assert(Seq(TSEntry(11, "Hi", 10)) == 
+      tse.prependEntry(TSEntry(11, "Hi", 10)))
+      
+    assert(Seq(TSEntry(12, "Hi", 10)) == 
+      tse.prependEntry(TSEntry(12, "Hi", 10)))
+  }
+  
   @Test def testMergeEntriesSimpleOp() {
     
     // For two exactly overlapping entries,
