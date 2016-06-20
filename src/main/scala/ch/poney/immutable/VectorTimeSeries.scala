@@ -71,7 +71,14 @@ case class VectorTimeSeries[T]
       }
 
   def entries: Seq[TSEntry[T]] = data
-  
+
+  def head: TSEntry[T] = data.head
+
+  def headOption: Option[TSEntry[T]] = data.headOption
+
+  def last: TSEntry[T] = data.last
+
+  def lastOption: Option[TSEntry[T]] = data.lastOption
 }
 
 object VectorTimeSeries {
@@ -82,5 +89,8 @@ object VectorTimeSeries {
   
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
     ofEntries(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)));
+  
+  def apply[T](elems: TSEntry[T]*): VectorTimeSeries[T] = 
+    ofEntries(elems)
   
 }

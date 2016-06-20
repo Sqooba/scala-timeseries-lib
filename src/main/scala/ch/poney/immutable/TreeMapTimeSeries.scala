@@ -58,6 +58,15 @@ case class TreeMapTimeSeries[T]
     new TreeMapTimeSeries(data.map(t => (t._1, t._2.map(f))))
 
   def entries: Seq[TSEntry[T]] = data.map(e => TSEntry(e)).toSeq
+
+  def head: TSEntry[T] = TSEntry(data.head)
+
+  def headOption: Option[TSEntry[T]] = data.headOption.map(TSEntry(_))
+
+  def last: TSEntry[T] = TSEntry(data.last)
+
+  def lastOption: Option[TSEntry[T]] = data.lastOption.map(TSEntry(_))
+  
 }
 
 object TreeMapTimeSeries {

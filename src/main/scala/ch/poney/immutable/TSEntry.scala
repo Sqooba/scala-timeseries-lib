@@ -3,8 +3,8 @@ package ch.poney.immutable
 import ch.poney.TimeSeries
 
 case class TSEntry[T]
-    (timestamp: Long,   
-     value: T,   
+    (timestamp: Long,     
+     value: T,     
      validity: Long) 
      extends TimeSeries[T] {
   
@@ -123,10 +123,7 @@ case class TSEntry[T]
       Seq(other, this.trimEntryLeft(other.definedUntil))
     else //the prepended entry completely overwrites the present one.
       Seq(other) 
-        
-        
-    
-  
+
       
 }
 
@@ -241,6 +238,7 @@ object TSEntry {
         case Seq() => mergeEitherToNone(single)(op).toSeq
         case Seq(alone) => mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
         case toMerge: Seq[_] =>
+          toMerge.head
           // Take care of the potentially undefined domain before the 'others'
           mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++ 
           // Merge the others to the single entry, including potential undefined spaces between them.

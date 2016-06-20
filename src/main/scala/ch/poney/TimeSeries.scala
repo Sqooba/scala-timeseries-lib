@@ -37,6 +37,49 @@ trait TimeSeries[T] {
   
   /** Return a Seq of the TSEntries representing this time series.*/
   def entries: Seq[TSEntry[T]]
+  
+  /** Return the first (chronological) entry in this time series.
+   *  @throws NoSuchElementException if this time series is empty. */
+  def head: TSEntry[T]
+  
+  /** Return a filled option containing the first (chronological) entry in this
+   *  time series. 
+   *  None if this time series is empty. */
+  def headOption: Option[TSEntry[T]]
+  
+  /** Return the last (chronological) entry in this time series.
+   *  @throws NoSuchElementException if this time series is empty. */
+  def last: TSEntry[T]
+  
+  /** Return a filled option containing the last (chronological) entry in this
+   *  time series. 
+   *  None if this time series is empty. */
+  def lastOption: Option[TSEntry[T]]
+  
+  /** Append the 'other' time series to this one at exactly the first of other's entries timestamp.
+   *  
+   *  if t_app = other.head.timestamp, this time series domain will be completely forgotten for all 
+   *  t > t_app, and replaced with whatever is in the domain of 'other'.
+   *  
+   *  This is equivalent to right-trimming this time series at other.head.timestamp and prepending 
+   *  it as-is to 'other'. 
+   *  
+   *  If 'other' is empty, this time series is unchanged.
+   */
+  def append(other: TimeSeries[T]): TimeSeries[T]
+  
+  /** Prepend the 'other' time series to this one at exactly the last of other's entries definedUntil().
+   *  
+   *  if t_prep = other.last.definedUntil, this time series domain will be completely forgotten for all 
+   *  t <= t_prep, and replaced with whatever is in the domain of 'other'.
+   *  
+   *  This is equivalent to left-trimming this time series at other.last.definedUntil and appending 
+   *  it as-is with to 'other'. 
+   *  
+   *  If 'other' is empty, this time series is unchanged.
+   */
+  def prepend(other: TimeSeries[T]): TimeSeries[T]
+  
 }
 
 object TimeSeries {
