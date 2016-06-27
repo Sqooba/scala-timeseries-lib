@@ -1,6 +1,6 @@
-package ch.poney.immutable
+package ch.shastick.immutable
 
-import ch.poney.TimeSeries
+import ch.shastick.TimeSeries
 
 /**
  * A time series that is never defined.

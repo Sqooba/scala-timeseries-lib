@@ -1,8 +1,10 @@
-package ch.poney
+package ch.shastick
 
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
-import ch.poney.immutable.TSEntry
+
+import ch.shastick.immutable.TSEntry
+import ch.shastick.TimeSeries;
 
 class TimeSeriesTest extends JUnitSuite {
   

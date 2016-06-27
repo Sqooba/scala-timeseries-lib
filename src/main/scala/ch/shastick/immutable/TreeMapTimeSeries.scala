@@ -1,6 +1,6 @@
-package ch.poney.immutable
+package ch.shastick.immutable
 
-import ch.poney.TimeSeries
+import ch.shastick.TimeSeries
 import scala.collection.immutable.TreeMap
 
 case class TreeMapTimeSeries[T]
@@ -67,6 +67,7 @@ case class TreeMapTimeSeries[T]
 
   def lastOption: Option[TSEntry[T]] = data.lastOption.map(TSEntry(_))
 
+  // TODO: Can share code with VectorTS
   def append(other: TimeSeries[T]): TimeSeries[T] = 
     other.headOption match {
       case None => // other is empty, nothing to do.
@@ -77,6 +78,7 @@ case class TreeMapTimeSeries[T]
         other
     }
 
+  // TODO: Can share code with VectorTS
   def prepend(other: TimeSeries[T]): TimeSeries[T] = 
     other.lastOption match {
       case None => // other is empty, nothing to do.

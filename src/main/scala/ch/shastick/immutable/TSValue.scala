@@ -1,4 +1,4 @@
-package ch.poney.immutable
+package ch.shastick.immutable
 
 case class TSValue[T](value: T, validity: Long) {
   

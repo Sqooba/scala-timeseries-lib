@@ -1,8 +1,8 @@
-package ch.poney
+package ch.shastick
 
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
-import ch.poney.immutable.TSValue
+import ch.shastick.immutable.TSValue
 
 class TSValueTest extends JUnitSuite {
   

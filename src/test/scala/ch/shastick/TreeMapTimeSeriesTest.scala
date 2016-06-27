@@ -1,13 +1,13 @@
-package ch.poney
+package ch.shastick
 
 import org.scalatest.junit.JUnitSuite
 import org.junit.Assert._
 import org.junit.Test
-import ch.poney.immutable.TreeMapTimeSeries
+import ch.shastick.immutable.TreeMapTimeSeries
 import scala.collection.immutable.TreeMap
-import ch.poney.immutable.TreeMapTimeSeries
-import ch.poney.immutable.TSValue
-import ch.poney.immutable.EmptyTimeSeries
+import ch.shastick.immutable.TreeMapTimeSeries
+import ch.shastick.immutable.TSValue
+import ch.shastick.immutable.EmptyTimeSeries
 
 class TreeMapTimeSeriesTest extends JUnitSuite {
   

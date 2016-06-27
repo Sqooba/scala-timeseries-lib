@@ -1,6 +1,6 @@
-package ch.poney
+package ch.shastick
 
-import ch.poney.immutable.TSEntry
+import ch.shastick.immutable.TSEntry
 import scala.util.Left
 import scala.annotation.tailrec
 

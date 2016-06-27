@@ -1,10 +1,10 @@
-package ch.poney
+package ch.shastick
 
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
-import ch.poney.immutable.VectorTimeSeries
-import ch.poney.immutable.EmptyTimeSeries
-import ch.poney.immutable.TSEntry
+import ch.shastick.immutable.VectorTimeSeries
+import ch.shastick.immutable.EmptyTimeSeries
+import ch.shastick.immutable.TSEntry
 
 class VectorTimeSeriesTest extends JUnitSuite  {
   
