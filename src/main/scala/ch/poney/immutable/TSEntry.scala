@@ -3,8 +3,8 @@ package ch.poney.immutable
 import ch.poney.TimeSeries
 
 case class TSEntry[T]
-    (timestamp: Long,     
-     value: T,     
+    (timestamp: Long,           
+     value: T,           
      validity: Long) 
      extends TimeSeries[T] {
   
@@ -124,6 +124,46 @@ case class TSEntry[T]
     else //the prepended entry completely overwrites the present one.
       Seq(other) 
 
+  def head: TSEntry[T] = this
+
+  def headOption: Option[TSEntry[T]] = Some(this)
+
+  def last: TSEntry[T] = this
+
+  def lastOption: Option[TSEntry[T]] = Some(this)
+
+  def append(other: TimeSeries[T]): TimeSeries[T] = 
+    other.headOption match {
+      case None => // Other TS is empty: no effect 
+        this
+      // TODO: find out how to get the nice +: syntax working here :)
+      case Some(tse) if tse.timestamp > timestamp => 
+        other match { 
+          // Check if the other TS is also a TSEntry, otherwise we might get into infinite recursion.
+          case o: TSEntry[T] => VectorTimeSeries.ofEntries(Seq(this.trimEntryRight(tse.timestamp), o)) 
+          case _ => other.prepend(this.trimEntryRight(tse.timestamp))
+        }
+      case _ => // Hides the current entry completely: just return the other.
+        other
+    }
+
+  def prepend(other: TimeSeries[T]): TimeSeries[T] = 
+    other.lastOption match {
+      case None => // Other TS is empty: no effect 
+        this
+      case Some(tse) if tse.definedUntil() < this.definedUntil() => // other TS overlaps partially  
+        other match { 
+          // Check if the other TS is also a TSEntry, otherwise we might get into infinite recursion.
+          //TODO: find out how to get the nice :+ syntax working here :)
+          case o: TSEntry[T] =>  
+            VectorTimeSeries.ofEntries(Seq(o, this.trimEntryLeft(tse.definedUntil())))
+          case _ => 
+            other.append(this.trimEntryLeft(tse.definedUntil()))
+        }
+      case _ => // Hides the current entry completely: just return the other. 
+        other
+  }
+  
       
 }
 

@@ -79,6 +79,27 @@ case class VectorTimeSeries[T]
   def last: TSEntry[T] = data.last
 
   def lastOption: Option[TSEntry[T]] = data.lastOption
+
+  def append(other: TimeSeries[T]): TimeSeries[T] = 
+    other.headOption match {
+      case None => // other is empty, nothing to do.
+        this
+      case Some(tse) if tse.timestamp > head.definedUntil => // Something to keep from the current TS
+        VectorTimeSeries.ofEntries(this.trimRight(tse.timestamp).entries ++ other.entries)
+      case _ => // Nothing to keep, other overwrites this TS completely 
+        other
+    }
+
+  def prepend(other: TimeSeries[T]): TimeSeries[T] = 
+    other.lastOption match {
+      case None => // other is empty, nothing to do.
+        this
+      case Some(tse) if tse.timestamp < last.definedUntil => // Something to keep from the current TS
+        VectorTimeSeries.ofEntries(other.entries ++ this.trimLeft(tse.definedUntil).entries)
+      case _ => // Nothing to keep, other overwrites this TS completely
+        other
+    }
+  
 }
 
 object VectorTimeSeries {
@@ -89,8 +110,5 @@ object VectorTimeSeries {
   
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
     ofEntries(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)));
-  
-  def apply[T](elems: TSEntry[T]*): VectorTimeSeries[T] = 
-    ofEntries(elems)
   
 }

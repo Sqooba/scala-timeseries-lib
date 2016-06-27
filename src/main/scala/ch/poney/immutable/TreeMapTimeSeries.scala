@@ -66,10 +66,33 @@ case class TreeMapTimeSeries[T]
   def last: TSEntry[T] = TSEntry(data.last)
 
   def lastOption: Option[TSEntry[T]] = data.lastOption.map(TSEntry(_))
+
+  def append(other: TimeSeries[T]): TimeSeries[T] = 
+    other.headOption match {
+      case None => // other is empty, nothing to do.
+        this
+      case Some(tse) if tse.timestamp > head.definedUntil => // Something to keep from the current TS
+        TreeMapTimeSeries.ofEntries(this.trimRight(tse.timestamp).entries ++ other.entries)
+      case _ => // Nothing to keep, other overwrites this TS completely 
+        other
+    }
+
+  def prepend(other: TimeSeries[T]): TimeSeries[T] = 
+    other.lastOption match {
+      case None => // other is empty, nothing to do.
+        this
+      case Some(tse) if tse.timestamp < last.definedUntil => // Something to keep from the current TS
+        TreeMapTimeSeries.ofEntries(other.entries ++ this.trimLeft(tse.definedUntil).entries)
+      case _ => // Nothing to keep, other overwrites this TS completely
+        other
+    }
   
 }
 
 object TreeMapTimeSeries {
+  
+  def ofEntries[T](elems: Seq[TSEntry[T]]): TimeSeries[T] =
+    apply(elems.map(_.toMapTuple):_*)
   
   def apply[T](elems: (Long, TSValue[T])*): TimeSeries[T] = 
     if (elems.isEmpty)
