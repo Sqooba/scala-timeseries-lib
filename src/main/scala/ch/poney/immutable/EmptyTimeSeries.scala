@@ -20,4 +20,16 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
   def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries()
   
   def entries: Seq[TSEntry[T]] = Seq()
+  
+  def head: TSEntry[T] = throw new NoSuchElementException()
+  
+  def headOption: Option[TSEntry[T]] = None
+  
+  def last: TSEntry[T] = throw new NoSuchElementException()
+  
+  def lastOption: Option[TSEntry[T]] = None
+  
+  def append(other: TimeSeries[T]): TimeSeries[T] = other
+  
+  def prepend(other: TimeSeries[T]): TimeSeries[T] = other
 }
