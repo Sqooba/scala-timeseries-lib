@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitSuite
 import ch.shastick.immutable.TSEntry
 import ch.shastick.immutable.TSValue
 import ch.shastick.immutable.EmptyTimeSeries
+import ch.shastick.immutable.VectorTimeSeries
 
 class TSEntryTest extends JUnitSuite {
   
@@ -423,4 +424,33 @@ class TSEntryTest extends JUnitSuite {
     assert (TSEntry(3, "Ho", 10) == e.prepend(TSEntry(3, "Ho", 10)))
   }
   
+  def testTs(startsAt: Long) = VectorTimeSeries(
+      startsAt -> ("Hi", 10L), 
+      startsAt + 10 -> ("Ho", 10L),
+      startsAt + 20 -> ("Hé", 10L)
+      )
+  
+  @Test def appendTs() {
+    // Append a multi-entry TS at various times on the entry  
+    
+    val e = TSEntry(1, "Hu", 10) 
+    assert(e +: testTs(11).entries == e.append(testTs(11)).entries)
+    assert(TSEntry(1, "Hu", 9) +: testTs(10).entries == e.append(testTs(10)).entries)
+    assert(TSEntry(1, "Hu", 1) +: testTs(2).entries == e.append(testTs(2)).entries)
+    assert(testTs(1).entries == e.append(testTs(1)).entries)
+    assert(testTs(0).entries == e.append(testTs(0)).entries)
+  
+  }
+  
+  @Test def prependTs() {
+    // Prepend a multi-entry TS at various times on the entry
+    val e = TSEntry(1, "Hu", 10) 
+    assert(testTs(-30).entries :+ e == e.prepend(testTs(-30)).entries)
+    assert(testTs(-29).entries :+ TSEntry(1, "Hu", 10) == e.prepend(testTs(-29)).entries)
+    assert(testTs(-28).entries :+ TSEntry(2, "Hu", 9) == e.prepend(testTs(-28)).entries)
+    assert(testTs(-20).entries :+ TSEntry(10, "Hu", 1) == e.prepend(testTs(-20)).entries)
+    assert(testTs(-19).entries == e.prepend(testTs(-19)).entries)
+    assert(testTs(-18).entries == e.prepend(testTs(-18)).entries)
+    
+  }
 }
