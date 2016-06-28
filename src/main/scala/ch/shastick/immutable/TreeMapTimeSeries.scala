@@ -72,7 +72,7 @@ case class TreeMapTimeSeries[T]
     other.headOption match {
       case None => // other is empty, nothing to do.
         this
-      case Some(tse) if tse.timestamp > head.definedUntil => // Something to keep from the current TS
+      case Some(tse) if tse.timestamp > head.timestamp => // Something to keep from the current TS
         TreeMapTimeSeries.ofEntries(this.trimRight(tse.timestamp).entries ++ other.entries)
       case _ => // Nothing to keep, other overwrites this TS completely 
         other
@@ -83,7 +83,7 @@ case class TreeMapTimeSeries[T]
     other.lastOption match {
       case None => // other is empty, nothing to do.
         this
-      case Some(tse) if tse.timestamp < last.definedUntil => // Something to keep from the current TS
+      case Some(tse) if tse.definedUntil < last.definedUntil => // Something to keep from the current TS
         TreeMapTimeSeries.ofEntries(other.entries ++ this.trimLeft(tse.definedUntil).entries)
       case _ => // Nothing to keep, other overwrites this TS completely
         other

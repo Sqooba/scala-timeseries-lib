@@ -1,9 +1,11 @@
 package ch.shastick
 
-import org.scalatest.junit.JUnitSuite
-import org.junit.Assert._
 import org.junit.Test
+import org.scalatest.junit.JUnitSuite
+
+import org.junit.Assert._
 import ch.shastick.immutable.TreeMapTimeSeries
+import ch.shastick.immutable.TSEntry
 import scala.collection.immutable.TreeMap
 import ch.shastick.immutable.TreeMapTimeSeries
 import ch.shastick.immutable.TSValue
@@ -196,5 +198,101 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     assert(up.at(0) == Some("HI"))
     assert(up.at(10) == Some("HO"))
     assert(up.at(20) == Some("HU"))
+  }
+  
+  @Test def appendEntry() {
+    val tri = 
+       TreeMapTimeSeries(
+              1L -> TSValue("Hi", 10), 
+              11L -> TSValue("Ho", 10),
+              21L -> TSValue("Hu", 10))
+     
+    // Appending after...
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(32, "Hy", 10))
+        == tri.append(TSEntry(32, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(31, "Hy", 10))
+        == tri.append(TSEntry(31, "Hy", 10)).entries)
+        
+    // Appending on last entry
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 9), TSEntry(30, "Hy", 10))
+        == tri.append(TSEntry(30, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 1), TSEntry(22, "Hy", 10))
+        == tri.append(TSEntry(22, "Hy", 10)).entries)
+        
+    // ... just after and on second entry
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hy", 10))
+        == tri.append(TSEntry(21, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9), TSEntry(20, "Hy", 10))
+        == tri.append(TSEntry(20, "Hy", 10)).entries)
+    
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 1), TSEntry(12, "Hy", 10))
+        == tri.append(TSEntry(12, "Hy", 10)).entries)
+        
+    // ... just after and on first
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Hy", 10))
+        == tri.append(TSEntry(11, "Hy", 10)).entries)
+    
+    assert(Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Hy", 10))
+        == tri.append(TSEntry(10, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Hy", 10))
+        == tri.append(TSEntry(2, "Hy", 10)).entries)
+        
+    // And complete override
+    assert(Seq(TSEntry(1, "Hy", 10))
+        == tri.append(TSEntry(1, "Hy", 10)).entries)
+        
+  }
+  
+  @Test def prependEntry() {
+    val tri = 
+       TreeMapTimeSeries(
+              1L -> TSValue("Hi", 10), 
+              11L -> TSValue("Ho", 10),
+              21L -> TSValue("Hu", 10))
+              
+    // Prepending before...
+    assert(Seq(TSEntry(-10, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-10, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(-9, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-9, "Hy", 10)).entries)
+    
+    // Overlaps with first entry
+    assert(Seq(TSEntry(-8, "Hy", 10), TSEntry(2, "Hi", 9), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-8, "Hy", 10)).entries)
+    
+    assert(Seq(TSEntry(0, "Hy", 10), TSEntry(10, "Hi", 1), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(0, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(1, "Hy", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(1, "Hy", 10)).entries)
+        
+    // ... second entry
+    assert(Seq(TSEntry(2, "Hy", 10), TSEntry(12, "Ho", 9), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(2, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(10, "Hy", 10), TSEntry(20, "Ho", 1), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(10, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(11, "Hy", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(11, "Hy", 10)).entries)
+    
+    // ... third entry
+    assert(Seq(TSEntry(12, "Hy", 10), TSEntry(22, "Hu", 9))
+        == tri.prepend(TSEntry(12, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(20, "Hy", 10), TSEntry(30, "Hu", 1))
+        == tri.prepend(TSEntry(20, "Hy", 10)).entries)
+        
+    // Complete override
+    assert(Seq(TSEntry(21, "Hy", 10))
+        == tri.prepend(TSEntry(21, "Hy", 10)).entries)
+        
+    assert(Seq(TSEntry(22, "Hy", 10))
+        == tri.prepend(TSEntry(22, "Hy", 10)).entries)
   }
 }

@@ -168,7 +168,7 @@ class TSEntryTest extends JUnitSuite {
       
   }
   
-  @Test def prependEntry() {
+  @Test def testPrependEntry() {
     val tse = TSEntry(11, "Ho", 10)
     
     // Prepend without overwrite 
@@ -383,6 +383,7 @@ class TSEntryTest extends JUnitSuite {
       (aO, bO) match {
         case (Some(a), None) => aO
         case (None, Some(b)) => None
+        case _ => None
       }
     val t = TSEntry(1, "Hi", 10)
     
@@ -399,6 +400,27 @@ class TSEntryTest extends JUnitSuite {
     intercept[IllegalArgumentException] {
       TSEntry(10, "Duh", 0)
     }
+  }
+  
+  @Test def appendEntryTs() {
+    val e = TSEntry(1, "Hi", 10)
+    assert (Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10)) == e.append(TSEntry(12, "Ho", 10)).entries)
+    assert (Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == e.append(TSEntry(11, "Ho", 10)).entries)
+    assert (Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Ho", 10)) == e.append(TSEntry(10, "Ho", 10)).entries)
+    assert (Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Ho", 10)) == e.append(TSEntry(2, "Ho", 10)).entries)
+    assert (TSEntry(1, "Ho", 10) == e.append(TSEntry(1, "Ho", 10)))
+    assert (TSEntry(0, "Ho", 10) == e.append(TSEntry(0, "Ho", 10)))
+  }
+  
+  @Test def prependEntryTs() {
+    val e = TSEntry(1, "Hi", 10) 
+    assert (Seq(TSEntry(-10, "Ho", 10), TSEntry(1, "Hi", 10)) == e.prepend(TSEntry(-10, "Ho", 10)).entries)
+    assert (Seq(TSEntry(-9, "Ho", 10), TSEntry(1, "Hi", 10)) == e.prepend(TSEntry(-9, "Ho", 10)).entries)
+    assert (Seq(TSEntry(-8, "Ho", 10), TSEntry(2, "Hi", 9)) == e.prepend(TSEntry(-8, "Ho", 10)).entries)
+    assert (Seq(TSEntry(0, "Ho", 10), TSEntry(10, "Hi", 1)) == e.prepend(TSEntry(0, "Ho", 10)).entries)
+    assert (Seq(TSEntry(1, "Ho", 10)) == e.prepend(TSEntry(1, "Ho", 10)).entries)
+    assert (TSEntry(2, "Ho", 10) == e.prepend(TSEntry(2, "Ho", 10)))
+    assert (TSEntry(3, "Ho", 10) == e.prepend(TSEntry(3, "Ho", 10)))
   }
   
 }
