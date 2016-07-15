@@ -3,6 +3,7 @@ package ch.shastick
 import ch.shastick.immutable.TSEntry
 import scala.util.Left
 import scala.annotation.tailrec
+import ch.shastick.immutable.VectorTimeSeries
 
 trait TimeSeries[T] {
   
@@ -79,6 +80,44 @@ trait TimeSeries[T] {
    *  If 'other' is empty, this time series is unchanged.
    */
   def prepend(other: TimeSeries[T]): TimeSeries[T]
+  
+  /**
+   * Merge another time series to this one, using the provided operator
+   * to merge entries. 
+   * 
+   * The operator can define all four cases encountered during merging:
+   *   - both entries defined
+   *   - only one of the entries defined
+   *   - no entry defined
+   *   
+   * In any case, the returned time series will only be defined between the
+   * bounds defined by min(this.head.timestamp, other.head.timestamp) and 
+   * max(this.last.definedUntil, other.last.definedUntil) 
+   */
+  def merge[O, R]
+    (op: (Option[T], Option[O]) => Option[R])
+    (other: TimeSeries[O])
+    : TimeSeries[R] = 
+      VectorTimeSeries.ofEntries(
+          TimeSeries.mergeEntries(this.entries)(other.entries)(op))
+
+  /**
+   * Sum the entries within this and the provided time series such that
+   * this.at(x) + other.at(x) = returned.at(x) where x may take any value where
+   * both time series are defined.
+   */
+  def plus(other: TimeSeries[T])(implicit n: Numeric[T]) = 
+    VectorTimeSeries.ofEntries(
+      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.safePlus(_,_)(n)))
+  
+  /**
+   * Subtract the entries within this and the provided time series such that
+   * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
+   * both time series are defined.
+   */
+  def minus(other: TimeSeries[T])(implicit n: Numeric[T]) =
+    VectorTimeSeries.ofEntries(
+      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.safeMinus(_,_)(n)))
   
 }
 

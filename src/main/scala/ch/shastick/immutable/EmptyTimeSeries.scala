@@ -32,4 +32,5 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
   def append(other: TimeSeries[T]): TimeSeries[T] = other
   
   def prepend(other: TimeSeries[T]): TimeSeries[T] = other
+    
 }
