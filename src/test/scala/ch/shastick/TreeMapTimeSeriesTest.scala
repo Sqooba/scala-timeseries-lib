@@ -47,8 +47,8 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
    
     val double = 
       TreeMapTimeSeries(
-              0L -> TSValue("Hi", 10), 
-              20L -> TSValue("Ho", 10))
+              0L -> ("Hi", 10L), 
+              20L -> ("Ho", 10L))
 
     assert(!double.defined(-1))
     assert(double.defined(0))
@@ -69,14 +69,14 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     // With one entry
     val single = 
       TreeMapTimeSeries(
-        1L -> TSValue("Hi", 10))
+        1L -> ("Hi", 10L))
         
     assert(single.trimLeft(1) == single)
     assert(single.trimLeft(2) ==  
-      TreeMapTimeSeries( 2L -> TSValue("Hi", 9)))
+      TreeMapTimeSeries(2L -> ("Hi", 9L)))
       
     assert(single.trimLeft(10) ==  
-      TreeMapTimeSeries( 10L -> TSValue("Hi", 1)))
+      TreeMapTimeSeries(10L -> ("Hi", 1L)))
       
     assert(single.trimLeft(11) ==  EmptyTimeSeries())
     assert(single.trimLeft(12) ==  EmptyTimeSeries())
@@ -84,31 +84,31 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     // With two entries
     val double = 
       TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10), 
-              11L -> TSValue("Ho", 10))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L))
               
     assert(double.trimLeft(1) == double)
     assert(double.trimLeft(2) ==  
       TreeMapTimeSeries(
-          2L -> TSValue("Hi", 9),
-          11L -> TSValue("Ho", 10)))
+          2L -> ("Hi", 9L),
+          11L -> ("Ho", 10L)))
       
     assert(double.trimLeft(10) ==  
       TreeMapTimeSeries( 
-          10L -> TSValue("Hi", 1),
-          11L -> TSValue("Ho", 10)))
+          10L -> ("Hi", 1L),
+          11L -> ("Ho", 10L)))
       
     assert(double.trimLeft(11) ==  
       TreeMapTimeSeries( 
-          11L -> TSValue("Ho", 10)))
+          11L -> ("Ho", 10L)))
           
     assert(double.trimLeft(12) ==  
       TreeMapTimeSeries( 
-          12L -> TSValue("Ho", 9)))
+          12L -> ("Ho", 9L)))
           
     assert(double.trimLeft(20) ==  
       TreeMapTimeSeries( 
-          20L -> TSValue("Ho", 1)))
+          20L -> ("Ho", 1L)))
           
    assert(double.trimLeft(21) ==  EmptyTimeSeries())
    assert(double.trimLeft(22) ==  EmptyTimeSeries())
@@ -121,14 +121,14 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     // With one entry
     val single = 
       TreeMapTimeSeries(
-        1L -> TSValue("Hi", 10))
+        1L -> ("Hi", 10L))
         
     assert(single.trimRight(11) == single)
     assert(single.trimRight(10) ==  
-      TreeMapTimeSeries( 1L -> TSValue("Hi", 9)))
+      TreeMapTimeSeries( 1L -> ("Hi", 9L)))
       
     assert(single.trimRight(2) ==  
-      TreeMapTimeSeries( 1L -> TSValue("Hi", 1)))
+      TreeMapTimeSeries( 1L -> ("Hi", 1L)))
       
     assert(single.trimRight(1) ==  EmptyTimeSeries())
     assert(single.trimRight(0) ==  EmptyTimeSeries())
@@ -136,31 +136,31 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     // With two entries
     val double = 
       TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10), 
-              11L -> TSValue("Ho", 10))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L))
               
     assert(double.trimRight(21) == double)
     assert(double.trimRight(20) ==  
       TreeMapTimeSeries(
-          1L -> TSValue("Hi", 10),
-          11L -> TSValue("Ho", 9)))
+          1L -> ("Hi", 10L),
+          11L -> ("Ho", 9L)))
       
     assert(double.trimRight(12) ==  
       TreeMapTimeSeries( 
-          1L -> TSValue("Hi", 10),
-          11L -> TSValue("Ho", 1)))
+          1L -> ("Hi", 10L),
+          11L -> ("Ho", 1L)))
       
     assert(double.trimRight(11) ==  
       TreeMapTimeSeries( 
-          1L -> TSValue("Hi", 10)))
+          1L -> ("Hi", 10L)))
           
     assert(double.trimRight(10) ==  
       TreeMapTimeSeries( 
-          1L -> TSValue("Hi", 9)))
+          1L -> ("Hi", 9L)))
           
     assert(double.trimRight(2) ==  
       TreeMapTimeSeries( 
-          1L -> TSValue("Hi", 1)))
+          1L -> ("Hi", 1L)))
           
    assert(double.trimRight(1) ==  EmptyTimeSeries())
    assert(double.trimRight(0) ==  EmptyTimeSeries())
@@ -169,9 +169,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   @Test def testSplit() {
     val tri = 
        TreeMapTimeSeries(
-              0L -> TSValue("Hi", 10), 
-              10L -> TSValue("Ho", 10),
-              20L -> TSValue("Hu", 10))
+              0L -> ("Hi", 10L), 
+              10L -> ("Ho", 10L),
+              20L -> ("Hu", 10L))
     assert(tri.split(-1) == (EmptyTimeSeries(), tri))
     assert(tri.split(0) == (EmptyTimeSeries(), tri))
     assert(tri.split(1) == (tri.trimRight(1), tri.trimLeft(1)))
@@ -189,9 +189,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   @Test def testMap() {
     val tri = 
        TreeMapTimeSeries(
-              0L -> TSValue("Hi", 10), 
-              10L -> TSValue("Ho", 10),
-              20L -> TSValue("Hu", 10))
+              0L -> ("Hi", 10L), 
+              10L -> ("Ho", 10L),
+              20L -> ("Hu", 10L))
               
     val up = tri.map(s => s.toUpperCase())
     assert(3 == up.size())
@@ -203,9 +203,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   @Test def appendEntry() {
     val tri = 
        TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10), 
-              11L -> TSValue("Ho", 10),
-              21L -> TSValue("Hu", 10))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L),
+              21L -> ("Hu", 10L))
      
     // Appending after...
     assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(32, "Hy", 10))
@@ -250,9 +250,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   @Test def prependEntry() {
     val tri = 
        TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10), 
-              11L -> TSValue("Ho", 10),
-              21L -> TSValue("Hu", 10))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L),
+              21L -> ("Hu", 10L))
               
     // Prepending before...
     assert(Seq(TSEntry(-10, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
@@ -298,9 +298,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
   
   
   def testTs(startsAt: Long) = TreeMapTimeSeries(
-      startsAt -> TSValue("Ai", 10L), 
-      startsAt + 10 -> TSValue("Ao", 10L),
-      startsAt + 20 -> TSValue("Au", 10L)
+      startsAt -> ("Ai", 10L), 
+      startsAt + 10 -> ("Ao", 10L),
+      startsAt + 20 -> ("Au", 10L)
       )
       
   @Test def appendTs() {
@@ -308,9 +308,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     
     val tri = 
        TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10L), 
-              11L -> TSValue("Ho", 10L),
-              21L -> TSValue("Hu", 10L))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L),
+              21L -> ("Hu", 10L))
               
     // Append after all entries
     assert(tri.entries ++ testTs(31).entries == tri.append(testTs(31)).entries)
@@ -351,9 +351,9 @@ class TreeMapTimeSeriesTest extends JUnitSuite {
     // Prepend a multi-entry TS at various times on the entry
     val tri = 
        TreeMapTimeSeries(
-              1L -> TSValue("Hi", 10L), 
-              11L -> TSValue("Ho", 10L),
-              21L -> TSValue("Hu", 10L))
+              1L -> ("Hi", 10L), 
+              11L -> ("Ho", 10L),
+              21L -> ("Hu", 10L))
     
     // Before all entries
     assert(testTs(-30).entries ++ tri.entries == tri.prepend(testTs(-30)).entries)

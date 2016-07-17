@@ -94,12 +94,15 @@ case class TreeMapTimeSeries[T]
 object TreeMapTimeSeries {
   
   def ofEntries[T](elems: Seq[TSEntry[T]]): TimeSeries[T] =
-    apply(elems.map(_.toMapTuple):_*)
-  
-  def apply[T](elems: (Long, TSValue[T])*): TimeSeries[T] = 
+    ofValues(elems.map(_.toMapTuple))
+    
+  def ofValues[T](elems: Seq[(Long, TSValue[T])]): TimeSeries[T] = 
     if (elems.isEmpty)
       EmptyTimeSeries()
     else 
       new TreeMapTimeSeries(TreeMap(elems:_*))
+  
+  def apply[T](elems: (Long, (T, Long))*): TimeSeries[T] = 
+    ofValues(elems.map(t => (t._1, TSValue(t._2._1, t._2._2))))
   
 }

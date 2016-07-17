@@ -108,7 +108,7 @@ trait TimeSeries[T] {
    */
   def plus(other: TimeSeries[T])(implicit n: Numeric[T]) = 
     VectorTimeSeries.ofEntries(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.safePlus(_,_)(n)))
+      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_,_)(n)))
   
   /**
    * Subtract the entries within this and the provided time series such that
@@ -117,7 +117,11 @@ trait TimeSeries[T] {
    */
   def minus(other: TimeSeries[T])(implicit n: Numeric[T]) =
     VectorTimeSeries.ofEntries(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.safeMinus(_,_)(n)))
+      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_,_)(n)))
+      
+  def multiply(other: TimeSeries[T])(implicit n: Numeric[T]) =
+    VectorTimeSeries.ofEntries(
+        TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_,_)(n)))
   
 }
 
