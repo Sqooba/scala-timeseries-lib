@@ -128,4 +128,6 @@ class TimeSeriesTest extends JUnitSuite {
     
   }
   
+  @Test def testSlice = ???
+  
 }

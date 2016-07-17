@@ -100,6 +100,27 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.split(10) == (tse,EmptyTimeSeries()))
   }
   
+  @Test def testSlice = {
+    val t = TSEntry(1, "Hi", 10)
+    
+    // No effect
+    assert(TSEntry(1, "Hi", 10) == t.slice(0, 12))
+    assert(TSEntry(1, "Hi", 10) == t.slice(1, 11))
+    
+    // Check left and right sides.
+    assert(TSEntry(2, "Hi", 9) == t.slice(2, 20))
+    assert(TSEntry(1, "Hi", 9) == t.slice(0, 10))
+    assert(TSEntry(1, "Hi", 4) == t.slice(1, 5))
+    assert(TSEntry(5, "Hi", 6) == t.slice(5, 11))
+    
+    // Check both
+    assert(TSEntry(3, "Hi", 6) == t.slice(3, 9))
+    
+    // Outside of definition bounds
+    assert(EmptyTimeSeries() == t.slice(12, 15))
+    assert(EmptyTimeSeries() == t.slice(0, 1))
+  }
+  
   @Test def testTrimLeftNRight() {
     val t = TSEntry(1, "Hi", 10)
     
