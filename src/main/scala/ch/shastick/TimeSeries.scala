@@ -110,6 +110,8 @@ trait TimeSeries[T] {
     VectorTimeSeries.ofEntries(
       TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_,_)(n)))
   
+  def +(other: TimeSeries[T])(implicit n: Numeric[T]) = plus(other)
+  
   /**
    * Subtract the entries within this and the provided time series such that
    * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
@@ -118,10 +120,19 @@ trait TimeSeries[T] {
   def minus(other: TimeSeries[T])(implicit n: Numeric[T]) =
     VectorTimeSeries.ofEntries(
       TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_,_)(n)))
+  
+  def -(other: TimeSeries[T])(implicit n: Numeric[T]) = minus(other)
       
+  /**
+   * Multiply the entries within this and the provided time series such that
+   * this.at(x) * other.at(x) = returned.at(x) where x may take any value where
+   * both time series are defined.
+   */
   def multiply(other: TimeSeries[T])(implicit n: Numeric[T]) =
     VectorTimeSeries.ofEntries(
         TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_,_)(n)))
+  
+  def *(other: TimeSeries[T])(implicit n: Numeric[T]) = multiply(other)
   
 }
 

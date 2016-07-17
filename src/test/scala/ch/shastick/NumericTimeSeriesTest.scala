@@ -27,10 +27,10 @@ class NumericTimeSeriesTest extends JUnitSuite {
    */
   @Test def testStrictPlus {
     
-    assert(tsa.plus(tsb).entries == tsb.plus(tsa).entries)
+    assert(tsa + tsb == tsb + tsa)
     
     assert(Seq(TSEntry(6, 4.0, 5), TSEntry(12, 5.0, 4))
-        == tsa.plus(tsb).entries)
+        == (tsa + tsb).entries)
   }
   
   /**
@@ -52,10 +52,10 @@ class NumericTimeSeriesTest extends JUnitSuite {
    */
   @Test def testStrictMultiply {
     
-  assert(tsa.multiply(tsb).entries == tsb.multiply(tsa).entries)
+    assert(tsa * tsb == tsb * tsa)
     
     assert(Seq(TSEntry(6, 3.0, 5), TSEntry(12, 6.0, 4))
-        == tsb.multiply(tsa).entries)
+        == (tsb * tsa).entries)
   }
   
   
