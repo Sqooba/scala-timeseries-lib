@@ -11,7 +11,7 @@ In essence, a TimeSeries is just an ordered map of `[Long,T]`. In most use cases
 
 
 ### Defining a Timeseries 
-The TimeSeries interface has two main implementations: `VectorTimeSeries[T]` and `TreeMapTimeSeries[T]`, referring to the underlying collection holding the data.
+The TimeSeries trait has two main implementations: `VectorTimeSeries[T]` and `TreeMapTimeSeries[T]`, referring to the underlying collection holding the data.
 
 ```
 val tsv = VectorTimeSeries(
@@ -65,17 +65,17 @@ For non-numeric TimeSeries, or for any particular needs, TimeSeries can be merge
 ```
 def plus(aO: Option[Double], bO: Option[Double]) = 
     (aO, bO) match {
-      // Wherever both timeseries share a defined domain, return the sum of the present value
+      // Wherever both timeseries share a defined domain, return the sum of the values
       case (Some(a), Some(b)) => Some(a+b) 
-      // Wherever only a single timeseries is defined, return its value
+      // Wherever only a single timeseries is defined, return the defined value
       case (Some(a), None) => aO
       case (None, Some(b)) => bO
-      // Where none of the timeseries is defined, the result remains undefined.
+      // Where none of the timeseries are defined, the result remains undefined.
       case _ => None
     }
 ```
 
-For a complete view of what you can do with a TimeSeries, the best is to have a look at the `TimeSeries.scala` interface living in `ch.shastick`.
+For a complete view of what you can do with a TimeSeries, the best is to have a look at the `TimeSeries.scala` trait living in `ch.shastick`.
 
 ### Under the hood
 While a TimeSeries looks a lot like an ordered `Map[Long,T]`, it should more be considered like an ordered collection of triples of the form `(timestamp, value, validity)` (called a `TSEntry[T]` internally), representing small timeseries chunks.
