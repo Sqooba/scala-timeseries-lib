@@ -83,8 +83,8 @@ While a TimeSeries looks a lot like an ordered `Map[Long,T]`, it should more be 
 
 As suggested by their name, `VectorTimeSeries` and `TreeMapTimeSeries` have different underlying collections holding the data. Depending on the use-case, one or the other might be preferable:
 
-  - `TreeMapTimeSeries` should be preferred for query-intesive tasks that seek for arbitrary points in time within the timeseries, like `at(), split(), slice()` as searching for something in a `Vector` implies a linear search.
-  - `VectorTimeSeries` can be used for everything else, especially when it implies iterating over whole timeseries (generally `merge()` related operations), which often needs to be done while cooking up a TimeSeries using the content of other ones.
+  - `TreeMapTimeSeries` should be preferred for query-intensive tasks that seek for arbitrary points in time within the timeseries, like `at(), split(), slice()` as searching for something in a `Vector` implies a linear search.
+  - `VectorTimeSeries` can be used for everything else, especially when it implies iterating over whole timeseries (generally `merge()`, `append()` or `prepend()` related operations), which often needs to be done while cooking up a TimeSeries using the content of other ones.
   
 Also note that the current implementation for merging timeseries probably deserves some improvements.
 
