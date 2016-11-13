@@ -168,6 +168,11 @@ case class TSEntry[T]
 }
 
 object TSEntry {
+  
+  /** Define an implicit ordering for TSEntries of any type */ 
+  implicit def orderByTs[T]: Ordering[TSEntry[T]] =
+    Ordering.by(ts => ts.timestamp)
+    
   /** Build a TSEntry from a tuple containing the a TSValue and the time at which it starts.*/
   def apply[T](tValTup: (Long, TSValue[T])): TSEntry[T] = 
     TSEntry(tValTup._1, tValTup._2.value, tValTup._2.validity)

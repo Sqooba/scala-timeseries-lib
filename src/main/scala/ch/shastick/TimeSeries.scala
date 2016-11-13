@@ -21,13 +21,12 @@ trait TimeSeries[T] {
   def split(at: Long): (TimeSeries[T], TimeSeries[T]) = (this.trimRight(at), this.trimLeft(at))
   
   /** Extract a slice from this time series.
-   *   
    *  
    *  The returned slice will only be defined between the specified bounds such that:
    *  
    *  this.at(x) == returned.at(x) for all x in [from, to[. 
    *  
-   *  If x is outside of the bouds, returned.at(x) is None.  
+   *  If x is outside of the bounds, returned.at(x) is None.  
    */
   def slice(from: Long, to: Long): TimeSeries[T] = this.trimLeft(from).trimRight(to)
   
@@ -187,7 +186,7 @@ object TimeSeries {
     (op: (Option[A], Option[B]) => Option[C])
     : Seq[TSEntry[C]] = {
     // TODO : sortyBy really required? More efficient options?
-    mergeEithers(Seq.empty)((a.map(_.toLeftEntry[B]) ++ b.map(_.toRightEntry[A])).sortBy(_.timestamp))(op)
+    mergeEithers(Seq.empty)((a.map(_.toLeftEntry[B]) ++ b.map(_.toRightEntry[A])).sorted)(op)
   }
   
   /** Merge a sequence composed of entries containing Eithers.
