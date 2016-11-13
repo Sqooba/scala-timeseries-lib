@@ -1,4 +1,4 @@
-# scala-timeseries-lib — a lightweight time series library
+#scala-timeseries-lib — a lightweight time series library
 
 Easily manipulate and query time-series like data. Useful for manipulating series of discrete values associated to a validity or time-to-live duration, like sensor measures for example.
 
@@ -106,6 +106,7 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - default Seq implementation (and the one that is imported) is mutable -> consider the implications and see if we can easily fix this by 'import scala.collection.immutable.Seq' everywhere required.
   - input validation when applying. Check entries sorted (for the vector TS) and without overlap.
   - Have empty time series always be represented by an EmptyTimeSeries. (Ie, wrapping an empty vector or map with a vector/treemap time-series should not happen)
+  - Have single-entry timeseries always be represented by a TSEntry
   - Generic tests for any kind of TS implementation
   - benchmarks to actually compare various implementations.
   - make it easy to use from Java

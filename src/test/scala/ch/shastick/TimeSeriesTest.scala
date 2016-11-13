@@ -4,6 +4,8 @@ import org.junit.Test
 import org.scalatest.junit.JUnitSuite
 
 import ch.shastick.immutable.TSEntry
+import ch.shastick.immutable.TreeMapTimeSeries
+import ch.shastick.immutable.EmptyTimeSeries
 
 class TimeSeriesTest extends JUnitSuite {
   
@@ -128,6 +130,26 @@ class TimeSeriesTest extends JUnitSuite {
     
   }
   
-  @Test def testSlice = ???
+  @Test def testSlice = {
+    val tri = 
+       TreeMapTimeSeries(
+              0L -> ("Hi", 10L), 
+              10L -> ("Ho", 10L),
+              20L -> ("Hu", 10L))
+    assert(tri.slice(-1, 0) == EmptyTimeSeries())
+    assert(tri.slice(-1, 10).entries == Seq(TSEntry(0, "Hi", 10)))
+    assert(tri.slice(0, 10).entries == Seq(TSEntry(0, "Hi", 10)))
+    assert(tri.slice(0, 9).entries == Seq(TSEntry(0, "Hi", 9)))
+    assert(tri.slice(1, 10).entries == Seq(TSEntry(1, "Hi", 9)))
+    assert(tri.slice(9, 11).entries == Seq(TSEntry(9, "Hi", 1), TSEntry(10, "Ho", 1)))
+    assert(tri.slice(9, 20).entries == Seq(TSEntry(9, "Hi", 1), TSEntry(10, "Ho", 10)))
+    assert(tri.slice(10, 20).entries == Seq(TSEntry(10, "Ho", 10)))
+    assert(tri.slice(15, 20).entries == Seq(TSEntry(15, "Ho", 5)))
+    assert(tri.slice(15, 25).entries == Seq(TSEntry(15, "Ho", 5), TSEntry(20, "Hu", 5)))
+    assert(tri.slice(20, 25).entries == Seq(TSEntry(20, "Hu", 5)))
+    assert(tri.slice(25, 30).entries == Seq(TSEntry(25, "Hu", 5)))
+    assert(tri.slice(25, 35).entries == Seq(TSEntry(25, "Hu", 5)))
+    
+  }
   
 }

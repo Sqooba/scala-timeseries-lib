@@ -44,8 +44,8 @@ class EmptyTimeSeriesTest extends JUnitSuite {
   
   @Test def testPrepend = assert(ts.prepend(testE) == testE)
   
-  @Test def testSlice = ???
+  @Test def testSlice = assert(ts.slice(-1, 1) == EmptyTimeSeries())
   
-  @Test def testSplit = ???
+  @Test def testSplit = assert(ts.split(1) == (EmptyTimeSeries(), EmptyTimeSeries()))
   
 }
