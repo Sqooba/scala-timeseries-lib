@@ -4,6 +4,9 @@ import ch.shastick.immutable.TSEntry
 import scala.util.Left
 import scala.annotation.tailrec
 import ch.shastick.immutable.VectorTimeSeries
+import scala.collection.mutable.Builder
+import scala.collection.immutable.VectorBuilder
+import scala.collection.mutable.ArrayBuffer
 
 trait TimeSeries[T] {
   
@@ -184,9 +187,33 @@ object TimeSeries {
     (a: Seq[TSEntry[A]])
     (b: Seq[TSEntry[B]])
     (op: (Option[A], Option[B]) => Option[C])
-    : Seq[TSEntry[C]] = {
-    // TODO : sortyBy really required? More efficient options?
-    mergeEithers(Seq.empty)((a.map(_.toLeftEntry[B]) ++ b.map(_.toRightEntry[A])).sorted)(op)
+    : Seq[TSEntry[C]] = 
+      mergeEithers(Seq.empty)(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
+  
+  /**
+   * Combine two Seq's that are known to be ordered and return a Seq that is
+   * both ordered and that contains both of the elements in 'a' and 'b'. 
+   * Adapted from http://stackoverflow.com/a/19452304/1997056
+   */
+   def mergeOrderedSeqs[E: Ordering]
+       (a: Seq[E], b: Seq[E])
+       (implicit o: Ordering[E]): 
+       Seq[E] = {
+    @tailrec
+    def rec(x: Seq[E], y: Seq[E], acc: Builder[E, Seq[E]]): Builder[E, Seq[E]] = {
+      (x, y) match {
+        case (Nil, Nil) => acc
+        case (_, Nil)   => acc ++= x
+        case (Nil, _)   => acc ++= y
+        case (xh :: xt, yh :: yt) =>
+          if (o.lteq(xh, yh))
+            rec(xt, y, acc += xh)
+          else
+            rec(x, yt, acc += yh)
+      }
+    }
+    // Use an ArrayBuffer set to the correct capacity as a Builder
+    rec(a, b, new ArrayBuffer(a.length + b.length)).result
   }
   
   /** Merge a sequence composed of entries containing Eithers.

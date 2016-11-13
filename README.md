@@ -110,3 +110,4 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - Generic tests for any kind of TS implementation
   - benchmarks to actually compare various implementations.
   - make it easy to use from Java
+  - consider https://scalacheck.org/ for property-based testing ? (especially for ordering-related tests?)
