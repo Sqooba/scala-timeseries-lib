@@ -1,6 +1,7 @@
 package ch.shastick.immutable
 
 import ch.shastick.TimeSeries
+import scala.annotation.tailrec
 
 /**
  * TimeSeries implementation based on a Vector.
@@ -12,16 +13,30 @@ case class VectorTimeSeries[T]
   (data: Vector[TSEntry[T]]) // data needs to be SORTED -> TODO: private constructor?
   extends TimeSeries[T] {
   
-  /** Linear search for the last element in the time series where the timestamp is less 
-   *  or equal to the specified time. */
+  /** 
+   *  Dichotomic search for the element in the time series for the entry 
+   *  with the biggest timestamp lower or equal to 't'. 
+   *  If an entry exists and it is valid at 't', Some(value) is returned.
+   */
   def at(t: Long): Option[T] = 
-    data.lastIndexWhere(_.timestamp <= t) match {
-      case -1 => None
-      case i: Int => data(i).at(t)
-    }
+   entryValidAt(t).map(_.value)
+     
+  def entryValidAt(t: Long): Option[TSEntry[T]] =
+    if (data.isEmpty)
+      None
+    else 
+      lastEntryAt(t).flatMap(_._1.entryAt(t))
+        
+  /** 
+   *  Return the entry in the timeseries with the highest timestamp lower or equal to 't', 
+   *  along with its index in the vector. 
+   */
+  def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] = 
+    VectorTimeSeries.dichotomicSearch(data, t)
 
-  /** Linear search for the last element in the time series where the timestamp is less 
-   *  or equal to the specified time, and returns whether it is valid at time 't' or not. */  
+ /** 
+   *  returns true if at(t) would return Some(value)
+   */ 
   def defined(t: Long): Boolean = at(t).isDefined
 
   def map[O](f: T => O): TimeSeries[O] = 
@@ -38,37 +53,37 @@ case class VectorTimeSeries[T]
     else if(data.head.timestamp >= t)
       this
     else
-      data.lastIndexWhere(_.timestamp <= t) match { 
-        case -1 => EmptyTimeSeries() // No index where condition holds.
-        case i: Int => data.splitAt(i) match {
-          case (drop, keep) => keep.head match {
-            case e: TSEntry[T] if e.defined(t) => 
-              new VectorTimeSeries(e.trimEntryLeft(t) +: keep.tail)
-            case _ =>  
-              if (keep.size == 1) 
+      lastEntryAt(t) match {
+        case Some((e, idx)) =>
+          data.splitAt(idx) match {
+            case (drop, _ +: keep) =>
+              if(e.defined(t)) 
+                new VectorTimeSeries(e.trimEntryLeft(t) +: keep)
+              else if (!keep.isEmpty)
+                new VectorTimeSeries(keep)
+              else 
                 EmptyTimeSeries()
-              else
-                new VectorTimeSeries(keep.tail)
-          }
         }
+        case _ => EmptyTimeSeries()
     }
 
   def trimRight(t: Long): TimeSeries[T] =
     if(data.isEmpty) 
       EmptyTimeSeries()
     else if(data.size == 1)
-      data.head.trimRight(t)
-      // TODO: check last entry for trivial cases before proceeding?
+      data.last.trimRight(t)
     else
-      data.lastIndexWhere(_.timestamp < t) match { 
-        case -1 => EmptyTimeSeries() // No index where condition holds.
-        case 0 => data.head.trimRight(t) //First element: trim and return it.  
-        case i: Int => data.splitAt(i)  match { 
+      lastEntryAt(t - 1) match {
+      case Some((e, 0)) => // First element: trim and return it
+        e.trimRight(t)
+      case Some((e, idx)) => 
+        data.splitAt(idx)  match { 
             // First of the last elements is valid and may need trimming. Others can be forgotten.
             case (noChange, lastAndDrop) =>
-              new VectorTimeSeries(noChange :+ lastAndDrop.head.trimEntryRight(t))
+              new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
           }
-      }
+      case _ => EmptyTimeSeries()
+    }
 
   def entries: Seq[TSEntry[T]] = data
 
@@ -109,6 +124,59 @@ object VectorTimeSeries {
     new VectorTimeSeries(Vector(elems.sortBy(_.timestamp):_*))
   
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
-    ofEntries(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)));
+    ofEntries(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)))
+  
+  /**
+   * Run a dichotomic search on the passed sequence to find the entry in the 
+   * sequence that has the highest timestamp that is lower or equal to 'ts'.
+   * 
+   * Some(entry, index) is returned if such an entry exists, None otherwise.
+   */
+  def dichotomicSearch[T](
+      data: IndexedSeq[TSEntry[T]], 
+      ts: Long): Option[(TSEntry[T], Int)] =
+       // Dichotomic search for a candidate
+        dichotomic(data, ts, 0, data.size - 1) match {
+          // Result is either 0, or the search failed
+          case 0 => data.headOption.filter(_.timestamp <= ts).map((_,0))
+          case i: Int =>
+            data(i) match {
+              case e: TSEntry[T] if(e.timestamp <= ts) => Some((e,i))
+              case _ => Some(data(i-1), i-1)
+            }
+        }
+
+  /**
+   * Dichotomic search within the passed Seq.
+   * 
+   * Returns the index for an entry having a timestamp less or equal to the target.
+   * 
+   *  - The returned value may be:
+   *    - the correct index
+   *    - the correct index + 1
+   *    - 0 if the search fails, or if the result is 0.
+   *    
+   */
+  @tailrec
+  private def dichotomic[T](
+      data: IndexedSeq[TSEntry[T]], 
+      target: Long, 
+      lower: Int, 
+      upper: Int,
+      previousPivot: Int = 0 // Default to 0 for initial call
+      ):  Int = {
+    if(lower > upper)
+      previousPivot
+    else {
+      val newPivot = (lower + upper) / 2
+      data(newPivot).timestamp match {
+        case after: Long if (after > target) => // Pivot is after target: 'upper' becomes pivot - 1
+          dichotomic(data, target, lower, newPivot - 1, newPivot)
+        case before: Long => // Pivot is before target: 'lower' becomes pivot + 1
+        dichotomic(data, target, newPivot + 1, upper, newPivot)
+      }
+    }
+  }
+    
   
 }

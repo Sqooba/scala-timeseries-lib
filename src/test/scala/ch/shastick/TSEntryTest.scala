@@ -25,6 +25,13 @@ class TSEntryTest extends JUnitSuite {
     assert(!TSEntry(0, "", 10).at(10).isDefined)
   }
   
+  @Test def testEntryAt() {
+    assert(!TSEntry(0, "", 10).entryAt(-1).isDefined)
+    assert(TSEntry(0, "", 10).entryAt(0) == Some(TSEntry(0, "", 10)))
+    assert(TSEntry(0, "", 10).entryAt(9) == Some(TSEntry(0, "", 10)))
+    assert(!TSEntry(0, "", 10).entryAt(10).isDefined)
+  }
+  
   @Test def testDefined() {
     assert(!TSEntry(0, "", 10).defined(-1))
     assert(TSEntry(0, "", 10).defined(0))

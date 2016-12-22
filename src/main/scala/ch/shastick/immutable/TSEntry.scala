@@ -11,9 +11,16 @@ case class TSEntry[T]
   if(validity <= 0) throw new IllegalArgumentException("Validity must be strictly positive")
  
   def at(t: Long): Option[T] =
-    if (timestamp <= t && t < timestamp + validity)
+    if (defined(t))
       Some(value)
     else 
+      None
+      
+  /** Return this entry within an option if it is valid at time t */
+  def entryAt(t: Long): Option[TSEntry[T]] =
+    if(defined(t))
+      Some(this)
+    else
       None
 
   def size(): Int = 1

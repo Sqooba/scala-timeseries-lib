@@ -3,6 +3,10 @@ package ch.shastick.immutable
 import ch.shastick.TimeSeries
 import scala.collection.immutable.TreeMap
 
+/**
+ * @Deprecated -> vector-based immutable timeseries are sufficient for all uses.  
+ */
+@Deprecated
 case class TreeMapTimeSeries[T]
   (data: TreeMap[Long, TSValue[T]])
   extends TimeSeries[T] {
