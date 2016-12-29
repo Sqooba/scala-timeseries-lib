@@ -7,11 +7,11 @@ This library exposes time series as functions that have a value depending on tim
 This library is not intended to provide in-depth statistics about time series data, only to make manipulating and querying it easy, without any kind of approximation.
 
 ## Usage
-In essence, a TimeSeries is just an ordered map of `[Long,T]`. In most use cases the Key represents the time since the epoch in milliseconds, but the implementation makes no assumption about the time unit of the key.
+In essence, a `TimeSeries` is just an ordered map of `[Long,T]`. In most use cases the Key represents the time since the epoch in milliseconds, but the implementation makes no assumption about the time unit of the key.
 
 
-### Defining a Timeseries 
-The TimeSeries trait has one main implementation: `VectorTimeSeries[T]`, referring to the underlying collection holding the data.
+### Defining a `TimeSeries`
+The `TimeSeries` trait has one main implementation: `VectorTimeSeries[T]`, referring to the underlying collection holding the data.
 
 ```
 val tsv = VectorTimeSeries(
@@ -23,7 +23,7 @@ val tsv = VectorTimeSeries(
 `tsv` now defines a time series of Strings that is defined on the `[1000,5000[` interval, with a hole at `[3000,4000[`
 
 ### Querying
-The simplest function exposed by a timeseries is `at(t: Long): Option[T]`. With `ts` defined as above, calling `at()`yields the following results:
+The simplest function exposed by a time series is `at(t: Long): Option[T]`. With `ts` defined as above, calling `at()`yields the following results:
 
 ```
     ts.at(999)  // None
@@ -37,7 +37,7 @@ The simplest function exposed by a timeseries is `at(t: Long): Option[T]`. With 
     ts.at(5000) // None
 ```
 ### Basic Operations
-TimeSeries of any `Numeric` type come with basic operators you might expect for such cases:
+`TimeSeries` of any `Numeric` type come with basic operators you might expect for such cases:
 
 ```
 val tsa = VectorTimeSeries(
@@ -56,34 +56,34 @@ tsa * tsb // (0L -> (3.0, 10l), 10L -> (8.0, 10L))
 Note that there are a few quirks to be aware of when a TimeSeries has discontinuities: please refer to function comments in `NumericTimeSeries.scala` (living in `ch.shastick`) for more details.
 
 ### Custom Operators: Time Series Merging
-For non-numeric TimeSeries, or for any particular needs, TimeSeries can be merged using an arbitrary merge operator: `op: (Option[A], Option[B]) => Option[C]`. For example:
+For non-numeric time series, or for any particular needs, a `TimeSeries` can be merged using an arbitrary merge operator: `op: (Option[A], Option[B]) => Option[C]`. For example:
 
 ```
 def plus(aO: Option[Double], bO: Option[Double]) = 
     (aO, bO) match {
-      // Wherever both timeseries share a defined domain, return the sum of the values
+      // Wherever both time series share a defined domain, return the sum of the values
       case (Some(a), Some(b)) => Some(a+b) 
-      // Wherever only a single timeseries is defined, return the defined value
+      // Wherever only a single time series is defined, return the defined value
       case (Some(a), None) => aO
       case (None, Some(b)) => bO
-      // Where none of the timeseries are defined, the result remains undefined.
+      // Where none of the time series are defined, the result remains undefined.
       case _ => None
     }
 ```
 
-For a complete view of what you can do with a TimeSeries, the best is to have a look at the `TimeSeries.scala` trait living in `ch.shastick`.
+For a complete view of what you can do with a `TimeSeries`, the best is to have a look at the `TimeSeries.scala` trait living in `ch.shastick`.
 
 ### Under the hood
-While a TimeSeries looks a lot like an ordered `Map[Long,T]`, it should more be considered like an ordered collection of triples of the form `(timestamp, value, validity)` (called a `TSEntry[T]` internally), representing small timeseries chunks.
+While a `TimeSeries[T]` looks a lot like an ordered `Map[Long,T]`, it should more be considered like an ordered collection of triples of the form `(timestamp, value, validity)` (called a `TSEntry[T]` internally), representing small, constant, time series chunks.
 ## Notes on Performance
 
 As suggested by its name, `VectorTimeSeries` is backed by a `Vector` and uses dichotomic search for lookups. The following performances can thus be expected (using the denomination [found here](http://docs.scala-lang.org/overviews/collections/performance-characteristics.html)):
 
   - `Log` for random lookups, left/right trimming and slicing within the definition bounds
-  - `eC` (amortized constant time) for the rest (appending, prepending, head, last, ...)
+  - `eC` (effectively constant time) for the rest (appending, prepending, head, last, ...)
 
 ## Why 
-I've had to handle time-series like data in Java recently, which turned out to be ~~slightly~~ really frustrating.
+I've had to handle time series like data in Java recently, which turned out to be ~~slightly~~ really frustrating.
 
 Having some spare time and wanting to see what I could come up with in Scala, I decided to build a small time series library. Additional reasons are:
 
@@ -92,14 +92,14 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - I wanted to write some Scala again.
 
 ## TODOS
-  - updatable timeseries (ala mutable collection style)
+  - updatable time-series (ala mutable collection style)
   - compression (at least for strict equality) when new entries are appended
   - review trait function implementations for efficiency? (ie, split/slice. Slice at least could be a stupid wrapper checking the bounds?)
   - decent tests for non-trivial merge operators
   - default Seq implementation (and the one that is imported) is mutable -> consider the implications and see if we can easily fix this by 'import scala.collection.immutable.Seq' everywhere required.
   - input validation when applying. Check entries sorted (for the vector TS) and without overlap.
   - Have empty time series always be represented by an EmptyTimeSeries. (Ie, wrapping an empty vector in a time-series should not happen)
-  - Have single-entry timeseries always be represented by a TSEntry
+  - Have single-entry  always be represented by a TSEntry
   - Generic tests for any kind of TS implementation
   - benchmarks to actually compare various implementations.
   - make it easy to use from Java
