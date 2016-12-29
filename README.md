@@ -11,7 +11,7 @@ In essence, a TimeSeries is just an ordered map of `[Long,T]`. In most use cases
 
 
 ### Defining a Timeseries 
-The TimeSeries trait has two main implementations: `VectorTimeSeries[T]` and `TreeMapTimeSeries[T]`, referring to the underlying collection holding the data.
+The TimeSeries trait has one main implementation: `VectorTimeSeries[T]`, referring to the underlying collection holding the data.
 
 ```
 val tsv = VectorTimeSeries(
@@ -19,12 +19,8 @@ val tsv = VectorTimeSeries(
               2000L -> ("Two", 1000L),
               4000L -> ("Four", 1000L))
               
-val tst = TreeMapTimeSeries(
-              1000L -> ("One", 1000L), 
-              2000L -> ("Two", 1000L),
-              4000L -> ("Four", 1000L))
 ```
-`tsv` and `tst` now both define a time series of Strings that is defined on the `[1000,5000[` interval, with a hole at `[3000,4000[`
+`tsv` now defines a time series of Strings that is defined on the `[1000,5000[` interval, with a hole at `[3000,4000[`
 
 ### Querying
 The simplest function exposed by a timeseries is `at(t: Long): Option[T]`. With `ts` defined as above, calling `at()`yields the following results:
@@ -81,12 +77,10 @@ For a complete view of what you can do with a TimeSeries, the best is to have a 
 While a TimeSeries looks a lot like an ordered `Map[Long,T]`, it should more be considered like an ordered collection of triples of the form `(timestamp, value, validity)` (called a `TSEntry[T]` internally), representing small timeseries chunks.
 ## Notes on Performance
 
-As suggested by their name, `VectorTimeSeries` and `TreeMapTimeSeries` have different underlying collections holding the data. Depending on the use-case, one or the other might be preferable:
+As suggested by its name, `VectorTimeSeries` is backed by a `Vector` and uses dichotomic search for lookups. The following performances can thus be expected (using the denomination [found here](http://docs.scala-lang.org/overviews/collections/performance-characteristics.html)):
 
-  - `TreeMapTimeSeries` should be preferred for query-intensive tasks that seek for arbitrary points in time within the timeseries, like `at(), split(), slice()` as searching for something in a `Vector` implies a linear search.
-  - `VectorTimeSeries` can be used for everything else, especially when it implies iterating over whole timeseries (generally `merge()`, `append()` or `prepend()` related operations), which often needs to be done while cooking up a TimeSeries using the content of other ones.
-  
-Also note that the current implementation for merging timeseries probably deserves some improvements.
+  - `Log` for random lookups, left/right trimming and slicing within the definition bounds
+  - `eC` (amortized constant time) for the rest (appending, prepending, head, last, ...)
 
 ## Why 
 I've had to handle time-series like data in Java recently, which turned out to be ~~slightly~~ really frustrating.
@@ -101,11 +95,10 @@ Having some spare time and wanting to see what I could come up with in Scala, I 
   - updatable timeseries (ala mutable collection style)
   - compression (at least for strict equality) when new entries are appended
   - review trait function implementations for efficiency? (ie, split/slice. Slice at least could be a stupid wrapper checking the bounds?)
-  - check if sorting of sequences for merges is required/efficient.
   - decent tests for non-trivial merge operators
   - default Seq implementation (and the one that is imported) is mutable -> consider the implications and see if we can easily fix this by 'import scala.collection.immutable.Seq' everywhere required.
   - input validation when applying. Check entries sorted (for the vector TS) and without overlap.
-  - Have empty time series always be represented by an EmptyTimeSeries. (Ie, wrapping an empty vector or map with a vector/treemap time-series should not happen)
+  - Have empty time series always be represented by an EmptyTimeSeries. (Ie, wrapping an empty vector in a time-series should not happen)
   - Have single-entry timeseries always be represented by a TSEntry
   - Generic tests for any kind of TS implementation
   - benchmarks to actually compare various implementations.
