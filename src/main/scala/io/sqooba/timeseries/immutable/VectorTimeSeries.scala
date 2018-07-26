@@ -42,6 +42,9 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
   def map[O](f: T => O): TimeSeries[O] =
     new VectorTimeSeries(data.map(_.map(f)))
 
+  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] =
+    new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
+
   def size(): Int = data.size
 
   def trimLeft(t: Long): TimeSeries[T] =

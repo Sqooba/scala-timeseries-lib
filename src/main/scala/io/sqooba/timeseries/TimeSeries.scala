@@ -46,6 +46,11 @@ trait TimeSeries[T] {
     * Timestamps and validities of entries remain unchanged */
   def map[O](f: T => O): TimeSeries[O]
 
+  /** Map the values within the time series.
+    * Timestamps and validities of entries remain unchanged,
+    * but the time is made available for cases where the new value would depend on it.*/
+  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O]
+
   /** Return a Seq of the TSEntries representing this time series. */
   def entries: Seq[TSEntry[T]]
 

@@ -21,6 +21,8 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testMap: Unit = assert(ts.map(n => None) == EmptyTimeSeries())
 
+  @Test def testMapWithTime(): Unit = assert(ts.mapWithTime( (t, v) => t + v ) == EmptyTimeSeries())
+
   @Test def testEntries: Unit = assert(ts.entries == Seq())
 
   @Test def testHead(): Unit = {

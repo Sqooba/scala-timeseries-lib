@@ -300,6 +300,20 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(up.at(20) == Some("HU"))
   }
 
+  @Test def testMapWithTime() {
+    val tri =
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        10L -> ("Ho", 10L),
+        20L -> ("Hu", 10L))
+
+    val up = tri.mapWithTime((t, s) => s.toUpperCase() + t)
+    assert(3 == up.size())
+    assert(up.at(0) == Some("HI0"))
+    assert(up.at(10) == Some("HO10"))
+    assert(up.at(20) == Some("HU20"))
+  }
+
   @Test def appendEntry() {
     val tri =
       VectorTimeSeries(
