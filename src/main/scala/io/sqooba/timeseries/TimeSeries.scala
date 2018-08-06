@@ -48,7 +48,7 @@ trait TimeSeries[T] {
 
   /** Map the values within the time series.
     * Timestamps and validities of entries remain unchanged,
-    * but the time is made available for cases where the new value would depend on it.*/
+    * but the time is made available for cases where the new value would depend on it. */
   def mapWithTime[O](f: (Long, T) => O): TimeSeries[O]
 
   /** Return a Seq of the TSEntries representing this time series. */
@@ -191,6 +191,44 @@ object TimeSeries {
     in match {
       case last +: Nil => acc :+ last
       case head +: tail => fitMe(tail, acc :+ head.trimEntryRight(tail.head.timestamp))
+    }
+  }
+
+  // TODO consider merging this with the fitting function ? Or replace the fitting function with this?
+  /**
+    * Assumes the input entries to be ordered.
+    * Will compress any contiguous or overlapping entries that have values that are strictly equal.
+    */
+  def compressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] =
+    if (in.size < 2) {
+      in
+    } else {
+      compressMe(in, new ArrayBuffer[TSEntry[T]](in.size))
+    }
+
+  @tailrec
+  private def compressMe[T](in: Seq[TSEntry[T]], acc: Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] = {
+    in match {
+      case Seq(first, last) =>
+        // Only two elements remaining, we reached the end of the seq.
+        // Compress the two values if required, add to the accumulator and return the result
+        (acc ++= first.appendEntry(last)).result()
+      case Seq(first, second, tail@_*) =>
+        first.appendEntry(second) match {
+          case Seq(compressed) =>
+            // Compression occurred.
+            // We recurse without adding to the accumulator,
+            // as the next value may be compressed into this one as well
+            compressMe(compressed +: tail, acc)
+
+          case Seq(first, second) =>
+            // No compression occurred:
+            // the first element can be added to the accumulator,
+            // we then recurse with the second one as the head of the seq,
+            // as the following values may be compressed into it
+            acc += first
+            compressMe(second +: tail, acc)
+        }
     }
   }
 

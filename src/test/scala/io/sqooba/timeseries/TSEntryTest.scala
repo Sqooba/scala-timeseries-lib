@@ -176,7 +176,7 @@ class TSEntryTest extends JUnitSuite {
     assert(!TSEntry(10, "", 10).overlaps(TSEntry(0, "", 10)))
   }
 
-  @Test def testAppendEntry(): Unit = {
+  @Test def testAppendEntryWithoutCompression(): Unit = {
     val tse = TSEntry(1, "Hi", 10)
 
     // Append without overwrite 
@@ -199,6 +199,30 @@ class TSEntryTest extends JUnitSuite {
 
     assert(Seq(TSEntry(0, "Ho", 10)) ==
       tse.appendEntry(TSEntry(0, "Ho", 10)))
+
+  }
+
+  @Test def testAppendEntryWithCompression(): Unit = {
+    val tse = TSEntry(1, "Hi", 10)
+
+    // Append with a gap in the domain
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Hi", 10)) ==
+      tse.appendEntry(TSEntry(12, "Hi", 10)))
+
+    // No gap
+    // perfect contiguity
+    assert(Seq(TSEntry(1, "Hi", 20)) ==
+      tse.appendEntry(TSEntry(11, "Hi", 10)))
+    // overlapping domains
+    assert(Seq(TSEntry(1, "Hi", 14)) ==
+      tse.appendEntry(TSEntry(5, "Hi", 10)))
+
+    // Complete overwrite
+    assert(Seq(TSEntry(1, "Hi", 10)) ==
+      tse.appendEntry(TSEntry(1, "Hi", 10)))
+
+    assert(Seq(TSEntry(0, "Hi", 10)) ==
+      tse.appendEntry(TSEntry(0, "Hi", 10)))
 
   }
 

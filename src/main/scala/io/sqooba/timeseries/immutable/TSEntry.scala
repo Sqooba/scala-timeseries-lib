@@ -116,12 +116,30 @@ case class TSEntry[T]
     * Any part of this entry that is defined for t > other.timestamp will be overwritten,
     * either by 'other' or by nothing if 'others's validity does not reach t.
     *
-    * Ie, if 'other' has a timestamp before this value, only 'other' is returned. */
+    * Notes:
+    * - if 'other' has a timestamp before this value, only 'other' is returned.
+    * - 'other' will be compressed into 'this' if their domains overlap and their
+    * values are strictly equal
+    */
   def appendEntry(other: TSEntry[T]): Seq[TSEntry[T]] =
     if (other.timestamp <= timestamp)
       Seq(other)
     else
+      extendOrTrim(other)
+
+  /**
+    * Note: expects that 'other' has a timestamp after 'this'
+    *
+    * @return a Seq of this entry, extended until the end of validity of 'other',
+    *         if their values are strictly equal and their domain overlap.
+    *         A seq of 'this', trimmed to 'other's timestamp, and the other entry is returned otherwise.
+    */
+  private def extendOrTrim(other: TSEntry[T]): Seq[TSEntry[T]] =
+    if (other.timestamp <= this.definedUntil() && this.value == other.value) {
+      Seq(extendValidity(other.definedUntil() - this.definedUntil()))
+    } else {
       Seq(this.trimEntryRight(other.timestamp), other)
+    }
 
   /** Prepend the other entry to this one.
     * Any part of this entry that is defined at t < other.definedUntil will be overwritten by the
@@ -161,7 +179,6 @@ case class TSEntry[T]
         validity + validityIncrement
       )
     }
-
 
   def append(other: TimeSeries[T]): TimeSeries[T] =
     other.headOption match {
