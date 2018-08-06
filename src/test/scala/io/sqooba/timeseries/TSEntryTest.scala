@@ -16,11 +16,11 @@ class TSEntryTest extends JUnitSuite {
     }
 
   @Test def testMap(): Unit = {
-    assert(TSEntry(0, 42, 10).map( _ / 2) == TSEntry(0, 21, 10))
+    assert(TSEntry(0, 42, 10).map(_ / 2) == TSEntry(0, 21, 10))
   }
 
   @Test def testMapWithTime(): Unit = {
-    assert(TSEntry(10, 5, 10).mapWithTime( (t, v) => t + v ) == TSEntry(10, 15, 10))
+    assert(TSEntry(10, 5, 10).mapWithTime((t, v) => t + v) == TSEntry(10, 15, 10))
   }
 
   @Test def testAt(): Unit = {
@@ -486,5 +486,15 @@ class TSEntryTest extends JUnitSuite {
     assert(testTs(-19).entries == e.prepend(testTs(-19)).entries)
     assert(testTs(-18).entries == e.prepend(testTs(-18)).entries)
 
+  }
+
+  @Test def extendValidity(): Unit = {
+    val tse = TSEntry(1, "entry", 10)
+    assert(tse.extendValidity(10) == TSEntry(1, "entry", 20))
+    assert(tse.extendValidity(0) == tse)
+
+    intercept[IllegalArgumentException] {
+      tse.extendValidity(-10)
+    }
   }
 }

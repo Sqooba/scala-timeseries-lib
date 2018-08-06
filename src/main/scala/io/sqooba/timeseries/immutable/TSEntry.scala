@@ -142,6 +142,27 @@ case class TSEntry[T]
 
   def lastOption: Option[TSEntry[T]] = Some(this)
 
+  /**
+    * Creates a new entry with an extended validity.
+    *
+    * @param validityIncrement The validity increment
+    */
+  def extendValidity(validityIncrement: Long): TSEntry[T] =
+    if (validityIncrement < 0) {
+      throw new IllegalArgumentException("Cannot reduce validity of a TS entry.")
+    }
+    else if (validityIncrement == 0) {
+      this
+    }
+    else {
+      TSEntry(
+        timestamp,
+        value,
+        validity + validityIncrement
+      )
+    }
+
+
   def append(other: TimeSeries[T]): TimeSeries[T] =
     other.headOption match {
       case None => // Other TS is empty: no effect 
