@@ -6,7 +6,7 @@ import org.scalatest.junit.JUnitSuite
 
 class TimeSeriesTest extends JUnitSuite {
 
-  // Simple summing operator
+  // Simple non-strict summing operator
   def plus(aO: Option[Double], bO: Option[Double]) =
     (aO, bO) match {
       case (Some(a), Some(b)) => Some(a + b)
@@ -151,20 +151,20 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testFitTSEntries(): Unit = {
     // Test the simple cases
-    assert(TimeSeries.fitTSEntries(Seq()).isEmpty)
-    assert(TimeSeries.fitTSEntries(Seq(TSEntry(20, "B", 10)))
+    assert(TimeSeries.fitAndCompressTSEntries(Seq()).isEmpty)
+    assert(TimeSeries.fitAndCompressTSEntries(Seq(TSEntry(20, "B", 10)))
       == Seq(TSEntry(20, "B", 10)))
 
     // Test non-overlapping entries:
     assert(
-      TimeSeries.fitTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 10)))
         == Seq(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 10))
     )
 
     // Test non-overlapping entries:
     assert(
-      TimeSeries.fitTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 11), TSEntry(20, "B", 12), TSEntry(30, "C", 13)))
         == Seq(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 13))
     )
@@ -175,18 +175,18 @@ class TimeSeriesTest extends JUnitSuite {
     // test makes sure it is used.
 
     // Test the simple case
-    assert(TimeSeries.fitTSEntries(Vector()).isEmpty)
+    assert(TimeSeries.fitAndCompressTSEntries(Vector()).isEmpty)
 
     // Test non-overlapping entries:
     assert(
-      TimeSeries.fitTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 10)))
         == Seq(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 10))
     )
 
     // Test overlapping entries:
     assert(
-      TimeSeries.fitTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 11), TSEntry(20, "B", 12), TSEntry(30, "C", 13)))
         == Seq(TSEntry(10, "A", 10), TSEntry(20, "B", 10), TSEntry(30, "C", 13))
     )
@@ -195,41 +195,41 @@ class TimeSeriesTest extends JUnitSuite {
   @Test def testCompressTSEntries(): Unit = {
 
     // Simple cases
-    assert(TimeSeries.compressTSEntries(Seq()).isEmpty)
-    assert(TimeSeries.compressTSEntries(Seq(TSEntry(20, "B", 10)))
+    assert(TimeSeries.fitAndCompressTSEntries(Seq()).isEmpty)
+    assert(TimeSeries.fitAndCompressTSEntries(Seq(TSEntry(20, "B", 10)))
       == Seq(TSEntry(20, "B", 10)))
 
     // Test non contiguous entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 9), TSEntry(20, "A", 9), TSEntry(30, "A", 10)))
         == Seq(TSEntry(10, "A", 9), TSEntry(20, "A", 9), TSEntry(30, "A", 10))
     )
 
     // Test two contiguous and equal entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 10), TSEntry(20, "A", 10)))
         == Seq(TSEntry(10, "A", 20))
     )
 
     // Test three contiguous and equal entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 10), TSEntry(20, "A", 10), TSEntry(30, "A", 10)))
         == Seq(TSEntry(10, "A", 30))
     )
 
     // Test four contiguous entries, the two first being unequal
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "B", 10), TSEntry(20, "A", 10), TSEntry(30, "A", 10), TSEntry(40, "A", 10)))
         == Seq(TSEntry(10, "B", 10), TSEntry(20, "A", 30))
     )
 
     // Test five contiguous entries, the third one being unequal to the others
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Seq(TSEntry(10, "A", 10), TSEntry(20, "A", 10), TSEntry(30, "B", 10), TSEntry(40, "A", 10), TSEntry(50, "A", 10)))
         == Seq(TSEntry(10, "A", 20), TSEntry(30, "B", 10), TSEntry(40, "A", 20))
     )
@@ -237,45 +237,59 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testCompressVectors(): Unit = {
     // Simple cases
-    assert(TimeSeries.compressTSEntries(Vector()).isEmpty)
-    assert(TimeSeries.compressTSEntries(Vector(TSEntry(20, "B", 10)))
+    assert(TimeSeries.fitAndCompressTSEntries(Vector()).isEmpty)
+    assert(TimeSeries.fitAndCompressTSEntries(Vector(TSEntry(20, "B", 10)))
       == Vector(TSEntry(20, "B", 10)))
 
     // Test non contiguous entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 9), TSEntry(20, "A", 9), TSEntry(30, "A", 10)))
         == Vector(TSEntry(10, "A", 9), TSEntry(20, "A", 9), TSEntry(30, "A", 10))
     )
 
     // Test two contiguous and equal entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 10), TSEntry(20, "A", 10)))
         == Vector(TSEntry(10, "A", 20))
     )
 
     // Test three contiguous and equal entries:
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 10), TSEntry(20, "A", 10), TSEntry(30, "A", 10)))
         == Vector(TSEntry(10, "A", 30))
     )
 
     // Test four contiguous entries, the two first being unequal
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "B", 10), TSEntry(20, "A", 10), TSEntry(30, "A", 10), TSEntry(40, "A", 10)))
         == Vector(TSEntry(10, "B", 10), TSEntry(20, "A", 30))
     )
 
     // Test five contiguous entries, the third one being unequal to the others
     assert(
-      TimeSeries.compressTSEntries(
+      TimeSeries.fitAndCompressTSEntries(
         Vector(TSEntry(10, "A", 10), TSEntry(20, "A", 10), TSEntry(30, "B", 10), TSEntry(40, "A", 10), TSEntry(50, "A", 10)))
         == Vector(TSEntry(10, "A", 20), TSEntry(30, "B", 10), TSEntry(40, "A", 20))
     )
   }
 
+  @Test def testCompressionAfterMerge(): Unit = {
+
+    // Perfectly aligned, no discontinuities
+    val l =
+      Seq(TSEntry(-20, 1.0, 10), TSEntry(-10, 2.0, 10), TSEntry(0, 3.0, 10), TSEntry(10, 1.0, 10), TSEntry(20, 0.0, 10))
+
+    val r =
+      Seq(TSEntry(-20, -1.0, 10), TSEntry(-10, -2.0, 10), TSEntry(0, 3.0, 10), TSEntry(10, 1.0, 10), TSEntry(20, 2.0, 10))
+
+    assert(
+      TimeSeries.mergeEntries(l)(r)(plus) ==
+        Seq(TSEntry(-20, 0.0, 20), TSEntry(0, 6.0, 10), TSEntry(10, 2.0, 20))
+    )
+  }
 
 }

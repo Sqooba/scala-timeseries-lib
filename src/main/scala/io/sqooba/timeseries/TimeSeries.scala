@@ -171,35 +171,14 @@ trait TimeSeries[T] {
 object TimeSeries {
 
   /**
-    * @return a sequence of TSEntries that are guaranteed not to overlap with each other.
+    * Assumes the input entries to be ordered. This function will do both:
+    *  - compressing of any contiguous or overlapping entries that have values that are strictly equal.
+    *  - correctly fitting overlapping entries together when they are not equal.
+    *
+    * @return a sequence of TSEntries that are guaranteed not to overlap with each other,
+    *         and where contiguous values are guaranteed to be different.
     */
-  def fitTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] =
-    if (in.size < 2) {
-      in
-    } else {
-      fitMe(in, Seq())
-    }
-
-  /**
-    * - fits the first element in the sequence according to the one that follows it,
-    * - adds it to the buffer,
-    * - recurses if the seq has two or more elements.
-    * - returns the last element in the sequence
-    */
-  @tailrec
-  private def fitMe[T](in: Seq[TSEntry[T]], acc: Seq[TSEntry[T]]): Seq[TSEntry[T]] = {
-    in match {
-      case last +: Nil => acc :+ last
-      case head +: tail => fitMe(tail, acc :+ head.trimEntryRight(tail.head.timestamp))
-    }
-  }
-
-  // TODO consider merging this with the fitting function ? Or replace the fitting function with this?
-  /**
-    * Assumes the input entries to be ordered.
-    * Will compress any contiguous or overlapping entries that have values that are strictly equal.
-    */
-  def compressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] =
+  def fitAndCompressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] =
     if (in.size < 2) {
       in
     } else {
@@ -220,7 +199,6 @@ object TimeSeries {
             // We recurse without adding to the accumulator,
             // as the next value may be compressed into this one as well
             compressMe(compressed +: tail, acc)
-
           case Seq(first, second) =>
             // No compression occurred:
             // the first element can be added to the accumulator,
@@ -269,7 +247,10 @@ object TimeSeries {
   (b: Seq[TSEntry[B]])
   (op: (Option[A], Option[B]) => Option[C])
   : Seq[TSEntry[C]] =
-    mergeEithers(Seq.empty)(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
+  // TODO: consider moving the compression within the merging logic so we avoid a complete iteration.
+    fitAndCompressTSEntries(
+      mergeEithers(Seq.empty)(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
+    )
 
   /**
     * Combine two Seq's that are known to be ordered and return a Seq that is

@@ -129,7 +129,7 @@ object VectorTimeSeries {
     */
   def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
   // TODO: Expect entries to be sorted and just check?
-    new VectorTimeSeries(Vector(TimeSeries.fitTSEntries(elems.sortBy(_.timestamp)): _*))
+    new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sortBy(_.timestamp)): _*))
 
   /**
     * @return a VectorTimeSeries built from the passed entries, only ensuring that the are sorted
