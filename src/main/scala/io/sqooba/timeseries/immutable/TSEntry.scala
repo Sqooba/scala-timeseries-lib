@@ -110,6 +110,8 @@ case class TSEntry[T]
   def mapWithTime[O](f: (Long, T) => O): TSEntry[O] =
     TSEntry(timestamp, f(timestamp, value), validity)
 
+  def fill(whenUndef: T): TSEntry[T] = this
+
   def entries: Seq[TSEntry[T]] = Seq(this)
 
   /** Append the other entry to this one.

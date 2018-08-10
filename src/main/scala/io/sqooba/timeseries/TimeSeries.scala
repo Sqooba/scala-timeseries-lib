@@ -51,6 +51,11 @@ trait TimeSeries[T] {
     * but the time is made available for cases where the new value would depend on it. */
   def mapWithTime[O](f: (Long, T) => O): TimeSeries[O]
 
+  /** Fill the wholes in the definition domain of this time series with the passed value.
+    * The resulting time series will have a single continuous definition domain,
+    * provided the original time series was non-empty. */
+  def fill(whenUndef: T): TimeSeries[T]
+
   /** Return a Seq of the TSEntries representing this time series. */
   def entries: Seq[TSEntry[T]]
 
@@ -209,6 +214,77 @@ object TimeSeries {
         }
     }
   }
+
+  /** For any collection of TSEntries of size 2 and more, intersperses entries containing
+    * fillValue between any two non-contiguous entries.
+    *
+    * Assumes the passed entries to be both properly fitted (no overlapping domains) and
+    * compressed (no contiguous entries containing the same value).
+    *
+    * The result will be properly fitted and compressed as well.
+    */
+  def fillGaps[T](in: Seq[TSEntry[T]], fillValue: T): Seq[TSEntry[T]] =
+    if (in.size < 2) {
+      return in
+    } else {
+      fillMe(in, fillValue, new ArrayBuffer[TSEntry[T]](in.size))
+    }
+
+  @tailrec
+  private def fillMe[T](in: Seq[TSEntry[T]], fillValue: T, acc: Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] =
+    in match {
+      case Seq(first, last) =>
+        // Only two elements remaining: the recursion can end
+        (acc ++= fillAndCompress(first, last, fillValue)).result()
+      case Seq(first, second, tail@_*) =>
+        // Fill the gap, and check the result
+        fillAndCompress(first, second, fillValue) match {
+          // the above may return 1, 2 or 3 entries,
+          // of which the last one must not yet
+          // be added to the accumulator,
+          // instead it is prepended to what is passed to the recursive call
+          case Seq(compressed) =>
+            // Nothing to add to acc:
+            // compressed may still be extended by the next filler
+            fillMe(compressed +: tail, fillValue, acc)
+          case Seq(one, two) =>
+            // The fill value either extended 'first' or advanced 'second:
+            // we don't need to know and just add first to acc
+            fillMe(two +: tail, fillValue, acc += one)
+          case Seq(_, filler, _) =>
+            // the fill value did not extend the first,
+            // and did not advance the second
+            // first and filler are added to the accumulator
+            fillMe(second +: tail, fillValue, acc ++= Seq(first, filler))
+        }
+    }
+
+  /** Returns a Sequence of entries such that there is no discontinuity between current.timestamp
+    * and next.definedUntil, filling the gap between the entries and compression them if necessary. */
+  def fillAndCompress[T](first: TSEntry[T], second: TSEntry[T], fillValue: T): Seq[TSEntry[T]] = {
+    if (first.definedUntil() == second.timestamp) {
+      // Entries contiguous.
+      Seq(first, second)
+    } else {
+      // There is space to fill
+      first.appendEntry(
+        TSEntry(
+          first.definedUntil(),
+          fillValue,
+          second.timestamp - first.definedUntil())
+      ) match {
+        case Seq(single) =>
+          // 'first' was extended.
+          // // Check if 'second' can be compressed into the result
+          single.appendEntry(second)
+        case Seq(notExtended, filler) =>
+          // 'first' was not extended.
+          // Check if 'second' can be advanced with the filling value
+          notExtended +: filler.appendEntry(second)
+      }
+    }
+  }
+
 
   /** Merge two time series together, using the provided merge operator.
     *

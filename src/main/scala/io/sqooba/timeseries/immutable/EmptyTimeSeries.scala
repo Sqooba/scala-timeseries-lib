@@ -22,6 +22,8 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] = EmptyTimeSeries()
 
+  def fill(whenUndef: T): TimeSeries[T] = EmptyTimeSeries()
+
   def entries: Seq[TSEntry[T]] = Seq()
 
   def head: TSEntry[T] = throw new NoSuchElementException()

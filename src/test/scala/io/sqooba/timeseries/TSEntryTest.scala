@@ -23,6 +23,10 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(10, 5, 10).mapWithTime((t, v) => t + v) == TSEntry(10, 15, 10))
   }
 
+  @Test def testFill(): Unit = {
+    assert(TSEntry(10, 5, 10).fill(42) == TSEntry(10, 5, 10))
+  }
+
   @Test def testAt(): Unit = {
     assert(!TSEntry(0, "", 10).at(-1).isDefined)
     assert(TSEntry(0, "", 10).at(0) == Some(""))

@@ -292,4 +292,101 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
+  @Test def testFillWithoutCompression(): Unit = {
+    // Simple cases: 0 and 1 entries
+    assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
+    assert(TimeSeries.fillGaps(
+      Seq(TSEntry(1, 1, 10)), 0) ==
+      Seq(TSEntry(1, 1, 10))
+    )
+
+    // Two values, contiguous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10)), 0) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10))
+    )
+
+    // Three values, contiguous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10), TSEntry(21, 3, 10)), 0) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10), TSEntry(21, 3, 10))
+    )
+
+    // Two values, non-contiguous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 0) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 3, 10))
+    )
+
+    // Three values, non-contiguous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 3, 10)), 0) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10),
+          TSEntry(31, 0, 10), TSEntry(41, 3, 10))
+    )
+
+    // Three values, two first non-contiguous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(31, 3, 10)), 0) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10), TSEntry(31, 3, 10))
+    )
+
+  }
+
+  @Test def testFillWithCompression(): Unit = {
+    // Simple cases: 0 and 1 entries
+    assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
+    assert(TimeSeries.fillGaps(
+      Seq(TSEntry(1, 1, 10)), 0) ==
+      Seq(TSEntry(1, 1, 10))
+    )
+
+    // Two values, non-contiguous, fill value extends previous
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 1) ==
+        Seq(TSEntry(1, 1, 20), TSEntry(21, 3, 10))
+    )
+
+    // Two values, non-contiguous, fill value advances next
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 3) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 3, 20))
+    )
+
+    // Two values, non-contiguous, fill value bridges both values
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 1, 10)), 1) ==
+        Seq(TSEntry(1, 1, 30))
+    )
+
+    // Three values, non-contiguous, extend first and advance last
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 1, 10)), 1) ==
+        Seq(TSEntry(1, 1, 20), TSEntry(21, 2, 10), TSEntry(31, 1, 20))
+    )
+
+    // Three values, non-contiguous, both advance and extend middle one
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 1, 10)), 2) ==
+        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 30), TSEntry(41, 1, 10))
+    )
+
+    // Three values, non-contiguous, bridge every one
+    assert(
+      TimeSeries.fillGaps(
+        Seq(TSEntry(1, 1, 10), TSEntry(21, 1, 10), TSEntry(41, 1, 10)), 1) ==
+        Seq(TSEntry(1, 1, 50))
+    )
+  }
+
 }

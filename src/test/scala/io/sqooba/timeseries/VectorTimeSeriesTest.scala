@@ -314,6 +314,60 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(up.at(20) == Some("HU20"))
   }
 
+  @Test def testFillContiguous(): Unit = {
+    val tri =
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        10L -> ("Ho", 10L),
+        20L -> ("Hu", 10L))
+
+    assert(tri.fill("Ha") == tri)
+  }
+
+  @Test def testFill(): Unit = {
+    val tri =
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        20L -> ("Ho", 10L),
+        40L -> ("Hu", 10L))
+
+    assert(tri.fill("Ha") ==
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        10L -> ("Ha", 10L),
+        20L -> ("Ho", 10L),
+        30L -> ("Ha", 10L),
+        40L -> ("Hu", 10L)
+      )
+    )
+
+    assert(tri.fill("Hi") ==
+      VectorTimeSeries(
+        0L -> ("Hi", 20L),
+        20L -> ("Ho", 10L),
+        30L -> ("Hi", 10L),
+        40L -> ("Hu", 10L)
+      )
+    )
+
+    assert(tri.fill("Ho") ==
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        10L -> ("Ho", 30L),
+        40L -> ("Hu", 10L)
+      )
+    )
+
+    assert(tri.fill("Hu") ==
+      VectorTimeSeries(
+        0L -> ("Hi", 10L),
+        10L -> ("Hu", 10L),
+        20L -> ("Ho", 10L),
+        30L -> ("Hu", 20L)
+      )
+    )
+  }
+
   @Test def appendEntry() {
     val tri =
       VectorTimeSeries(
