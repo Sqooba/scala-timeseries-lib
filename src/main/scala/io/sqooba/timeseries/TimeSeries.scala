@@ -171,6 +171,24 @@ trait TimeSeries[T] {
       case _ => None
     }
 
+  /**
+    * Computes the integral of this time series.
+    * This function returns a step function, so only represents an approximation.
+    * Use it if you need to compute multiple integrals of the same time series.
+    */
+  def stepIntegral()(implicit n: Numeric[T]) =
+    VectorTimeSeries.ofEntriesUnsafe(
+      NumericTimeSeries.stepIntegral(this.entries))
+
+  /**
+    * Compute the integral of this time series between the two specified points.
+    * Simply sums values on the [from, to] interval.
+    * If you need to call this multiple times, consider using #stepIntegral()
+    * depending on your use case.
+    */
+  def integrateBetween(from: Long, to: Long)(implicit n: Numeric[T]): T =
+    this.slice(from, to).entries.map(_.value).sum
+
 }
 
 object TimeSeries {

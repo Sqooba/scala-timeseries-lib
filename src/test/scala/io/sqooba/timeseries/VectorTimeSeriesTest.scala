@@ -558,5 +558,40 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   }
 
+  @Test def testStepIntegral(): Unit = {
+    val tri =
+      VectorTimeSeries(
+        0L -> (1, 10L),
+        10L -> (2, 10L),
+        20L -> (3, 10L))
+
+    assert(
+      tri.stepIntegral().entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10))
+    )
+  }
+
+  @Test def testIntegrateBetween(): Unit = {
+    val tri =
+      VectorTimeSeries(
+        0L -> (1, 10L),
+        10L -> (2, 10L),
+        20L -> (3, 10L))
+
+    assert(tri.integrateBetween(-10, 0) == 0)
+    assert(tri.integrateBetween(0, 5) == 1)
+    assert(tri.integrateBetween(0, 10) == 1)
+    assert(tri.integrateBetween(5, 10) == 1)
+    assert(tri.integrateBetween(0, 11) == 3)
+    assert(tri.integrateBetween(0, 20) == 3)
+    assert(tri.integrateBetween(10, 15) == 2)
+    assert(tri.integrateBetween(10, 20) == 2)
+    assert(tri.integrateBetween(10, 21) == 5)
+    assert(tri.integrateBetween(10, 30) == 5)
+    assert(tri.integrateBetween(10, 40) == 5)
+    assert(tri.integrateBetween(0, 30) == 6)
+    assert(tri.integrateBetween(0, 40) == 6)
+    assert(tri.integrateBetween(-10, 40) == 6)
+  }
+
   // TODO add test for constructor using the 'ofEntriesSafe' function.
 }

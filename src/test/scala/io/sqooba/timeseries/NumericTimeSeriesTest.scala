@@ -56,5 +56,38 @@ class NumericTimeSeriesTest extends JUnitSuite {
       == (tsb * tsa).entries)
   }
 
+  @Test def testStepIntegral(): Unit = {
+    // Easy cases...
+    assert(
+      NumericTimeSeries.stepIntegral[Int](Seq()) == Seq())
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(1, 2, 3))) == Seq(TSEntry(1, BigDecimal(6), 3)))
+
+    // Sum the stuff!
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10)))
+        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10)))
+
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10)))
+        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10)))
+
+    // With some negative values for fun
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 0, 10), TSEntry(20, -1, 10)))
+        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(10), 10), TSEntry(20, BigDecimal(0), 10)))
+
+    // With different validities
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 1), TSEntry(1, 2, 10)))
+        == Seq(TSEntry(0, BigDecimal(1), 1), TSEntry(1, BigDecimal(21), 10))
+    )
+    assert(
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 1)))
+        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(12), 1))
+    )
+
+  }
+
 
 }
