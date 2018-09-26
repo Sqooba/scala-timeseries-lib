@@ -1,9 +1,12 @@
 package io.sqooba.timeseries
 
+import java.util.concurrent.TimeUnit
+
 import io.sqooba.timeseries.immutable.{TSEntry, VectorTimeSeries}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.{ArrayBuffer, Builder}
+import scala.concurrent.duration.TimeUnit
 
 trait TimeSeries[T] {
 
@@ -176,10 +179,11 @@ trait TimeSeries[T] {
     * This function returns a step function, so only represents an approximation.
     * Use it if you need to compute multiple integrals of the same time series.
     */
-  def stepIntegral(stepLengthMs: Long)(implicit n: Numeric[T]) =
+  def stepIntegral(stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]) =
     VectorTimeSeries.ofEntriesUnsafe(
       NumericTimeSeries.stepIntegral(
-        this.resample(stepLengthMs).entries
+        this.resample(stepLengthMs).entries,
+        timeUnit
       )
     )
 

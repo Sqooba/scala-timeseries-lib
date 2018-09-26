@@ -1,9 +1,12 @@
 package io.sqooba.timeseries
 
+import java.util.concurrent.TimeUnit
+
 import io.sqooba.timeseries.immutable.TSEntry
 
 import scala.annotation.tailrec
 import scala.collection.mutable.{ArrayBuffer, Builder}
+import scala.concurrent.duration.TimeUnit
 
 object NumericTimeSeries {
 
@@ -61,36 +64,31 @@ object NumericTimeSeries {
     *
     * Please note that the result is still a step function.
     */
-  def stepIntegral[T](seq: Seq[TSEntry[T]])(implicit n: Numeric[T]): Seq[TSEntry[BigDecimal]] =
+  def stepIntegral[T](seq: Seq[TSEntry[T]], timeUnit: TimeUnit = TimeUnit.MILLISECONDS)
+                     (implicit n: Numeric[T]): Seq[TSEntry[Double]] =
     if (seq.isEmpty) {
       Seq()
     } else {
-      val zero = 0
       integrateMe[T](
-        BigDecimal(zero),
+        .0,
         seq,
-        new ArrayBuffer[TSEntry[BigDecimal]](seq.size)
-      )(n)
+        new ArrayBuffer[TSEntry[Double]](seq.size))(timeUnit)(n)
     }
 
   @tailrec
   private def integrateMe[T](
-                              sumUntilNow: BigDecimal,
+                              sumUntilNow: Double,
                               seq: Seq[TSEntry[T]],
-                              acc: Builder[TSEntry[BigDecimal], Seq[TSEntry[BigDecimal]]]
-                            )(implicit n: Numeric[T]): Seq[TSEntry[BigDecimal]] = {
+                              acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
+                            )
+                            (timeUnit: TimeUnit)
+                            (implicit n: Numeric[T]): Seq[TSEntry[Double]] = {
     if (seq.isEmpty) {
       acc.result()
     } else {
-      val newSum = sumUntilNow + mult(seq.head.value, seq.head.validity)
-      integrateMe(newSum, seq.tail, acc += (seq.head.map(_ => newSum)))
+      val newSum = sumUntilNow + seq.head.integral(timeUnit)
+      integrateMe(newSum, seq.tail, acc += (seq.head.map(_ => newSum)))(timeUnit)
     }
-  }
-
-  //TODO: this is ugly as s***, check what's possible with Numeric to avoid .toDouble conversion.
-  def mult[T](a: T, b: Long)(implicit n: Numeric[T]): BigDecimal = {
-    import n._
-    BigDecimal(a.toDouble()) * BigDecimal(b)
   }
 
 }

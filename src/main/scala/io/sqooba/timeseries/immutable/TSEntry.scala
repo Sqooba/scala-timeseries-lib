@@ -1,5 +1,7 @@
 package io.sqooba.timeseries.immutable
 
+import java.util.concurrent.TimeUnit
+
 import io.sqooba.timeseries.TimeSeries
 
 case class TSEntry[T]
@@ -215,7 +217,7 @@ case class TSEntry[T]
     }
 
   override def resample(sampleLengthMs: Long): TimeSeries[T] =
-    // this entry should be split
+  // this entry should be split
     if (this.validity > sampleLengthMs) {
       new TSEntry[T](this.timestamp, this.value, sampleLengthMs)
         .append(
@@ -225,10 +227,36 @@ case class TSEntry[T]
             this.value, this.validity - sampleLengthMs
           ).resample(sampleLengthMs)
         )
-    }
-    else {
+    } else {
       this
     }
+
+  /**
+    * Compute the integral of this entry. The caller may specify what time unit is used for this entry.
+    *
+    * By default, milliseconds are assumed.
+    *
+    * This function essentially computes "value * validity", with the validity first  being converted
+    * to seconds according to the passed time unit.
+    *
+    * This currently returns a double value.
+    *
+    * TODO: return a (initVal, slope) tuple or something like an "IntegralEntry" instead ?
+    */
+  def integral(timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Double = {
+    import n._
+
+    // - Obtain the duration in milliseconds
+    // - Compute the number of seconds (double division by 1000)
+    // - Multiply by the value
+    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value.toDouble()
+  }
+
+  /**
+    * See #integral
+    */
+  def integralEntry(timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): TSEntry[Double] =
+    this.map(_ => integral(timeUnit))
 
 }
 

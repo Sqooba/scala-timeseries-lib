@@ -1,5 +1,7 @@
 package io.sqooba.timeseries
 
+import java.util.concurrent.TimeUnit
+
 import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
@@ -565,9 +567,9 @@ class VectorTimeSeriesTest extends JUnitSuite {
         10L -> (2, 10L),
         20L -> (3, 10L))
 
-    assert(
-      tri.stepIntegral(10).entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10))
-    )
+    tri.stepIntegral(10, TimeUnit.SECONDS).entries ==
+      Seq(TSEntry(0, 10.0, 10), TSEntry(10, 30.0, 10), TSEntry(20, 60.0, 10))
+
 
     val withSampling =
       VectorTimeSeries(
@@ -575,7 +577,8 @@ class VectorTimeSeriesTest extends JUnitSuite {
       )
 
     assert(
-      withSampling.stepIntegral(10).entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(20), 10), TSEntry(20, BigDecimal(30), 10))
+      withSampling.stepIntegral(10, TimeUnit.SECONDS).entries ==
+        Seq(TSEntry(0, 10.0, 10), TSEntry(10, 20.0, 10), TSEntry(20, 30.0, 10))
     )
   }
 

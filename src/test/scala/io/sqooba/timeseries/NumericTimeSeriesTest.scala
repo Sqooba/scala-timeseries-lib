@@ -61,30 +61,30 @@ class NumericTimeSeriesTest extends JUnitSuite {
     assert(
       NumericTimeSeries.stepIntegral[Int](Seq()) == Seq())
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(1, 2, 3))) == Seq(TSEntry(1, BigDecimal(6), 3)))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(1, 2, 3000))) == Seq(TSEntry(1, 6.0, 3000)))
 
     // Sum the stuff!
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10)))
-        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10)))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 2, 10000)))
+        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 30.0, 10000)))
 
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10)))
-        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10)))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 2, 10000), TSEntry(20000, 3, 10000)))
+        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 30.0, 10000), TSEntry(20000, 60.0, 10000)))
 
     // With some negative values for fun
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 0, 10), TSEntry(20, -1, 10)))
-        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(10), 10), TSEntry(20, BigDecimal(0), 10)))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 0, 10000), TSEntry(20000, -1, 10000)))
+        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 10.0, 10000), TSEntry(20000, 0.0, 10000)))
 
     // With different validities
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 1), TSEntry(1, 2, 10)))
-        == Seq(TSEntry(0, BigDecimal(1), 1), TSEntry(1, BigDecimal(21), 10))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 1000), TSEntry(1000, 2, 10000)))
+        == Seq(TSEntry(0, 1.0, 1000), TSEntry(1000, 21.0, 10000))
     )
     assert(
-      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 1)))
-        == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(12), 1))
+      NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 2, 1000)))
+        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 12.0, 1000))
     )
   }
 

@@ -1,5 +1,7 @@
 package io.sqooba.timeseries
 
+import java.util.concurrent.TimeUnit
+
 import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, TSValue, VectorTimeSeries}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
@@ -524,5 +526,13 @@ class TSEntryTest extends JUnitSuite {
     intercept[IllegalArgumentException] {
       tse.extendValidity(-10)
     }
+  }
+
+  @Test def testIntegral(): Unit = {
+    assert(TSEntry(0, 1, 1000).integral() == 1.0)
+    assert(TSEntry(0, 1, 1).integral(TimeUnit.SECONDS) == 1.0)
+    assert(TSEntry(0, 1, 1).integral(TimeUnit.MINUTES) == 60.0)
+
+    assert(TSEntry(0, 1, 1000).integralEntry() == TSEntry(0, 1.0, 1000))
   }
 }
