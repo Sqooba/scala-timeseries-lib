@@ -176,9 +176,12 @@ trait TimeSeries[T] {
     * This function returns a step function, so only represents an approximation.
     * Use it if you need to compute multiple integrals of the same time series.
     */
-  def stepIntegral()(implicit n: Numeric[T]) =
+  def stepIntegral(stepLengthMs: Long)(implicit n: Numeric[T]) =
     VectorTimeSeries.ofEntriesUnsafe(
-      NumericTimeSeries.stepIntegral(this.entries))
+      NumericTimeSeries.stepIntegral(
+        this.resample(stepLengthMs).entries
+      )
+    )
 
   /**
     * Compute the integral of this time series between the two specified points.
@@ -188,6 +191,12 @@ trait TimeSeries[T] {
     */
   def integrateBetween(from: Long, to: Long)(implicit n: Numeric[T]): T =
     this.slice(from, to).entries.map(_.value).sum
+
+  /**
+    * Resamples the time series by ensuring that each entry has a validity
+    * of maximum sampleLengthMs.
+    */
+  def resample(sampleLengthMs: Long): TimeSeries[T]
 
 }
 
@@ -303,7 +312,6 @@ object TimeSeries {
     }
   }
 
-
   /** Merge two time series together, using the provided merge operator.
     *
     * The passed TSEntry sequences will be merged according to the merge operator,
@@ -413,12 +421,12 @@ object TimeSeries {
         mergeEithers(done ++ filling ++ TSEntry.mergeSingleToMultiple(head, toMerge)(op))(nextRound)(op)
     }
 
-
   /**
     * This is needed to be able to pattern match on Vectors:
     * https://stackoverflow.com/questions/10199171/matcherror-when-match-receives-an-indexedseq-but-not-a-linearseq
     */
   object +: {
+
     def unapply[T](s: Seq[T]) =
       s.headOption.map(head => (head, s.tail))
   }

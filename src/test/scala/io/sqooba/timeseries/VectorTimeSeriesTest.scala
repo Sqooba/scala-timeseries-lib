@@ -566,7 +566,31 @@ class VectorTimeSeriesTest extends JUnitSuite {
         20L -> (3, 10L))
 
     assert(
-      tri.stepIntegral().entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10))
+      tri.stepIntegral(10).entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(30), 10), TSEntry(20, BigDecimal(60), 10))
+    )
+
+    val withSampling =
+      VectorTimeSeries(
+        0L -> (1, 30L)
+      )
+
+    assert(
+      withSampling.stepIntegral(10).entries == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(20), 10), TSEntry(20, BigDecimal(30), 10))
+    )
+  }
+
+  @Test def testResampling(): Unit = {
+    val withSampling =
+      VectorTimeSeries(
+        0L -> (1, 30L)
+      )
+
+    assert(
+      withSampling.resample(10).entries == Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10))
+    )
+
+    assert(
+      withSampling.resample(20).entries == Seq(TSEntry(0, 1, 20), TSEntry(20, 1, 10))
     )
   }
 

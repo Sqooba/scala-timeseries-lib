@@ -46,9 +46,18 @@ object NumericTimeSeries {
     }
   }
 
+  def rolling[T](ts: TimeSeries[T], aggregator: Seq[T] => T, windowMs: Long)(implicit n: Numeric[T]): TimeSeries[T] =
+    ts.mapWithTime { (time, currentVal) =>
+      // values from the last `windowMs` milliseconds plus the current val
+      aggregator(
+        ts.slice(time - windowMs, time).entries.map(_.value) :+ currentVal
+      )
+    }
+
   /**
     * Compute an integral of the passed entries, such that each entry is equal
     * to its own value plus the sum of the entries that came before.
+    *
     *
     * Please note that the result is still a step function.
     */
@@ -57,7 +66,11 @@ object NumericTimeSeries {
       Seq()
     } else {
       val zero = 0
-      integrateMe[T](BigDecimal(zero), seq, new ArrayBuffer[TSEntry[BigDecimal]](seq.size))(n)
+      integrateMe[T](
+        BigDecimal(zero),
+        seq,
+        new ArrayBuffer[TSEntry[BigDecimal]](seq.size)
+      )(n)
     }
 
   @tailrec
@@ -66,11 +79,10 @@ object NumericTimeSeries {
                               seq: Seq[TSEntry[T]],
                               acc: Builder[TSEntry[BigDecimal], Seq[TSEntry[BigDecimal]]]
                             )(implicit n: Numeric[T]): Seq[TSEntry[BigDecimal]] = {
-    import n._
     if (seq.isEmpty) {
       acc.result()
     } else {
-      val newSum = sumUntilNow + mult(seq.head.value , seq.head.validity)
+      val newSum = sumUntilNow + mult(seq.head.value, seq.head.validity)
       integrateMe(newSum, seq.tail, acc += (seq.head.map(_ => newSum)))
     }
   }
@@ -78,6 +90,7 @@ object NumericTimeSeries {
   //TODO: this is ugly as s***, check what's possible with Numeric to avoid .toDouble conversion.
   def mult[T](a: T, b: Long)(implicit n: Numeric[T]): BigDecimal = {
     import n._
-    BigDecimal(a.toDouble())* BigDecimal(b)
+    BigDecimal(a.toDouble()) * BigDecimal(b)
   }
+
 }

@@ -214,6 +214,21 @@ case class TSEntry[T]
         other
     }
 
+  override def resample(sampleLengthMs: Long): TimeSeries[T] =
+    // this entry should be split
+    if (this.validity > sampleLengthMs) {
+      new TSEntry[T](this.timestamp, this.value, sampleLengthMs)
+        .append(
+          // recursively resamples the next entries
+          new TSEntry[T](
+            this.timestamp + sampleLengthMs,
+            this.value, this.validity - sampleLengthMs
+          ).resample(sampleLengthMs)
+        )
+    }
+    else {
+      this
+    }
 
 }
 

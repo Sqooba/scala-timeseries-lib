@@ -86,8 +86,46 @@ class NumericTimeSeriesTest extends JUnitSuite {
       NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 1)))
         == Seq(TSEntry(0, BigDecimal(10), 10), TSEntry(10, BigDecimal(12), 1))
     )
-
   }
 
+  @Test def testRollingFunctions(): Unit = {
+    // using min as an aggregation function for the window
+    val min = (in: Seq[Int]) => in.min
+
+    assert(
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
+        min,
+        10)
+        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10)))
+    )
+
+    assert(
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+        min,
+        20)
+        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10), TSEntry(30, 2, 10)))
+    )
+
+    assert(
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq()),
+        min,
+        20)
+        == VectorTimeSeries.ofEntriesUnsafe(Seq())
+    )
+
+    // other tests with sum
+    val sum = (in: Seq[Int]) => in.sum
+
+    assert(
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+        sum,
+        20)
+        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 3, 10), TSEntry(20, 6, 10), TSEntry(30, 9, 10)))
+    )
+  }
 
 }

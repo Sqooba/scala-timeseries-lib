@@ -121,6 +121,13 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
         other
     }
 
+  override def resample(sampleLengthMs: Long): TimeSeries[T] =
+    new VectorTimeSeries(
+      this.entries.flatMap(e =>
+        e.resample(sampleLengthMs).entries
+      ).toVector
+    )
+
 }
 
 object VectorTimeSeries {
