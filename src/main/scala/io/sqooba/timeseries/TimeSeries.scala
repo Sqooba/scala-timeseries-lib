@@ -202,6 +202,31 @@ trait TimeSeries[T] {
     */
   def resample(sampleLengthMs: Long): TimeSeries[T]
 
+  /**
+    * Compute a new time series that will contain, for any query time t, the sum
+    * of entries present in this time series that are defined for a time
+    * between t - window and t.
+    *
+    * Note: returns a step function, meaning that there is a slight level of imprecision
+    * depending on your resolution.
+    * The bigger the window is relative to individual entries' durations, the smaller the imprecision becomes.
+    *
+    * @param window width of the sliding integration window
+    * @return a TimeSeries that for any queried time will return an approximate integral of
+    *         this time series over the past window
+    */
+  def slidingIntegral(
+                       window: Long,
+                       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+                     )(implicit n: Numeric[T]): TimeSeries[Double] =
+    if (this.size() < 2) {
+      this.map(n.toDouble)
+    } else {
+      // TODO: have slidingSum return compressed output so we can use the unsafe constructor
+      // and save an iteration
+      VectorTimeSeries.ofEntriesSafe(NumericTimeSeries.slidingIntegral(this.entries, window, timeUnit))
+    }
+
 }
 
 object TimeSeries {

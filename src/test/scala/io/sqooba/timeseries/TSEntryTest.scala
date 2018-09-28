@@ -535,4 +535,10 @@ class TSEntryTest extends JUnitSuite {
 
     assert(TSEntry(0, 1, 1000).integralEntry() == TSEntry(0, 1.0, 1000))
   }
+  
+  @Test def testSlidingSum(): Unit = {
+    assert(
+      TSEntry(1, 42, 10).slidingIntegral(10)
+        == TSEntry(1, 42, 10))
+  }
 }

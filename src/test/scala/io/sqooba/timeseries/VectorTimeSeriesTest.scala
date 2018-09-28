@@ -620,5 +620,41 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(tri.integrateBetween(-10, 40) == 6)
   }
 
+  @Test def testSlidingIntegral(): Unit = {
+
+    val triA =
+      VectorTimeSeries.ofEntriesSafe(
+        Seq(
+          TSEntry(10, 1, 10),
+          TSEntry(21, 2, 2),
+          TSEntry(24, 3, 10)
+        )
+      )
+
+    assert(
+      triA.slidingIntegral(2, TimeUnit.SECONDS) ==
+        VectorTimeSeries.ofEntriesSafe(
+          Seq(
+            TSEntry(10, 10, 11),
+            TSEntry(21, 4, 3),
+            TSEntry(24, 30, 10)
+          )
+        )
+    )
+
+    assert(
+      triA.slidingIntegral(10, TimeUnit.SECONDS) ==
+        VectorTimeSeries.ofEntriesSafe(
+          Seq(
+            TSEntry(10, 10, 11),
+            TSEntry(21, 14, 3),
+            TSEntry(24, 44, 5),
+            TSEntry(29, 34, 3),
+            TSEntry(32, 30, 2)
+          )
+        )
+    )
+  }
+
   // TODO add test for constructor using the 'ofEntriesSafe' function.
 }
