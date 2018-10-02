@@ -442,7 +442,7 @@ object TimeSeries {
             if (ts + d == head.timestamp) // Continuous domain, no filling to do
               Seq.empty
             else
-              op(None, None).map(TSEntry(ts + d, _, head.timestamp)).toSeq
+              op(None, None).map(TSEntry(ts + d, _, head.timestamp - ts - d)).toSeq
           case _ => Seq.empty
         }
         val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)

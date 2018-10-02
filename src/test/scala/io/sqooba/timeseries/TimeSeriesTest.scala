@@ -389,4 +389,31 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
+  @Test def testAllDefinitionScenariosMerge(): Unit = {
+    val op =
+      (left: Option[String], right: Option[String]) =>
+        (left, right) match {
+          case (Some(a), Some(b)) => Some(s"$a|$b")
+          case (None, Some(b)) => Some(s"|$b")
+          case (Some(l), None) => Some(s"$l|")
+          case (None, None) => Some("none")
+        }
+
+    val a = Seq(TSEntry(15, "a1", 10), TSEntry(35, "a2", 10))
+    val b = Seq(TSEntry(10, "b1", 10), TSEntry(30, "b2", 10))
+
+    assert(
+      TimeSeries.mergeEntries(a)(b)(op) ==
+        Seq(
+          TSEntry(10, "|b1", 5),
+          TSEntry(15, "a1|b1", 5),
+          TSEntry(20, "a1|", 5),
+          TSEntry(25, "none", 5),
+          TSEntry(30, "|b2", 5),
+          TSEntry(35, "a2|b2", 5),
+          TSEntry(40, "a2|", 5),
+        )
+    )
+  }
+
 }
