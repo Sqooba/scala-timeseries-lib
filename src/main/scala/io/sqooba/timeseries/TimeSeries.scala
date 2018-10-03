@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import io.sqooba.timeseries.immutable.{TSEntry, VectorTimeSeries}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
 
@@ -243,33 +244,34 @@ object TimeSeries {
     if (in.size < 2) {
       in
     } else {
-      compressMe(in, new ArrayBuffer[TSEntry[T]](in.size))
-    }
+      val result = new ArrayBuffer[TSEntry[T]](in.size)
+      val toBeCompressed = mutable.Stack[TSEntry[T]](in: _*)
 
-  @tailrec
-  private def compressMe[T](in: Seq[TSEntry[T]], acc: Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] = {
-    in match {
-      case Seq(first, last) =>
-        // Only two elements remaining, we reached the end of the seq.
-        // Compress the two values if required, add to the accumulator and return the result
-        (acc ++= first.appendEntry(last)).result()
-      case Seq(first, second, tail@_*) =>
-        first.appendEntry(second) match {
-          case Seq(compressed) =>
-            // Compression occurred.
-            // We recurse without adding to the accumulator,
-            // as the next value may be compressed into this one as well
-            compressMe(compressed +: tail, acc)
-          case Seq(first, second) =>
-            // No compression occurred:
-            // the first element can be added to the accumulator,
-            // we then recurse with the second one as the head of the seq,
-            // as the following values may be compressed into it
-            acc += first
-            compressMe(second +: tail, acc)
+      while (toBeCompressed.nonEmpty) {
+        val first = toBeCompressed.pop()
+        // if there is a second value, try to compress it
+        if (toBeCompressed.nonEmpty) {
+          val second = toBeCompressed.pop()
+          first.appendEntry(second) match {
+            // it has been compressed, push the compressed entry in the
+            // "to be compressed" list, since it can be compressed with the following entrie(s)
+            case Seq(compressed) =>
+              toBeCompressed.push(compressed)
+            case Seq(one, two) =>
+              // No compression occurred:
+              // - the first element can be added to the result,
+              //  - the second element is added to "to be compressed" list, since it could be compressed
+              result.append(one)
+              toBeCompressed.push(two)
+          }
         }
+        // otherwise nothing to do
+        else {
+          result.append(first)
+        }
+      }
+      result
     }
-  }
 
   /** For any collection of TSEntries of size 2 and more, intersperses entries containing
     * fillValue between any two non-contiguous entries.
@@ -281,7 +283,7 @@ object TimeSeries {
     */
   def fillGaps[T](in: Seq[TSEntry[T]], fillValue: T): Seq[TSEntry[T]] =
     if (in.size < 2) {
-      return in
+      in
     } else {
       fillMe(in, fillValue, new ArrayBuffer[TSEntry[T]](in.size))
     }
@@ -380,7 +382,7 @@ object TimeSeries {
   : Seq[TSEntry[C]] =
   // TODO: consider moving the compression within the merging logic so we avoid a complete iteration.
     fitAndCompressTSEntries(
-      mergeEithers(Seq.empty)(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
+      mergeEithers(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
     )
 
   /**
@@ -417,38 +419,49 @@ object TimeSeries {
     * operator to be merged. Left and Right entries are passed as the first and second argument
     * of the merge operator, respectively.
     */
-  @tailrec
   def mergeEithers[A, B, C]
-  (done: Seq[TSEntry[C]]) //
-  (todo: Seq[TSEntry[Either[A, B]]])
+  (in: Seq[TSEntry[Either[A, B]]])
   (op: (Option[A], Option[B]) => Option[C])
-  : Seq[TSEntry[C]] =
-    todo match {
-      case Seq() => // Nothing remaining, we are done -> return the merged Seq
-        done
-      case Seq(head, remaining@_*) =>
-        // Take the head and all entries with which it overlaps and merge them.
-        // Remaining entries are merged via a recursive call
-        val (toMerge, nextRound) =
-          remaining.span(_.timestamp < head.definedUntil()) match {
-            case (vals :+ last, r) if last.defined(head.definedUntil) =>
-              // we need to add the part that is defined after the head to the 'nextRound' entries
-              (vals :+ last, last.trimEntryLeft(head.definedUntil) +: r)
-            case t: Any => t
-          }
-        // Check if there was some empty space between the last 'done' entry and the first remaining
-        val filling = done.lastOption match {
-          case Some(TSEntry(ts, valE, d)) =>
-            if (ts + d == head.timestamp) // Continuous domain, no filling to do
-              Seq.empty
-            else
-              op(None, None).map(TSEntry(ts + d, _, head.timestamp - ts - d)).toSeq
-          case _ => Seq.empty
-        }
-        val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
-        // Add the freshly merged entries to the previously done ones, call to self with the remaining entries.
-        mergeEithers(done ++ filling ++ TSEntry.mergeSingleToMultiple(head, toMerge)(op))(nextRound)(op)
+  : Seq[TSEntry[C]] = {
+
+    // Holds the final merged list
+    val result = new ArrayBuffer[TSEntry[C]]()
+    // Holds the current state of the entries to process
+    val current = mutable.Stack[TSEntry[Either[A, B]]](in: _*)
+
+    while (current.nonEmpty) {
+      // entries that need to be merged
+      val toMerge = new ArrayBuffer[TSEntry[Either[A, B]]]()
+      val head = current.pop()
+
+      // Take the head and all entries with which it overlaps and merge them.
+      while (current.nonEmpty && current.head.timestamp < head.definedUntil()) {
+        toMerge.append(current.pop())
+      }
+
+      // If the last entry to merge is defined after the head, it is split and added back the the list
+      // of entries to process
+      if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil())) {
+        current.push(toMerge.last.trimEntryLeft(head.definedUntil()))
+      }
+
+      // Check if there was some empty space between the last 'done' entry and the first remaining
+      val filling = result.lastOption match {
+        case Some(TSEntry(ts, _, d)) =>
+          if (ts + d == head.timestamp) // Continuous domain, no filling to do
+            Seq.empty
+          else
+            op(None, None).map(TSEntry(ts + d, _, head.timestamp - ts - d)).toSeq
+        case _ => Seq.empty
+      }
+
+      val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
+      result.append(filling: _*)
+      result.append(p: _*)
     }
+
+    result
+  }
 
   /**
     * This is needed to be able to pattern match on Vectors:
