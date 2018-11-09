@@ -6,10 +6,10 @@ import org.scalatest.junit.JUnitSuite
 
 class EmptyTimeSeriesTest extends JUnitSuite {
 
-  val ts = EmptyTimeSeries[String]()
+  val ts    = EmptyTimeSeries[String]()
   val testE = TSEntry(1, "Test", 10)
 
-  @Test def testAt: Unit = assert(ts.at(1) == None)
+  @Test def testAt: Unit = assert(ts.at(1).isEmpty)
 
   @Test def testSize: Unit = assert(ts.size == 0)
 
@@ -33,7 +33,7 @@ class EmptyTimeSeriesTest extends JUnitSuite {
     }
   }
 
-  @Test def testHeadOption: Unit = assert(ts.headOption == None)
+  @Test def testHeadOption: Unit = assert(ts.headOption.isEmpty)
 
   @Test def testLast(): Unit = {
     intercept[NoSuchElementException] {
@@ -41,7 +41,7 @@ class EmptyTimeSeriesTest extends JUnitSuite {
     }
   }
 
-  @Test def testLastOption: Unit = assert(ts.lastOption == None)
+  @Test def testLastOption: Unit = assert(ts.lastOption.isEmpty)
 
   @Test def testAppend: Unit = assert(ts.append(testE) == testE)
 

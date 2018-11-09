@@ -2,7 +2,6 @@ package io.sqooba.timeseries.immutable
 
 import io.sqooba.timeseries.TimeSeries
 
-
 /**
   * A time series that is never defined.
   */
@@ -12,7 +11,7 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def size(): Int = 0
 
-  def defined(at: Long) = false
+  def defined(at: Long): Boolean = false
 
   def trimLeft(at: Long): TimeSeries[T] = EmptyTimeSeries()
 

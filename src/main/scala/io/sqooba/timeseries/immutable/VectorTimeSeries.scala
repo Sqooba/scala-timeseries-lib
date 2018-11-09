@@ -10,8 +10,9 @@ import scala.annotation.tailrec
   * Useful for working on time series like data when no random access is required,
   * as any method requiring some sort of lookup will only run in linear time.
   */
-case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SORTED -> TODO: private constructor?
-  extends TimeSeries[T] {
+case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
+// data needs to be SORTED -> TODO: private constructor?
+    extends TimeSeries[T] {
 
   /**
     * Dichotomic search for the element in the time series for the entry
@@ -22,10 +23,11 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
     entryValidAt(t).map(_.value)
 
   def entryValidAt(t: Long): Option[TSEntry[T]] =
-    if (data.isEmpty)
+    if (data.isEmpty) {
       None
-    else
+    } else {
       lastEntryAt(t).flatMap(_._1.entryAt(t))
+    }
 
   /**
     * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
@@ -51,45 +53,48 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
   def size(): Int = data.size
 
   def trimLeft(t: Long): TimeSeries[T] =
-  // Check obvious shortcuts
-    if (data.isEmpty)
+    // Check obvious shortcuts
+    if (data.isEmpty) {
       EmptyTimeSeries()
-    else if (data.size == 1)
+    } else if (data.size == 1) {
       data.head.trimLeft(t)
-    else if (data.head.timestamp >= t)
+    } else if (data.head.timestamp >= t) {
       this
-    else
+    } else {
       lastEntryAt(t) match {
         case Some((e, idx)) =>
           data.splitAt(idx) match {
-            case (drop, _ +: keep) =>
-              if (e.defined(t))
+            case (_, _ +: keep) =>
+              if (e.defined(t)) {
                 new VectorTimeSeries(e.trimEntryLeft(t) +: keep)
-              else if (!keep.isEmpty)
+              } else if (!keep.isEmpty) {
                 new VectorTimeSeries(keep)
-              else
+              } else {
                 EmptyTimeSeries()
+              }
           }
         case _ => EmptyTimeSeries()
       }
+    }
 
   def trimRight(t: Long): TimeSeries[T] =
-    if (data.isEmpty)
+    if (data.isEmpty) {
       EmptyTimeSeries()
-    else if (data.size == 1)
+    } else if (data.size == 1) {
       data.last.trimRight(t)
-    else
+    } else {
       lastEntryAt(t - 1) match {
         case Some((e, 0)) => // First element: trim and return it
           e.trimRight(t)
         case Some((e, idx)) =>
           data.splitAt(idx) match {
             // First of the last elements is valid and may need trimming. Others can be forgotten.
-            case (noChange, lastAndDrop) =>
+            case (noChange, _) =>
               new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
           }
         case _ => EmptyTimeSeries()
       }
+    }
 
   def entries: Seq[TSEntry[T]] = data
 
@@ -106,7 +111,8 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
       case None => // other is empty, nothing to do.
         this
       case Some(tse) if tse.timestamp > head.timestamp => // Something to keep from the current TS
-        VectorTimeSeries.ofEntriesUnsafe(this.trimRight(tse.timestamp).entries ++ other.entries)
+        VectorTimeSeries
+          .ofEntriesUnsafe(this.trimRight(tse.timestamp).entries ++ other.entries)
       case _ => // Nothing to keep, other overwrites this TS completely
         other
     }
@@ -115,17 +121,19 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]]) // data needs to be SOR
     other.lastOption match {
       case None => // other is empty, nothing to do.
         this
-      case Some(tse) if tse.definedUntil < last.definedUntil => // Something to keep from the current TS
-        VectorTimeSeries.ofEntriesUnsafe(other.entries ++ this.trimLeft(tse.definedUntil).entries)
+      case Some(tse) if tse.definedUntil < last.definedUntil =>
+        // Something to keep from the current TS
+        VectorTimeSeries.ofEntriesUnsafe(
+          other.entries ++
+          this.trimLeft(tse.definedUntil).entries
+        )
       case _ => // Nothing to keep, other overwrites this TS completely
         other
     }
 
   override def resample(sampleLengthMs: Long): TimeSeries[T] =
     new VectorTimeSeries(
-      this.entries.flatMap(e =>
-        e.resample(sampleLengthMs).entries
-      ).toVector
+      this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
     )
 
 }
@@ -138,7 +146,7 @@ object VectorTimeSeries {
     *          - fitted to each other (no overlaps)
     */
   def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
-  // TODO: Expect entries to be sorted and just check?
+    // TODO: Expect entries to be sorted and just check?
     new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sortBy(_.timestamp)): _*))
 
   /**
@@ -156,17 +164,15 @@ object VectorTimeSeries {
     *
     * Some(entry, index) is returned if such an entry exists, None otherwise.
     */
-  def dichotomicSearch[T](
-                           data: IndexedSeq[TSEntry[T]],
-                           ts: Long): Option[(TSEntry[T], Int)] =
-  // Dichotomic search for a candidate
+  def dichotomicSearch[T](data: IndexedSeq[TSEntry[T]], ts: Long): Option[(TSEntry[T], Int)] =
+    // Dichotomic search for a candidate
     dichotomic(data, ts, 0, data.size - 1) match {
       // Result is either 0, or the search failed
       case 0 => data.headOption.filter(_.timestamp <= ts).map((_, 0))
       case i: Int =>
         data(i) match {
           case e: TSEntry[T] if (e.timestamp <= ts) => Some((e, i))
-          case _ => Some(data(i - 1), i - 1)
+          case _                                    => Some(data(i - 1), i - 1)
         }
     }
 
@@ -183,20 +189,20 @@ object VectorTimeSeries {
     */
   @tailrec
   private def dichotomic[T](
-                             data: IndexedSeq[TSEntry[T]],
-                             target: Long,
-                             lower: Int,
-                             upper: Int,
-                             previousPivot: Int = 0 // Default to 0 for initial call
-                           ): Int = {
-    if (lower > upper)
+      data: IndexedSeq[TSEntry[T]],
+      target: Long,
+      lower: Int,
+      upper: Int,
+      previousPivot: Int = 0 // Default to 0 for initial call
+  ): Int = {
+    if (lower > upper) {
       previousPivot
-    else {
+    } else {
       val newPivot = (lower + upper) / 2
       data(newPivot).timestamp match {
         case after: Long if (after > target) => // Pivot is after target: 'upper' becomes pivot - 1
           dichotomic(data, target, lower, newPivot - 1, newPivot)
-        case before: Long => // Pivot is before target: 'lower' becomes pivot + 1
+        case _: Long => // Pivot is before target: 'lower' becomes pivot + 1
           dichotomic(data, target, newPivot + 1, upper, newPivot)
       }
     }

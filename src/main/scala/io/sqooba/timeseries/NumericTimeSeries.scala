@@ -14,12 +14,11 @@ object NumericTimeSeries {
     * Defensive 'plus' operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */
-  def strictPlus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T])
-  : Option[T] = {
+  def strictPlus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
     import n._
     (lhO, rhO) match {
       case (Some(l), Some(r)) => Some(l + r)
-      case _ => None
+      case _                  => None
     }
   }
 
@@ -27,12 +26,11 @@ object NumericTimeSeries {
     * Defensive 'minus' operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */
-  def strictMinus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T])
-  : Option[T] = {
+  def strictMinus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
     import n._
     (lhO, rhO) match {
       case (Some(l), Some(r)) => Some(l - r)
-      case _ => None
+      case _                  => None
     }
   }
 
@@ -40,12 +38,11 @@ object NumericTimeSeries {
     * Defensive multiplication operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */
-  def strictMultiply[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T])
-  : Option[T] = {
+  def strictMultiply[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
     import n._
     (lhO, rhO) match {
       case (Some(l), Some(r)) => Some(l * r)
-      case _ => None
+      case _                  => None
     }
   }
 
@@ -64,25 +61,19 @@ object NumericTimeSeries {
     *
     * Please note that the result is still a step function.
     */
-  def stepIntegral[T](seq: Seq[TSEntry[T]], timeUnit: TimeUnit = TimeUnit.MILLISECONDS)
-                     (implicit n: Numeric[T]): Seq[TSEntry[Double]] =
+  def stepIntegral[T](seq: Seq[TSEntry[T]], timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
     if (seq.isEmpty) {
       Seq()
     } else {
-      integrateMe[T](
-        .0,
-        seq,
-        new ArrayBuffer[TSEntry[Double]](seq.size))(timeUnit)(n)
+      integrateMe[T](.0, seq, new ArrayBuffer[TSEntry[Double]](seq.size))(timeUnit)(n)
     }
 
   @tailrec
   private def integrateMe[T](
-                              sumUntilNow: Double,
-                              seq: Seq[TSEntry[T]],
-                              acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
-                            )
-                            (timeUnit: TimeUnit)
-                            (implicit n: Numeric[T]): Seq[TSEntry[Double]] = {
+      sumUntilNow: Double,
+      seq: Seq[TSEntry[T]],
+      acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
+  )(timeUnit: TimeUnit)(implicit n: Numeric[T]): Seq[TSEntry[Double]] = {
     if (seq.isEmpty) {
       acc.result()
     } else {
@@ -99,11 +90,7 @@ object NumericTimeSeries {
     */
   // TODO: return output guaranteed to be compressed
   // TODO: implement a "real" integral as this is darn imprecise.
-  def slidingIntegral[T](
-                          entries: Seq[TSEntry[T]],
-                          window: Long,
-                          timeUnit: TimeUnit = TimeUnit.MILLISECONDS)
-                        (implicit n: Numeric[T]): Seq[TSEntry[Double]] =
+  def slidingIntegral[T](entries: Seq[TSEntry[T]], window: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
     if (window < 1) {
       throw new IllegalArgumentException("Window must be strictly positive. Was " + window)
     } else if (entries.isEmpty) {
@@ -127,18 +114,18 @@ object NumericTimeSeries {
 
   @tailrec
   def slideMySum[T](
-                     remaining: Seq[TSEntry[T]],
-                     inWindow: Seq[TSEntry[T]],
-                     previousIntegral: Double,
-                     windowHeadTime: Long,
-                     acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
-                   )(
-                     windowLength: Long,
-                     endOfTime: Long,
-                     timeUnit: TimeUnit
-                   )(
-                     implicit n: Numeric[T]
-                   ): Seq[TSEntry[Double]] = {
+      remaining: Seq[TSEntry[T]],
+      inWindow: Seq[TSEntry[T]],
+      previousIntegral: Double,
+      windowHeadTime: Long,
+      acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
+  )(
+      windowLength: Long,
+      endOfTime: Long,
+      timeUnit: TimeUnit
+  )(
+      implicit n: Numeric[T]
+  ): Seq[TSEntry[Double]] = {
 
     if (windowHeadTime == endOfTime) {
       // For now we stop here
@@ -154,7 +141,7 @@ object NumericTimeSeries {
     val nextHeadTime =
       nextSumWindowAdvance(nextRemaining, nextWindow, windowHeadTime, windowTailTime)(endOfTime)
 
-    if (!nextWindow.isEmpty) {
+    if (nextWindow.nonEmpty) {
       // Currently only add an entry to the result if the current window is non-empty
       // TODO think about the merits of doing this?
       // This is both so that we have a 'unit operator when window is size 1' as well
@@ -174,69 +161,69 @@ object NumericTimeSeries {
   }
 
   /**
-    * @return how far we may advance the window until we reach a point where we need to add or remove something,
-    *         or we reach the end of the domain we wish to compute a sliding window for.
+    * @return how far we may advance the window until we reach a point where
+    *         we need to add or remove something, or we reach the end of the
+    *         domain we wish to compute a sliding window for.
     */
   def nextSumWindowAdvance[T](
-                     remaining: Seq[TSEntry[T]],
-                     inWindow: Seq[TSEntry[T]],
-                     windowHeadTime: Long,
-                     windowTailTime: Long
-                   )(endOfTime: Long) =
-  // TODO make this if/else block nicer?
+      remaining: Seq[TSEntry[T]],
+      inWindow: Seq[TSEntry[T]],
+      windowHeadTime: Long,
+      windowTailTime: Long
+  )(endOfTime: Long): Long = {
+    // TODO make this if/else block nicer?
     if (remaining.isEmpty) {
       windowHeadTime +
-        Math.min(
-          // Time to end of domain of interest, as there will be no new entries to add
-          endOfTime - windowHeadTime,
-          // Time to next entry to leave the window
-          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-        )
+      Math.min(
+        // Time to end of domain of interest, as there will be no new entries to add
+        endOfTime - windowHeadTime,
+        // Time to next entry to leave the window
+        inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
+      )
     } else {
       windowHeadTime +
-        Math.min(
-          // Time to next entry to enter the window, if there is any
-          remaining.headOption.map(_.timestamp - windowHeadTime).getOrElse(Long.MaxValue),
-          // Time to next entry to leave the window
-          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-        )
+      Math.min(
+        // Time to next entry to enter the window, if there is any
+        remaining.headOption.map(_.timestamp - windowHeadTime).getOrElse(Long.MaxValue),
+        // Time to next entry to leave the window
+        inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
+      )
     }
-
+  }
 
   /**
-    * Return a (remaining, inWindow) adapted from the passed 'remaining' and 'inWindow' entries according
-    * to the specified window head and tail times.
+    * Return a (remaining, inWindow) adapted from the passed 'remaining'
+    * and 'inWindow' entries according to the specified window head and tail times.
     */
   def updateCollectionsAndSum[T](
-                                  remaining: Seq[TSEntry[T]],
-                                  inWindow: Seq[TSEntry[T]],
-                                  currentIntegral: Double,
-                                  windowHeadTime: Long,
-                                  windowTailTime: Long,
-                                  timeUnit: TimeUnit
-                                )(implicit n: Numeric[T]): (Seq[TSEntry[T]], Seq[TSEntry[T]], Double) = {
+      remaining: Seq[TSEntry[T]],
+      inWindow: Seq[TSEntry[T]],
+      currentIntegral: Double,
+      windowHeadTime: Long,
+      windowTailTime: Long,
+      timeUnit: TimeUnit
+  )(implicit n: Numeric[T]): (Seq[TSEntry[T]], Seq[TSEntry[T]], Double) = {
 
     (remaining.headOption, inWindow.headOption) match {
       // Both window head and tail are defined, and reached a new entry and an existing entry's end
       case (Some(next), Some(last))
-        if next.timestamp == windowHeadTime
+          if next.timestamp == windowHeadTime
           && last.definedUntil == windowTailTime =>
         (
-          remaining.tail, // Remove head from remaining
-          inWindow.tail :+ next, // Keep current window's tail (head needs to be removed) and add remaining's head
+          remaining.tail,        // Remove head from remaining
+          inWindow.tail :+ next, // Keep current window's tail (head needs to be removed)
+          // and add remaining's head
           currentIntegral - last.integral(timeUnit) + next.integral(timeUnit)
         )
 
-      case (Some(next), _)
-        if next.timestamp == windowHeadTime =>
+      case (Some(next), _) if next.timestamp == windowHeadTime =>
         // the window head reached an entry which now needs to be added
         (
           remaining.tail, // Remove head from remaining
           inWindow :+ next, // Add remaining's head to current window content
           currentIntegral + next.integral(timeUnit)
         )
-      case (_, Some(last))
-        if last.definedUntil == windowTailTime =>
+      case (_, Some(last)) if last.definedUntil == windowTailTime =>
         // the window tail reached the end of an entry's domain: it needs to be removed
         (
           remaining, // remaining remains as-is
@@ -247,5 +234,4 @@ object NumericTimeSeries {
         throw new IllegalArgumentException("expecting exact boundary matches")
     }
   }
-
 }

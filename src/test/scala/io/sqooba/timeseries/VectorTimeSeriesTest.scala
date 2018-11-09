@@ -14,17 +14,13 @@ class VectorTimeSeriesTest extends JUnitSuite {
   val single = VectorTimeSeries(1L -> ("Hi", 10L))
 
   // Two contiguous entries
-  val contig2 = VectorTimeSeries(1L -> ("Hi", 10L),
-    11L -> ("Ho", 10L))
+  val contig2 = VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L))
 
-  // Two entries with a gap in between            
-  val discon2 = VectorTimeSeries(1L -> ("Hi", 10L),
-    12L -> ("Ho", 10L))
+  // Two entries with a gap in between
+  val discon2 = VectorTimeSeries(1L -> ("Hi", 10L), 12L -> ("Ho", 10L))
 
   // Three entries, gap between first and second
-  val three = VectorTimeSeries(1L -> ("Hi", 10L),
-    12L -> ("Ho", 10L),
-    22L -> ("Ha", 10L))
+  val three = VectorTimeSeries(1L -> ("Hi", 10L), 12L -> ("Ho", 10L), 22L -> ("Ha", 10L))
 
   @Test def testAtNSize() {
     // Check empty
@@ -145,17 +141,20 @@ class VectorTimeSeriesTest extends JUnitSuite {
     // ... and after the second entry:
     assert(EmptyTimeSeries() == discon2.trimLeft(22))
 
-
     // Trim on a three element time series with a discontinuity
     // Left of the first entry
     assert(three == three.trimLeft(0))
     assert(three == three.trimLeft(1))
 
     // Trimming on the first entry
-    assert(Seq(TSEntry(2, "Hi", 9), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 10)) ==
-      three.trimLeft(2).entries)
-    assert(Seq(TSEntry(10, "Hi", 1), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 10)) ==
-      three.trimLeft(10).entries)
+    assert(
+      Seq(TSEntry(2, "Hi", 9), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 10)) ==
+        three.trimLeft(2).entries
+    )
+    assert(
+      Seq(TSEntry(10, "Hi", 1), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 10)) ==
+        three.trimLeft(10).entries
+    )
 
     // Trimming between entries:
     assert(Seq(TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 10)) == three.trimLeft(11).entries)
@@ -171,7 +170,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(23, "Ha", 9)) == three.trimLeft(23).entries)
     assert(Seq(TSEntry(31, "Ha", 1)) == three.trimLeft(31).entries)
 
-    //... and after every entry.
+    // ... and after every entry.
     assert(EmptyTimeSeries() == three.trimLeft(32))
   }
 
@@ -236,17 +235,20 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(EmptyTimeSeries() == discon2.trimRight(1))
     assert(EmptyTimeSeries() == discon2.trimRight(0))
 
-
     // Trim on a three element time series with a discontinuity
     // Right of the last entry
     assert(three == three.trimRight(33))
     assert(three == three.trimRight(32))
 
     // Trimming on the last entry
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 9)) ==
-      three.trimRight(31).entries)
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 1)) ==
-      three.trimRight(23).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 9)) ==
+        three.trimRight(31).entries
+    )
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10), TSEntry(22, "Ha", 1)) ==
+        three.trimRight(23).entries
+    )
 
     // Trimming between 2nd and 3rd entries:
     assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10)) == three.trimRight(22).entries)
@@ -263,17 +265,14 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(1, "Hi", 9)) == three.trimRight(10).entries)
     assert(Seq(TSEntry(1, "Hi", 1)) == three.trimRight(2).entries)
 
-    //... and after every entry.
+    // ... and after every entry.
     assert(EmptyTimeSeries() == three.trimRight(1))
     assert(EmptyTimeSeries() == three.trimRight(0))
   }
 
   @Test def testSplit() {
     val tri =
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ho", 10L),
-        20L -> ("Hu", 10L))
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
     assert(tri.split(-1) == (EmptyTimeSeries(), tri))
     assert(tri.split(0) == (EmptyTimeSeries(), tri))
     assert(tri.split(1) == (tri.trimRight(1), tri.trimLeft(1)))
@@ -290,10 +289,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testMap() {
     val tri =
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ho", 10L),
-        20L -> ("Hu", 10L))
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
 
     val up = tri.map(s => s.toUpperCase())
     assert(3 == up.size())
@@ -304,10 +300,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testMapWithTime() {
     val tri =
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ho", 10L),
-        20L -> ("Hu", 10L))
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
 
     val up = tri.mapWithTime((t, s) => s.toUpperCase() + t)
     assert(3 == up.size())
@@ -318,199 +311,250 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testFillContiguous(): Unit = {
     val tri =
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ho", 10L),
-        20L -> ("Hu", 10L))
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
 
     assert(tri.fill("Ha") == tri)
   }
 
   @Test def testFill(): Unit = {
     val tri =
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        20L -> ("Ho", 10L),
-        40L -> ("Hu", 10L))
+      VectorTimeSeries(0L -> ("Hi", 10L), 20L -> ("Ho", 10L), 40L -> ("Hu", 10L))
 
-    assert(tri.fill("Ha") ==
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ha", 10L),
-        20L -> ("Ho", 10L),
-        30L -> ("Ha", 10L),
-        40L -> ("Hu", 10L)
-      )
+    assert(
+      tri.fill("Ha") ==
+        VectorTimeSeries(
+          0L  -> ("Hi", 10L),
+          10L -> ("Ha", 10L),
+          20L -> ("Ho", 10L),
+          30L -> ("Ha", 10L),
+          40L -> ("Hu", 10L)
+        )
     )
 
-    assert(tri.fill("Hi") ==
-      VectorTimeSeries(
-        0L -> ("Hi", 20L),
-        20L -> ("Ho", 10L),
-        30L -> ("Hi", 10L),
-        40L -> ("Hu", 10L)
-      )
+    assert(
+      tri.fill("Hi") ==
+        VectorTimeSeries(
+          0L  -> ("Hi", 20L),
+          20L -> ("Ho", 10L),
+          30L -> ("Hi", 10L),
+          40L -> ("Hu", 10L)
+        )
     )
 
-    assert(tri.fill("Ho") ==
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Ho", 30L),
-        40L -> ("Hu", 10L)
-      )
+    assert(
+      tri.fill("Ho") ==
+        VectorTimeSeries(
+          0L  -> ("Hi", 10L),
+          10L -> ("Ho", 30L),
+          40L -> ("Hu", 10L)
+        )
     )
 
-    assert(tri.fill("Hu") ==
-      VectorTimeSeries(
-        0L -> ("Hi", 10L),
-        10L -> ("Hu", 10L),
-        20L -> ("Ho", 10L),
-        30L -> ("Hu", 20L)
-      )
+    assert(
+      tri.fill("Hu") ==
+        VectorTimeSeries(
+          0L  -> ("Hi", 10L),
+          10L -> ("Hu", 10L),
+          20L -> ("Ho", 10L),
+          30L -> ("Hu", 20L)
+        )
     )
   }
 
   @Test def appendEntry() {
     val tri =
-      VectorTimeSeries(
-        1L -> ("Hi", 10L),
-        11L -> ("Ho", 10L),
-        21L -> ("Hu", 10L))
+      VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L), 21L -> ("Hu", 10L))
 
     // Appending after...
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(32, "Hy", 10))
-      == tri.append(TSEntry(32, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(32, "Hy", 10))
+        == tri.append(TSEntry(32, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(31, "Hy", 10))
-      == tri.append(TSEntry(31, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10), TSEntry(31, "Hy", 10))
+        == tri.append(TSEntry(31, "Hy", 10)).entries
+    )
 
     // Appending on last entry
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 9), TSEntry(30, "Hy", 10))
-      == tri.append(TSEntry(30, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 9), TSEntry(30, "Hy", 10))
+        == tri.append(TSEntry(30, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 1), TSEntry(22, "Hy", 10))
-      == tri.append(TSEntry(22, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 1), TSEntry(22, "Hy", 10))
+        == tri.append(TSEntry(22, "Hy", 10)).entries
+    )
 
     // ... just after and on second entry
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hy", 10))
-      == tri.append(TSEntry(21, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hy", 10))
+        == tri.append(TSEntry(21, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9), TSEntry(20, "Hy", 10))
-      == tri.append(TSEntry(20, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9), TSEntry(20, "Hy", 10))
+        == tri.append(TSEntry(20, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 1), TSEntry(12, "Hy", 10))
-      == tri.append(TSEntry(12, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 1), TSEntry(12, "Hy", 10))
+        == tri.append(TSEntry(12, "Hy", 10)).entries
+    )
 
     // ... just after and on first
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Hy", 10))
-      == tri.append(TSEntry(11, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Hy", 10))
+        == tri.append(TSEntry(11, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Hy", 10))
-      == tri.append(TSEntry(10, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Hy", 10))
+        == tri.append(TSEntry(10, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Hy", 10))
-      == tri.append(TSEntry(2, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Hy", 10))
+        == tri.append(TSEntry(2, "Hy", 10)).entries
+    )
 
     // And complete override
-    assert(Seq(TSEntry(1, "Hy", 10))
-      == tri.append(TSEntry(1, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hy", 10))
+        == tri.append(TSEntry(1, "Hy", 10)).entries
+    )
 
   }
 
   @Test def prependEntry() {
     val tri =
-      VectorTimeSeries(
-        1L -> ("Hi", 10L),
-        11L -> ("Ho", 10L),
-        21L -> ("Hu", 10L))
+      VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L), 21L -> ("Hu", 10L))
 
     // Prepending before...
-    assert(Seq(TSEntry(-10, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(-10, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(-10, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-10, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(-9, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(-9, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(-9, "Hy", 10), TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-9, "Hy", 10)).entries
+    )
 
     // Overlaps with first entry
-    assert(Seq(TSEntry(-8, "Hy", 10), TSEntry(2, "Hi", 9), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(-8, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(-8, "Hy", 10), TSEntry(2, "Hi", 9), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(-8, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(0, "Hy", 10), TSEntry(10, "Hi", 1), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(0, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(0, "Hy", 10), TSEntry(10, "Hi", 1), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(0, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hy", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(1, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hy", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(1, "Hy", 10)).entries
+    )
 
     // ... second entry
-    assert(Seq(TSEntry(2, "Hy", 10), TSEntry(12, "Ho", 9), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(2, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(2, "Hy", 10), TSEntry(12, "Ho", 9), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(2, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(10, "Hy", 10), TSEntry(20, "Ho", 1), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(10, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(10, "Hy", 10), TSEntry(20, "Ho", 1), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(10, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(11, "Hy", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(TSEntry(11, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(11, "Hy", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(TSEntry(11, "Hy", 10)).entries
+    )
 
     // ... third entry
-    assert(Seq(TSEntry(12, "Hy", 10), TSEntry(22, "Hu", 9))
-      == tri.prepend(TSEntry(12, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(12, "Hy", 10), TSEntry(22, "Hu", 9))
+        == tri.prepend(TSEntry(12, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(20, "Hy", 10), TSEntry(30, "Hu", 1))
-      == tri.prepend(TSEntry(20, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(20, "Hy", 10), TSEntry(30, "Hu", 1))
+        == tri.prepend(TSEntry(20, "Hy", 10)).entries
+    )
 
     // Complete override
-    assert(Seq(TSEntry(21, "Hy", 10))
-      == tri.prepend(TSEntry(21, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(21, "Hy", 10))
+        == tri.prepend(TSEntry(21, "Hy", 10)).entries
+    )
 
-    assert(Seq(TSEntry(22, "Hy", 10))
-      == tri.prepend(TSEntry(22, "Hy", 10)).entries)
+    assert(
+      Seq(TSEntry(22, "Hy", 10))
+        == tri.prepend(TSEntry(22, "Hy", 10)).entries
+    )
   }
 
-  def testTs(startsAt: Long) = VectorTimeSeries(
-    startsAt -> ("Ai", 10L),
+  def testTs(startsAt: Long): VectorTimeSeries[String] = VectorTimeSeries(
+    startsAt      -> ("Ai", 10L),
     startsAt + 10 -> ("Ao", 10L),
     startsAt + 20 -> ("Au", 10L)
   )
 
   @Test def appendTs() {
-    // Append a multi-entry TS at various times on the entry  
+    // Append a multi-entry TS at various times on the entry
 
     val tri =
-      VectorTimeSeries(
-        1L -> ("Hi", 10L),
-        11L -> ("Ho", 10L),
-        21L -> ("Hu", 10L))
+      VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L), 21L -> ("Hu", 10L))
 
     // Append after all entries
     assert(tri.entries ++ testTs(31).entries == tri.append(testTs(31)).entries)
     assert(tri.entries ++ testTs(32).entries == tri.append(testTs(32)).entries)
 
     // On last
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 9)) ++ testTs(30).entries
-      == tri.append(testTs(30)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 9)) ++ testTs(30).entries
+        == tri.append(testTs(30)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 1)) ++ testTs(22).entries
-      == tri.append(testTs(22)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 1)) ++ testTs(22).entries
+        == tri.append(testTs(22)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) ++ testTs(21).entries
-      == tri.append(testTs(21)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) ++ testTs(21).entries
+        == tri.append(testTs(21)).entries
+    )
 
     // On second
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9)) ++ testTs(20).entries
-      == tri.append(testTs(20)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9)) ++ testTs(20).entries
+        == tri.append(testTs(20)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 1)) ++ testTs(12).entries
-      == tri.append(testTs(12)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 1)) ++ testTs(12).entries
+        == tri.append(testTs(12)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 10)) ++ testTs(11).entries
-      == tri.append(testTs(11)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 10)) ++ testTs(11).entries
+        == tri.append(testTs(11)).entries
+    )
 
     // On first
-    assert(Seq(TSEntry(1, "Hi", 9)) ++ testTs(10).entries
-      == tri.append(testTs(10)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 9)) ++ testTs(10).entries
+        == tri.append(testTs(10)).entries
+    )
 
-    assert(Seq(TSEntry(1, "Hi", 1)) ++ testTs(2).entries
-      == tri.append(testTs(2)).entries)
+    assert(
+      Seq(TSEntry(1, "Hi", 1)) ++ testTs(2).entries
+        == tri.append(testTs(2)).entries
+    )
 
     assert(testTs(1).entries == tri.append(testTs(1)).entries)
     assert(testTs(0).entries == tri.append(testTs(0)).entries)
@@ -519,41 +563,54 @@ class VectorTimeSeriesTest extends JUnitSuite {
   @Test def prependTs() {
     // Prepend a multi-entry TS at various times on the entry
     val tri =
-      VectorTimeSeries(
-        1L -> ("Hi", 10L),
-        11L -> ("Ho", 10L),
-        21L -> ("Hu", 10L))
+      VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L), 21L -> ("Hu", 10L))
 
     // Before all entries
     assert(testTs(-30).entries ++ tri.entries == tri.prepend(testTs(-30)).entries)
     assert(testTs(-29).entries ++ tri.entries == tri.prepend(testTs(-29)).entries)
 
     // On first
-    assert(testTs(-28).entries ++ Seq(TSEntry(2, "Hi", 9), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-28)).entries)
+    assert(
+      testTs(-28).entries ++ Seq(TSEntry(2, "Hi", 9), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-28)).entries
+    )
 
-    assert(testTs(-20).entries ++ Seq(TSEntry(10, "Hi", 1), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-20)).entries)
+    assert(
+      testTs(-20).entries ++ Seq(TSEntry(10, "Hi", 1), TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-20)).entries
+    )
 
-    assert(testTs(-19).entries ++ Seq(TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-19)).entries)
+    assert(
+      testTs(-19).entries ++ Seq(TSEntry(11, "Ho", 10), TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-19)).entries
+    )
 
     // On second
-    assert(testTs(-18).entries ++ Seq(TSEntry(12, "Ho", 9), TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-18)).entries)
+    assert(
+      testTs(-18).entries ++ Seq(TSEntry(12, "Ho", 9), TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-18)).entries
+    )
 
-    assert(testTs(-10).entries ++ Seq(TSEntry(20, "Ho", 1), TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-10)).entries)
+    assert(
+      testTs(-10).entries ++ Seq(TSEntry(20, "Ho", 1), TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-10)).entries
+    )
 
-    assert(testTs(-9).entries ++ Seq(TSEntry(21, "Hu", 10))
-      == tri.prepend(testTs(-9)).entries)
+    assert(
+      testTs(-9).entries ++ Seq(TSEntry(21, "Hu", 10))
+        == tri.prepend(testTs(-9)).entries
+    )
 
-    // On third  
-    assert(testTs(-8).entries ++ Seq(TSEntry(22, "Hu", 9))
-      == tri.prepend(testTs(-8)).entries)
+    // On third
+    assert(
+      testTs(-8).entries ++ Seq(TSEntry(22, "Hu", 9))
+        == tri.prepend(testTs(-8)).entries
+    )
 
-    assert(testTs(0).entries ++ Seq(TSEntry(30, "Hu", 1))
-      == tri.prepend(testTs(0)).entries)
+    assert(
+      testTs(0).entries ++ Seq(TSEntry(30, "Hu", 1))
+        == tri.prepend(testTs(0)).entries
+    )
 
     assert(testTs(1).entries == tri.prepend(testTs(1)).entries)
     assert(testTs(2).entries == tri.prepend(testTs(2)).entries)
@@ -562,14 +619,10 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testStepIntegral(): Unit = {
     val tri =
-      VectorTimeSeries(
-        0L -> (1, 10L),
-        10L -> (2, 10L),
-        20L -> (3, 10L))
+      VectorTimeSeries(0L -> (1, 10L), 10L -> (2, 10L), 20L -> (3, 10L))
 
     tri.stepIntegral(10, TimeUnit.SECONDS).entries ==
       Seq(TSEntry(0, 10.0, 10), TSEntry(10, 30.0, 10), TSEntry(20, 60.0, 10))
-
 
     val withSampling =
       VectorTimeSeries(
@@ -599,10 +652,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testIntegrateBetween(): Unit = {
     val tri =
-      VectorTimeSeries(
-        0L -> (1, 10L),
-        10L -> (2, 10L),
-        20L -> (3, 10L))
+      VectorTimeSeries(0L -> (1, 10L), 10L -> (2, 10L), 20L -> (3, 10L))
 
     assert(tri.integrateBetween(-10, 0) == 0)
     assert(tri.integrateBetween(0, 5) == 1)

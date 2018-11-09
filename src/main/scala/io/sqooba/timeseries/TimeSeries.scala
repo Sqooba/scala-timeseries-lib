@@ -120,49 +120,43 @@ trait TimeSeries[T] {
     * bounds defined by min(this.head.timestamp, other.head.timestamp) and
     * max(this.last.definedUntil, other.last.definedUntil)
     */
-  def merge[O, R]
-  (op: (Option[T], Option[O]) => Option[R])
-  (other: TimeSeries[O])
-  : TimeSeries[R] =
-    VectorTimeSeries.ofEntriesUnsafe(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(op))
+  def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
+    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
 
   /**
     * Sum the entries within this and the provided time series such that
     * this.at(x) + other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def plus(other: TimeSeries[T])(implicit n: Numeric[T]) =
-    VectorTimeSeries.ofEntriesUnsafe(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_, _)(n)))
+  def plus(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_, _)(n)))
 
-  def +(other: TimeSeries[T])(implicit n: Numeric[T]) = plus(other)
+  def +(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = plus(other)
 
   /**
     * Subtract the entries within this and the provided time series such that
     * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def minus(other: TimeSeries[T])(implicit n: Numeric[T]) =
-    VectorTimeSeries.ofEntriesUnsafe(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_, _)(n)))
+  def minus(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_, _)(n)))
 
-  def -(other: TimeSeries[T])(implicit n: Numeric[T]) = minus(other)
+  def -(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = minus(other)
 
   /**
     * Multiply the entries within this and the provided time series such that
     * this.at(x) * other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def multiply(other: TimeSeries[T])(implicit n: Numeric[T]) =
-    VectorTimeSeries.ofEntriesUnsafe(
-      TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_, _)(n)))
+  def multiply(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_, _)(n)))
 
-  def *(other: TimeSeries[T])(implicit n: Numeric[T]) = multiply(other)
+  def *(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = multiply(other)
 
   /**
-    * Zips this time series with another one, returning a time series of tuples containing the values from
-    * both this and the other time series across their common domain.
+    * Zips this time series with another one, returning a time series
+    * of tuples containing the values from both this and the other time
+    * series across their common domain.
     */
   def strictZip[O](other: TimeSeries[O]): TimeSeries[(T, O)] =
     merge(
@@ -172,7 +166,7 @@ trait TimeSeries[T] {
   private def strictZipOp[L, R](left: Option[L], right: Option[R]): Option[(L, R)] =
     (left, right) match {
       case (Some(l), Some(r)) => Some((l, r))
-      case _ => None
+      case _                  => None
     }
 
   /**
@@ -180,13 +174,14 @@ trait TimeSeries[T] {
     * This function returns a step function, so only represents an approximation.
     * Use it if you need to compute multiple integrals of the same time series.
     */
-  def stepIntegral(stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]) =
+  def stepIntegral(stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): VectorTimeSeries[Double] = {
     VectorTimeSeries.ofEntriesUnsafe(
       NumericTimeSeries.stepIntegral(
         this.resample(stepLengthMs).entries,
         timeUnit
       )
     )
+  }
 
   /**
     * Compute the integral of this time series between the two specified points.
@@ -217,15 +212,16 @@ trait TimeSeries[T] {
     *         this time series over the past window
     */
   def slidingIntegral(
-                       window: Long,
-                       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-                     )(implicit n: Numeric[T]): TimeSeries[Double] =
+      window: Long,
+      timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+  )(implicit n: Numeric[T]): TimeSeries[Double] =
     if (this.size() < 2) {
       this.map(n.toDouble)
     } else {
       // TODO: have slidingSum return compressed output so we can use the unsafe constructor
       // and save an iteration
-      VectorTimeSeries.ofEntriesSafe(NumericTimeSeries.slidingIntegral(this.entries, window, timeUnit))
+      VectorTimeSeries
+        .ofEntriesSafe(NumericTimeSeries.slidingIntegral(this.entries, window, timeUnit))
     }
 
 }
@@ -244,7 +240,7 @@ object TimeSeries {
     if (in.size < 2) {
       in
     } else {
-      val result = new ArrayBuffer[TSEntry[T]](in.size)
+      val result         = new ArrayBuffer[TSEntry[T]](in.size)
       val toBeCompressed = mutable.Stack[TSEntry[T]](in: _*)
 
       while (toBeCompressed.nonEmpty) {
@@ -294,7 +290,7 @@ object TimeSeries {
       case Seq(first, last) =>
         // Only two elements remaining: the recursion can end
         (acc ++= fillAndCompress(first, last, fillValue)).result()
-      case Seq(first, second, tail@_*) =>
+      case Seq(first, second, tail @ _*) =>
         // Fill the gap, and check the result
         fillAndCompress(first, second, fillValue) match {
           // the above may return 1, 2 or 3 entries,
@@ -317,8 +313,9 @@ object TimeSeries {
         }
     }
 
-  /** Returns a Sequence of entries such that there is no discontinuity between current.timestamp
-    * and next.definedUntil, filling the gap between the entries and compression them if necessary. */
+  /** Returns a Sequence of entries such that there is no discontinuity
+    * between current.timestamp and next.definedUntil, filling the gap
+    * between the entries and compression them if necessary. */
   def fillAndCompress[T](first: TSEntry[T], second: TSEntry[T], fillValue: T): Seq[TSEntry[T]] = {
     if (first.definedUntil() == second.timestamp) {
       // Entries contiguous.
@@ -326,10 +323,7 @@ object TimeSeries {
     } else {
       // There is space to fill
       first.appendEntry(
-        TSEntry(
-          first.definedUntil(),
-          fillValue,
-          second.timestamp - first.definedUntil())
+        TSEntry(first.definedUntil(), fillValue, second.timestamp - first.definedUntil())
       ) match {
         case Seq(single) =>
           // 'first' was extended.
@@ -375,12 +369,8 @@ object TimeSeries {
     *
     * Assumes a and b to be ORDERED!
     */
-  def mergeEntries[A, B, C]
-  (a: Seq[TSEntry[A]])
-  (b: Seq[TSEntry[B]])
-  (op: (Option[A], Option[B]) => Option[C])
-  : Seq[TSEntry[C]] =
-  // TODO: consider moving the compression within the merging logic so we avoid a complete iteration.
+  def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
+    // TODO: consider moving the compression within the merging logic so we avoid a complete iteration.
     fitAndCompressTSEntries(
       mergeEithers(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
     )
@@ -390,21 +380,19 @@ object TimeSeries {
     * both ordered and that contains both of the elements in 'a' and 'b'.
     * Adapted from http://stackoverflow.com/a/19452304/1997056
     */
-  def mergeOrderedSeqs[E: Ordering]
-  (a: Seq[E], b: Seq[E])
-  (implicit o: Ordering[E]):
-  Seq[E] = {
+  def mergeOrderedSeqs[E: Ordering](a: Seq[E], b: Seq[E])(implicit o: Ordering[E]): Seq[E] = {
     @tailrec
-    def rec(x: Seq[E], y: Seq[E], acc: Builder[E, Seq[E]]): Builder[E, Seq[E]] = {
+    def rec(x: Seq[E], y: Seq[E], acc: mutable.Builder[E, Seq[E]]): mutable.Builder[E, Seq[E]] = {
       (x, y) match {
         case (Nil, Nil) => acc
-        case (_, Nil) => acc ++= x
-        case (Nil, _) => acc ++= y
+        case (_, Nil)   => acc ++= x
+        case (Nil, _)   => acc ++= y
         case (xh +: xt, yh +: yt) =>
-          if (o.lteq(xh, yh))
+          if (o.lteq(xh, yh)) {
             rec(xt, y, acc += xh)
-          else
+          } else {
             rec(x, yt, acc += yh)
+          }
       }
     }
     // Use an ArrayBuffer set to the correct capacity as a Builder
@@ -419,10 +407,7 @@ object TimeSeries {
     * operator to be merged. Left and Right entries are passed as the first and second argument
     * of the merge operator, respectively.
     */
-  def mergeEithers[A, B, C]
-  (in: Seq[TSEntry[Either[A, B]]])
-  (op: (Option[A], Option[B]) => Option[C])
-  : Seq[TSEntry[C]] = {
+  def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] = {
 
     // Holds the final merged list
     val result = new ArrayBuffer[TSEntry[C]]()
@@ -432,14 +417,15 @@ object TimeSeries {
     while (current.nonEmpty) {
       // entries that need to be merged
       val toMerge = new ArrayBuffer[TSEntry[Either[A, B]]]()
-      val head = current.pop()
+      val head    = current.pop()
 
       // Take the head and all entries with which it overlaps and merge them.
       while (current.nonEmpty && current.head.timestamp < head.definedUntil()) {
         toMerge.append(current.pop())
       }
 
-      // If the last entry to merge is defined after the head, it is split and added back the the list
+      // If the last entry to merge is defined after the head,
+      // it is split and added back the the list
       // of entries to process
       if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil())) {
         current.push(toMerge.last.trimEntryLeft(head.definedUntil()))
@@ -448,10 +434,11 @@ object TimeSeries {
       // Check if there was some empty space between the last 'done' entry and the first remaining
       val filling = result.lastOption match {
         case Some(TSEntry(ts, _, d)) =>
-          if (ts + d == head.timestamp) // Continuous domain, no filling to do
+          if (ts + d == head.timestamp) { // Continuous domain, no filling to do
             Seq.empty
-          else
+          } else {
             op(None, None).map(TSEntry(ts + d, _, head.timestamp - ts - d)).toSeq
+          }
         case _ => Seq.empty
       }
 
@@ -467,10 +454,12 @@ object TimeSeries {
     * This is needed to be able to pattern match on Vectors:
     * https://stackoverflow.com/questions/10199171/matcherror-when-match-receives-an-indexedseq-but-not-a-linearseq
     */
+  // scalastyle:off object_name
   object +: {
 
-    def unapply[T](s: Seq[T]) =
+    def unapply[T](s: Seq[T]): Option[(T, Seq[T])] =
       s.headOption.map(head => (head, s.tail))
   }
+  // scalastyle:on object_name
 
 }

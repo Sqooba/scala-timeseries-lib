@@ -9,20 +9,24 @@ case class TSValue[T](value: T, validity: Long) {
     valueTime <= atTime && atTime < valueTime + validity
 
   /** Convert this value to an entry for time 'at' */
-  def toEntry(at: Long) = TSEntry(at, value, validity)
+  def toEntry(at: Long): TSEntry[T] = TSEntry(at, value, validity)
 
-  /** Trim the validity of this entry, such that 'forTime + updated validity' is less or equal to trimAt
+  /** Trim the validity of this entry, such that 'forTime + updated validity'
+    * is less or equal to trimAt
     *
     * throws an IllegalArgumentException if 'forTime' >= 'trimAt'
     */
-  def trimRight(forTime: Long, trimAt: Long) =
-    if (forTime >= trimAt)
+  def trimRight(forTime: Long, trimAt: Long): TSValue[T] =
+    if (forTime >= trimAt) {
       throw new IllegalArgumentException(
-        s"Cannot trim a value's validity (at $trimAt) before that value is supposed to occur ($forTime) on the timeline.");
-    else if (forTime + validity <= trimAt) // Nothing to trim
+        s"Cannot trim a value's validity (at $trimAt) before that value" +
+        s"is supposed to occur ($forTime) on the timeline."
+      )
+    } else if (forTime + validity <= trimAt) { // Nothing to trim
       this
-    else
+    } else {
       TSValue(value, trimAt - forTime)
+    }
 
-  def map[O](f: T => O) = TSValue(f(value), validity)
+  def map[O](f: T => O): TSValue[O] = TSValue(f(value), validity)
 }
