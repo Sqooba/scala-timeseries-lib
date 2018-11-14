@@ -79,6 +79,16 @@ trait TimeSeries[T] {
     * None if this time series is empty. */
   def headOption: Option[TSEntry[T]]
 
+  /** Return the first (chronological) value in this time series.
+    *
+    * @throws NoSuchElementException if this time series is empty. */
+  def headValue: T
+
+  /** Return a filled option containing the first (chronological) value in this
+    * time series.
+    * None if this time series is empty. */
+  def headValueOption: Option[T]
+
   /** Return the last (chronological) entry in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */
@@ -88,6 +98,15 @@ trait TimeSeries[T] {
     * time series.
     * None if this time series is empty. */
   def lastOption: Option[TSEntry[T]]
+
+  /** Return the last (chronological) value in this time series.
+    *
+    * @throws NoSuchElementException if this time series is empty. */
+  def lastValue: T
+
+  /** Return a filled option containing the last (chronological) value in this time series.
+    * None if this time series is empty. */
+  def lastValueOption: Option[T]
 
   /** Append the 'other' time series to this one at exactly the first of other's entries timestamp.
     *

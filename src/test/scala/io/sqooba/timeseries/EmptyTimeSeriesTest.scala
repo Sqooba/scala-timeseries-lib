@@ -39,6 +39,14 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testHeadOption: Unit = assert(ts.headOption.isEmpty)
 
+  @Test def testHeadValue: Unit = {
+    intercept[NoSuchElementException] {
+      ts.headValue
+    }
+  }
+
+  @Test def testHeadValueOption: Unit = assert(ts.headValueOption.isEmpty)
+
   @Test def testLast: Unit = {
     intercept[NoSuchElementException] {
       ts.last
@@ -46,6 +54,14 @@ class EmptyTimeSeriesTest extends JUnitSuite {
   }
 
   @Test def testLastOption: Unit = assert(ts.lastOption.isEmpty)
+
+  @Test def testLastValue: Unit = {
+    intercept[NoSuchElementException] {
+      ts.lastValue
+    }
+  }
+
+  @Test def testLastValueOption: Unit = assert(ts.lastValueOption.isEmpty)
 
   @Test def testAppend: Unit = assert(ts.append(testE) == testE)
 

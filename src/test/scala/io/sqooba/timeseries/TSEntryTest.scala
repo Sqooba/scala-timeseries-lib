@@ -42,6 +42,38 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(10, 5, 10).fill(42) == TSEntry(10, 5, 10))
   }
 
+  @Test def testHead: Unit = {
+    assert(TSEntry(10, 5, 10).head == TSEntry(10, 5, 10))
+  }
+
+  @Test def testHeadOption: Unit = {
+    assert(TSEntry(10, 5, 10).headOption == Some(TSEntry(10, 5, 10)))
+  }
+
+  @Test def testHeadValue: Unit = {
+    assert(TSEntry(10, 5, 10).headValue == 5)
+  }
+
+  @Test def testHeadValueOption: Unit = {
+    assert(TSEntry(10, 5, 10).headValueOption == Some(5))
+  }
+
+  @Test def testLast: Unit = {
+    assert(TSEntry(10, 5, 10).last == TSEntry(10, 5, 10))
+  }
+
+  @Test def testLastOption: Unit = {
+    assert(TSEntry(10, 5, 10).lastOption == Some(TSEntry(10, 5, 10)))
+  }
+
+  @Test def testLastValue: Unit = {
+    assert(TSEntry(10, 5, 10).lastValue == 5)
+  }
+
+  @Test def testLastValueOption: Unit = {
+    assert(TSEntry(10, 5, 10).lastValueOption == Some(5))
+  }
+
   @Test def testAt(): Unit = {
     assert(TSEntry(0, "", 10).at(-1).isEmpty)
     assert(TSEntry(0, "", 10).at(0).contains(""))

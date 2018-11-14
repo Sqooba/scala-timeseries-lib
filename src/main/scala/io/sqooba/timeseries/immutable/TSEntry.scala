@@ -168,9 +168,17 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
 
   def headOption: Option[TSEntry[T]] = Some(this)
 
+  def headValue: T = this.value
+
+  def headValueOption: Option[T] = Some(this.value)
+
   def last: TSEntry[T] = this
 
   def lastOption: Option[TSEntry[T]] = Some(this)
+
+  def lastValue: T = this.value
+
+  def lastValueOption: Option[T] = Some(this.value)
 
   /**
     * Creates a new entry with an extended validity.

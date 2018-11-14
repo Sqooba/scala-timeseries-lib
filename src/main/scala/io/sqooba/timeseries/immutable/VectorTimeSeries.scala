@@ -112,9 +112,17 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
 
   def headOption: Option[TSEntry[T]] = data.headOption
 
+  def headValue: T = data.head.value
+
+  def headValueOption: Option[T] = data.headOption.map(_.value)
+
   def last: TSEntry[T] = data.last
 
   def lastOption: Option[TSEntry[T]] = data.lastOption
+
+  def lastValue: T = data.last.value
+
+  def lastValueOption: Option[T] = data.lastOption.map(_.value)
 
   def append(other: TimeSeries[T]): TimeSeries[T] =
     other.headOption match {

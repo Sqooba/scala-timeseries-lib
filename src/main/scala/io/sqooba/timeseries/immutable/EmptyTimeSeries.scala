@@ -33,9 +33,17 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def headOption: Option[TSEntry[T]] = None
 
+  def headValue: T = throw new NoSuchElementException()
+
+  def headValueOption: Option[T] = None
+
   def last: TSEntry[T] = throw new NoSuchElementException()
 
   def lastOption: Option[TSEntry[T]] = None
+
+  def lastValue: T = throw new NoSuchElementException()
+
+  def lastValueOption: Option[T] = None
 
   def append(other: TimeSeries[T]): TimeSeries[T] = other
 

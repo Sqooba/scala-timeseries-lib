@@ -392,6 +392,40 @@ class VectorTimeSeriesTest extends JUnitSuite {
     )
   }
 
+  val tri = VectorTimeSeries(1L -> ("Hi", 10L), 12L -> ("Ho", 10L), 22L -> ("Ha", 10L))
+
+  @Test def testHead: Unit = {
+    assert(tri.head == TSEntry(1, "Hi", 10))
+  }
+
+  @Test def testHeadOption: Unit = {
+    assert(tri.headOption == Some(TSEntry(1, "Hi", 10)))
+  }
+
+  @Test def testHeadValue: Unit = {
+    assert(tri.headValue == "Hi")
+  }
+
+  @Test def testHeadValueOption: Unit = {
+    assert(tri.headValueOption == Some("Hi"))
+  }
+
+  @Test def testLast: Unit = {
+    assert(tri.last == TSEntry(22, "Ha", 10))
+  }
+
+  @Test def testLastOption: Unit = {
+    assert(tri.lastOption == Some(TSEntry(22, "Ha", 10)))
+  }
+
+  @Test def testLastValue: Unit = {
+    assert(tri.lastValue == "Ha")
+  }
+
+  @Test def testLastValueOption: Unit = {
+    assert(tri.lastValueOption == Some("Ha"))
+  }
+
   @Test def appendEntry() {
     val tri =
       VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L), 21L -> ("Hu", 10L))
