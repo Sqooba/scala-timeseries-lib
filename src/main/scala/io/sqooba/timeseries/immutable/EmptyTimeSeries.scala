@@ -13,15 +13,19 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def defined(at: Long): Boolean = false
 
-  def trimLeft(at: Long): TimeSeries[T] = EmptyTimeSeries()
+  def trimLeft(at: Long): TimeSeries[T] = this
 
-  def trimRight(at: Long): TimeSeries[T] = EmptyTimeSeries()
+  def trimRight(at: Long): TimeSeries[T] = this
 
-  def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries()
+  def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries[O]()
 
-  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] = EmptyTimeSeries()
+  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] = this
 
-  def fill(whenUndef: T): TimeSeries[T] = EmptyTimeSeries()
+  def filterValues(predicate: T => Boolean): TimeSeries[T] = this
+
+  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] = EmptyTimeSeries[O]()
+
+  def fill(whenUndef: T): TimeSeries[T] = this
 
   def entries: Seq[TSEntry[T]] = Seq()
 
@@ -37,5 +41,5 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def prepend(other: TimeSeries[T]): TimeSeries[T] = other
 
-  override def resample(sampleLengthMs: Long): TimeSeries[T] = EmptyTimeSeries()
+  def resample(sampleLengthMs: Long): TimeSeries[T] = this
 }

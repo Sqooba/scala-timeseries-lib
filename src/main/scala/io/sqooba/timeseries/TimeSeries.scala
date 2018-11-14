@@ -55,6 +55,12 @@ trait TimeSeries[T] {
     * but the time is made available for cases where the new value would depend on it. */
   def mapWithTime[O](f: (Long, T) => O): TimeSeries[O]
 
+  /** Return a time series that will only contain entries for which the passed predicate returned True. */
+  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T]
+
+  /** Return a time series that will only contain entries containing values for which the passed predicate returned True. */
+  def filterValues(predicate: T => Boolean): TimeSeries[T]
+
   /** Fill the wholes in the definition domain of this time series with the passed value.
     * The resulting time series will have a single continuous definition domain,
     * provided the original time series was non-empty. */
@@ -460,6 +466,7 @@ object TimeSeries {
     def unapply[T](s: Seq[T]): Option[(T, Seq[T])] =
       s.headOption.map(head => (head, s.tail))
   }
+
   // scalastyle:on object_name
 
 }

@@ -309,6 +309,37 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(up.at(20) == Some("HU20"))
   }
 
+  @Test def testFilter: Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 15L -> ("Ho", 15L), 30L -> ("Hu", 20L))
+    assert(
+      ts.filter(_.timestamp < 15) ==
+        VectorTimeSeries(0L -> ("Hi", 10L))
+    )
+    assert(
+      ts.filter(_.validity > 10) ==
+        VectorTimeSeries(15L -> ("Ho", 15L), 30L -> ("Hu", 20L))
+    )
+    assert(
+      ts.filter(_.value.startsWith("H")) == ts
+    )
+    assert(
+      ts.filter(_.value.endsWith("H")) == EmptyTimeSeries()
+    )
+  }
+
+  @Test def testFilterValues: Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 15L -> ("Ho", 15L), 30L -> ("Hu", 20L))
+
+    assert(
+      ts.filterValues(_.startsWith("H")) == ts
+    )
+    assert(
+      ts.filterValues(_.endsWith("H")) == EmptyTimeSeries()
+    )
+  }
+
   @Test def testFillContiguous(): Unit = {
     val tri =
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))

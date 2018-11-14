@@ -25,6 +25,19 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(10, 5, 10).mapWithTime((t, v) => t + v) == TSEntry(10, 15, 10))
   }
 
+  @Test def testFilter: Unit = {
+    val t = TSEntry(10, "Hi", 10)
+    assert(t.filter(_.validity == 10) == t)
+    assert(t.filter(_.timestamp != 10) == EmptyTimeSeries())
+    assert(t.filter(_.value == "Hi") == t)
+  }
+
+  @Test def testFilterValues: Unit = {
+    val t = TSEntry(10, "Hi", 10)
+    assert(t.filterValues(_ == "Hi") == t)
+    assert(t.filterValues(_ == "Ho") == EmptyTimeSeries())
+  }
+
   @Test def testFill(): Unit = {
     assert(TSEntry(10, 5, 10).fill(42) == TSEntry(10, 5, 10))
   }

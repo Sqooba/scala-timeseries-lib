@@ -111,6 +111,12 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
   def mapWithTime[O](f: (Long, T) => O): TSEntry[O] =
     TSEntry(timestamp, f(timestamp, value), validity)
 
+  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+    if (predicate(this)) this else EmptyTimeSeries()
+
+  def filterValues(predicate: T => Boolean): TimeSeries[T] =
+    if (predicate(this.value)) this else EmptyTimeSeries()
+
   def fill(whenUndef: T): TSEntry[T] = this
 
   def entries: Seq[TSEntry[T]] = Seq(this)
@@ -220,7 +226,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
         other
     }
 
-  override def resample(sampleLengthMs: Long): TimeSeries[T] =
+  def resample(sampleLengthMs: Long): TimeSeries[T] =
     // this entry should be split
     if (this.validity > sampleLengthMs) {
       new TSEntry[T](this.timestamp, this.value, sampleLengthMs)

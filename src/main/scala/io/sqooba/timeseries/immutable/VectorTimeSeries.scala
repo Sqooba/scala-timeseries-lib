@@ -47,6 +47,16 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
   def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] =
     new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
 
+  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+    // We are not updating entries: no need to order or trim them
+    this.data.filter(predicate) match {
+      case Vector()              => EmptyTimeSeries()
+      case v: Vector[TSEntry[T]] => VectorTimeSeries.ofEntriesUnsafe(v)
+    }
+
+  def filterValues(predicate: T => Boolean): TimeSeries[T] =
+    filter(tse => predicate(tse.value))
+
   def fill(whenUndef: T): TimeSeries[T] =
     new VectorTimeSeries[T](TimeSeries.fillGaps(data, whenUndef).toVector)
 
@@ -131,7 +141,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
         other
     }
 
-  override def resample(sampleLengthMs: Long): TimeSeries[T] =
+  def resample(sampleLengthMs: Long): TimeSeries[T] =
     new VectorTimeSeries(
       this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
     )

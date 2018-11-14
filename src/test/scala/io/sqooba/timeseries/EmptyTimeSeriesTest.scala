@@ -21,13 +21,17 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testMap: Unit = assert(ts.map(n => None) == EmptyTimeSeries())
 
-  @Test def testMapWithTime(): Unit = assert(ts.mapWithTime((t, v) => t + v) == EmptyTimeSeries())
+  @Test def testMapWithTime: Unit = assert(ts.mapWithTime((t, v) => t + v) == EmptyTimeSeries())
 
-  @Test def testFille(): Unit = assert(ts.fill("None") == EmptyTimeSeries())
+  @Test def testFilter: Unit = assert(ts.filter(_ => true) == EmptyTimeSeries())
+
+  @Test def testFilterValues: Unit = assert(ts.filterValues(_ => true) == EmptyTimeSeries())
+
+  @Test def testFill: Unit = assert(ts.fill("None") == EmptyTimeSeries())
 
   @Test def testEntries: Unit = assert(ts.entries == Seq())
 
-  @Test def testHead(): Unit = {
+  @Test def testHead: Unit = {
     intercept[NoSuchElementException] {
       ts.head
     }
@@ -35,7 +39,7 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testHeadOption: Unit = assert(ts.headOption.isEmpty)
 
-  @Test def testLast(): Unit = {
+  @Test def testLast: Unit = {
     intercept[NoSuchElementException] {
       ts.last
     }
