@@ -106,9 +106,9 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
   def toRightEntry[O]: TSEntry[Either[O, T]] = TSEntry(timestamp, Right[O, T](value), validity)
 
   /** Map value contained in this timeseries using the passed function */
-  def map[O](f: T => O): TSEntry[O] = TSEntry(timestamp, f(value), validity)
+  def map[O](f: T => O, compress: Boolean = true): TSEntry[O] = TSEntry(timestamp, f(value), validity)
 
-  def mapWithTime[O](f: (Long, T) => O): TSEntry[O] =
+  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(timestamp, value), validity)
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =

@@ -1,6 +1,7 @@
 package io.sqooba.timeseries.immutable
 
 import io.sqooba.timeseries.TimeSeries
+import io.sqooba.timeseries.TimeSeriesBuilder
 
 import scala.annotation.tailrec
 
@@ -41,11 +42,29 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
     */
   def defined(t: Long): Boolean = at(t).isDefined
 
-  def map[O](f: T => O): TimeSeries[O] =
-    new VectorTimeSeries(data.map(_.map(f)))
+  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] =
+    if (compress) {
+      // Use a builder to handle compression
+      new VectorTimeSeries(
+        data
+          .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.map(f))
+          .result()
+      )
+    } else {
+      new VectorTimeSeries[O](data.map(_.map(f)))
+    }
 
-  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] =
-    new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
+  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
+    if (compress) {
+      // Use a builder to handle compression
+      new VectorTimeSeries(
+        data
+          .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.mapWithTime(f))
+          .result()
+      )
+    } else {
+      new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
+    }
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
@@ -169,8 +188,9 @@ object VectorTimeSeries {
     new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sortBy(_.timestamp)): _*))
 
   /**
-    * @return a VectorTimeSeries built from the passed entries, only ensuring that the are sorted
+    * @return a VectorTimeSeries built from the passed entries, only ensuring that they are sorted
     */
+  // TODO clarify why we want to sort here.
   private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
     new VectorTimeSeries(Vector(elems.sortBy(_.timestamp): _*))
 

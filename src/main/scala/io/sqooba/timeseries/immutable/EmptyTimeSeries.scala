@@ -17,13 +17,13 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def trimRight(at: Long): TimeSeries[T] = this
 
-  def map[O](f: T => O): TimeSeries[O] = EmptyTimeSeries[O]()
+  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] = EmptyTimeSeries[O]()
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] = this
 
   def filterValues(predicate: T => Boolean): TimeSeries[T] = this
 
-  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O] = EmptyTimeSeries[O]()
+  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = EmptyTimeSeries[O]()
 
   def fill(whenUndef: T): TimeSeries[T] = this
 

@@ -103,12 +103,22 @@ class NumericTimeSeriesTest extends JUnitSuite {
     val min = (in: Seq[Int]) => in.min
 
     assert(
-      NumericTimeSeries.rolling(VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))), min, 10)
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
+        min,
+        10,
+        false
+      )
         == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10)))
     )
 
     assert(
-      NumericTimeSeries.rolling(VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))), min, 20)
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+        min,
+        20,
+        false
+      )
         == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10), TSEntry(30, 2, 10)))
     )
 

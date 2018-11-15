@@ -46,13 +46,16 @@ object NumericTimeSeries {
     }
   }
 
-  def rolling[T](ts: TimeSeries[T], aggregator: Seq[T] => T, windowMs: Long)(implicit n: Numeric[T]): TimeSeries[T] =
-    ts.mapWithTime { (time, currentVal) =>
-      // values from the last `windowMs` milliseconds plus the current val
-      aggregator(
-        ts.slice(time - windowMs, time).entries.map(_.value) :+ currentVal
-      )
-    }
+  def rolling[T](ts: TimeSeries[T], aggregator: Seq[T] => T, windowMs: Long, compress: Boolean = true)(implicit n: Numeric[T]): TimeSeries[T] =
+    ts.mapWithTime(
+      { (time, currentVal) =>
+        // values from the last `windowMs` milliseconds plus the current val
+        aggregator(
+          ts.slice(time - windowMs, time).entries.map(_.value) :+ currentVal
+        )
+      },
+      compress
+    )
 
   /**
     * Compute an integral of the passed entries, such that each entry is equal

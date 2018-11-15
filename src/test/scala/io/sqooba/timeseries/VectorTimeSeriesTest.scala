@@ -298,6 +298,22 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(up.at(20) == Some("HU"))
   }
 
+  @Test def testMapWithCompressionFlag(): Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    val up = ts.map(s => 42, true)
+    assert(up.entries == Seq(TSEntry[Int](0, 42, 30)))
+  }
+
+  @Test def testMapWithoutCompressionFlag(): Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    val up = ts.map(s => 42, false)
+    assert(up.entries == Seq(TSEntry[Int](0, 42, 10), TSEntry[Int](10, 42, 10), TSEntry[Int](20, 42, 10)))
+  }
+
   @Test def testMapWithTime() {
     val tri =
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
@@ -307,6 +323,22 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(up.at(0) == Some("HI0"))
     assert(up.at(10) == Some("HO10"))
     assert(up.at(20) == Some("HU20"))
+  }
+
+  @Test def testMapWithTimeWithCompressionFlag(): Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    val up = ts.mapWithTime((_, _) => 42, true)
+    assert(up.entries == Seq(TSEntry[Int](0, 42, 30)))
+  }
+
+  @Test def testMapWithTimeWithoutCompressionFlag(): Unit = {
+    val ts =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    val up = ts.mapWithTime((_, _) => 42, false)
+    assert(up.entries == Seq(TSEntry[Int](0, 42, 10), TSEntry[Int](10, 42, 10), TSEntry[Int](20, 42, 10)))
   }
 
   @Test def testFilter: Unit = {

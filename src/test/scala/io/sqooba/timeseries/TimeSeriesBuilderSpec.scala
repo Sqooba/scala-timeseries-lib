@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
 
-  def newTsb = new TimeSeriesBuilder[Int]
+  private def newTsb = new TimeSeriesBuilder[Int]
 
   "A TimeSeriesBuilder" should "return an empty collection when nothing was added" in {
     newTsb.result() shouldBe Vector()

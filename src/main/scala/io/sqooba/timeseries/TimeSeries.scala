@@ -47,13 +47,14 @@ trait TimeSeries[T] {
   def defined(at: Long): Boolean
 
   /** Map the values within the time series.
-    * Timestamps and validities of entries remain unchanged */
-  def map[O](f: T => O): TimeSeries[O]
+    * the 'compress' parameters allows callers to control whether or not compression should occur.
+    * If set to false, timestamps and validities remain unchanged. Defaults to true*/
+  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O]
 
   /** Map the values within the time series.
     * Timestamps and validities of entries remain unchanged,
     * but the time is made available for cases where the new value would depend on it. */
-  def mapWithTime[O](f: (Long, T) => O): TimeSeries[O]
+  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O]
 
   /** Return a time series that will only contain entries for which the passed predicate returned True. */
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T]
