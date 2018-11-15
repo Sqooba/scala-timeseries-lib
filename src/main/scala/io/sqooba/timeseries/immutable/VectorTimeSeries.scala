@@ -165,6 +165,7 @@ object VectorTimeSeries {
     */
   def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
     // TODO: Expect entries to be sorted and just check?
+    // TODO: the fitting function returns a vector in most cases: don't rebuild one in such case
     new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sortBy(_.timestamp)): _*))
 
   /**

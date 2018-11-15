@@ -265,33 +265,9 @@ object TimeSeries {
     if (in.size < 2) {
       in
     } else {
-      val result         = new ArrayBuffer[TSEntry[T]](in.size)
-      val toBeCompressed = mutable.Stack[TSEntry[T]](in: _*)
-
-      while (toBeCompressed.nonEmpty) {
-        val first = toBeCompressed.pop()
-        // if there is a second value, try to compress it
-        if (toBeCompressed.nonEmpty) {
-          val second = toBeCompressed.pop()
-          first.appendEntry(second) match {
-            // it has been compressed, push the compressed entry in the
-            // "to be compressed" list, since it can be compressed with the following entrie(s)
-            case Seq(compressed) =>
-              toBeCompressed.push(compressed)
-            case Seq(one, two) =>
-              // No compression occurred:
-              // - the first element can be added to the result,
-              //  - the second element is added to "to be compressed" list, since it could be compressed
-              result.append(one)
-              toBeCompressed.push(two)
-          }
-        }
-        // otherwise nothing to do
-        else {
-          result.append(first)
-        }
-      }
-      result
+      val builder = new TimeSeriesBuilder[T]
+      builder ++= in
+      builder.result()
     }
 
   /** For any collection of TSEntries of size 2 and more, intersperses entries containing
@@ -395,10 +371,7 @@ object TimeSeries {
     * Assumes a and b to be ORDERED!
     */
   def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
-    // TODO: consider moving the compression within the merging logic so we avoid a complete iteration.
-    fitAndCompressTSEntries(
-      mergeEithers(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
-    )
+    mergeEithers(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
 
   /**
     * Combine two Seq's that are known to be ordered and return a Seq that is
@@ -435,8 +408,9 @@ object TimeSeries {
   def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] = {
 
     // Holds the final merged list
-    val result = new ArrayBuffer[TSEntry[C]]()
+    val result = new TimeSeriesBuilder[C]()
     // Holds the current state of the entries to process
+    // TODO looks like Stack is deprecated: see if we can use a List instead
     val current = mutable.Stack[TSEntry[Either[A, B]]](in: _*)
 
     while (current.nonEmpty) {
@@ -450,29 +424,29 @@ object TimeSeries {
       }
 
       // If the last entry to merge is defined after the head,
-      // it is split and added back the the list
+      // it is split and added back to the list
       // of entries to process
       if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil())) {
         current.push(toMerge.last.trimEntryLeft(head.definedUntil()))
       }
 
       // Check if there was some empty space between the last 'done' entry and the first remaining
-      val filling = result.lastOption match {
-        case Some(TSEntry(ts, _, d)) =>
-          if (ts + d == head.timestamp) { // Continuous domain, no filling to do
+      val filling = result.definedUntil match {
+        case Some(definedUntil) =>
+          if (definedUntil == head.timestamp) { // Continuous domain, no filling to do
             Seq.empty
           } else {
-            op(None, None).map(TSEntry(ts + d, _, head.timestamp - ts - d)).toSeq
+            op(None, None).map(TSEntry(definedUntil, _, head.timestamp - definedUntil)).toSeq
           }
         case _ => Seq.empty
       }
 
       val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
-      result.append(filling: _*)
-      result.append(p: _*)
+      result ++= filling
+      result ++= p
     }
 
-    result
+    result.result
   }
 
   /**
