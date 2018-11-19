@@ -48,7 +48,7 @@ trait TimeSeries[T] {
 
   /** Map the values within the time series.
     * the 'compress' parameters allows callers to control whether or not compression should occur.
-    * If set to false, timestamps and validities remain unchanged. Defaults to true*/
+    * If set to false, timestamps and validities remain unchanged. Defaults to true */
   def map[O](f: T => O, compress: Boolean = true): TimeSeries[O]
 
   /** Map the values within the time series.
