@@ -1,4 +1,4 @@
-#scala-timeseries-lib — a lightweight time series library
+# scala-timeseries-lib — a lightweight time series library
 
 Easily manipulate and query time-series like data. Useful for manipulating series of discrete values associated to a validity or time-to-live duration, like sensor measures for example.
 
