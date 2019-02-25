@@ -50,4 +50,6 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
   def prepend(other: TimeSeries[T]): TimeSeries[T] = other
 
   def resample(sampleLengthMs: Long): TimeSeries[T] = this
+
+  override def looseDomain: Option[LooseDomain] = None
 }

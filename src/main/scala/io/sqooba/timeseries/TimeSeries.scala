@@ -2,7 +2,7 @@ package io.sqooba.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{TSEntry, VectorTimeSeries}
+import io.sqooba.timeseries.immutable.{LooseDomain, TSEntry, VectorTimeSeries}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -241,7 +241,7 @@ trait TimeSeries[T] {
       window: Long,
       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
   )(implicit n: Numeric[T]): TimeSeries[Double] =
-    if (this.size() < 2) {
+    if (this.size < 2) {
       this.map(n.toDouble)
     } else {
       // TODO: have slidingSum return compressed output so we can use the unsafe constructor
@@ -249,6 +249,19 @@ trait TimeSeries[T] {
       VectorTimeSeries
         .ofEntriesSafe(NumericTimeSeries.slidingIntegral(this.entries, window, timeUnit))
     }
+
+  /**
+    * Returns the bounds of the domain
+    *
+    * If the time-series does not contain any "hole" in its domain, then the loose domain is equal to
+    * its domain. Otherwise, the loose domain only contains the min/max bounds of the domain.
+    *
+    * Said otherwise, the time-series is guaranteed to be undefined outside of the loose domain, and
+    * has at least a point where it is defined within the loose domain.
+    *
+    * @return The oldest and newest timestamps where the time-series is defined, encapsulated in a `LooseDomain`
+    */
+  def looseDomain: Option[LooseDomain]
 
 }
 
@@ -462,5 +475,36 @@ object TimeSeries {
   }
 
   // scalastyle:on object_name
+
+  /**
+    * Computes the union of the passed time-series' loose domains
+    *
+    * @param tss A sequence of time-series
+    * @tparam T The underlying type of the time-series
+    * @return The union of the LooseDomains
+    */
+  def unionLooseDomains[T](tss: Seq[TimeSeries[T]]): Option[LooseDomain] =
+    tss.flatMap(_.looseDomain).reduceOption(_.union(_))
+
+  /**
+    * Computes the intersection of the passed time-series' loose domains
+    *
+    * @note If there is an empty time-series, then the intersection will be None.
+    *
+    * @param tss A sequence of time-series
+    * @tparam T The underlying type of the time-series
+    * @return The intersection of the LooseDomains
+    */
+  def intersectLooseDomains[T](tss: Seq[TimeSeries[T]]): Option[LooseDomain] = {
+    val allLooseDomainsOpt = tss map (_.looseDomain)
+
+    if (allLooseDomainsOpt exists (_.isEmpty)) {
+      None
+    } else {
+      // This implementation may fail if an intersect returns a None (i.e. empty loose domain)
+      // TODO Fix it using EmptyLooseDomain
+      allLooseDomainsOpt.reduceOption(_.get.intersect(_)).flatten
+    }
+  }
 
 }

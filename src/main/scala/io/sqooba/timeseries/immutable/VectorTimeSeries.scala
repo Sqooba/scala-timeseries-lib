@@ -162,7 +162,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
         // Something to keep from the current TS
         VectorTimeSeries.ofEntriesUnsafe(
           other.entries ++
-          this.trimLeft(tse.definedUntil).entries
+            this.trimLeft(tse.definedUntil).entries
         )
       case _ => // Nothing to keep, other overwrites this TS completely
         other
@@ -172,6 +172,9 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
     new VectorTimeSeries(
       this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
     )
+
+  override def looseDomain: Option[LooseDomain] =
+    Some(LooseDomain(data.head.looseDomain.get.start, data.last.looseDomain.get.until))
 
 }
 

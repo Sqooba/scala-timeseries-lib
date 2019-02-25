@@ -271,6 +271,13 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
   def integralEntry(timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): TSEntry[Double] =
     this.map(_ => integral(timeUnit))
 
+  /**
+    * The loose domain of an entry is simply its domain.
+    *
+    * @return The looseDomain of the time-series
+    */
+  override def looseDomain: Option[LooseDomain] = Some(LooseDomain(timestamp, timestamp + validity))
+
 }
 
 object TSEntry {
