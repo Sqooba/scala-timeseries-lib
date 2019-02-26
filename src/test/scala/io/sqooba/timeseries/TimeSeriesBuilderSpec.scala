@@ -52,6 +52,15 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
       b.result()
     }
   }
+
+  it should "raise an exception if unordered TSEntry are added" in {
+    val b = newTsb
+
+    b += TSEntry(5, 0, 1)
+
+    assertThrows[IllegalArgumentException](b += TSEntry(0, 0, 1))
+  }
+
   "currentLastEntry" should "correctly return the current last entry of the builder" in {
     val b = newTsb
     b.definedUntil shouldBe None

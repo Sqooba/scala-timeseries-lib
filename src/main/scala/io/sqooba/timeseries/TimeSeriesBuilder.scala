@@ -27,6 +27,12 @@ class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], Vector[TSEntry[T]
         Some(elem)
       // A previous entry exists: attempt to append the new one
       case Some(last) =>
+        // Ensure that we don't throw away older entries
+        if (elem.timestamp <= last.timestamp) {
+          val errorMess = s"Elements should be added chronologically (here last timestamp was ${last.timestamp} and the one added was ${elem.timestamp}"
+          throw new IllegalArgumentException(errorMess)
+        }
+
         last.appendEntry(elem) match {
           // A compression occurred. Keep that entry around
           case Seq(compressed) =>
