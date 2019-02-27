@@ -276,7 +276,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     *
     * @return The looseDomain of the time-series
     */
-  override def looseDomain: Option[LooseDomain] = Some(LooseDomain(timestamp, timestamp + validity))
+  override def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
 
 }
 

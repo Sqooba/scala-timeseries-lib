@@ -51,5 +51,5 @@ case class EmptyTimeSeries[T]() extends TimeSeries[T] {
 
   def resample(sampleLengthMs: Long): TimeSeries[T] = this
 
-  override def looseDomain: Option[LooseDomain] = None
+  override def looseDomain: TimeDomain = EmptyTimeDomain
 }

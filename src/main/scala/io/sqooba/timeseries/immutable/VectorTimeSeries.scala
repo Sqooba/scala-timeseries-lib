@@ -173,8 +173,8 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
       this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
     )
 
-  override def looseDomain: Option[LooseDomain] =
-    Some(LooseDomain(data.head.looseDomain.get.start, data.last.looseDomain.get.until))
+  override def looseDomain: TimeDomain =
+    data.head.looseDomain.union(data.last.looseDomain)
 
 }
 

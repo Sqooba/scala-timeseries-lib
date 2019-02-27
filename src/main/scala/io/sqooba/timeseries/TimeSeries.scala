@@ -2,7 +2,7 @@ package io.sqooba.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{LooseDomain, TSEntry, VectorTimeSeries}
+import io.sqooba.timeseries.immutable.{EmptyTimeDomain, TSEntry, TimeDomain, VectorTimeSeries}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -261,7 +261,7 @@ trait TimeSeries[T] {
     *
     * @return The oldest and newest timestamps where the time-series is defined, encapsulated in a `LooseDomain`
     */
-  def looseDomain: Option[LooseDomain]
+  def looseDomain: TimeDomain
 
 }
 
@@ -483,8 +483,8 @@ object TimeSeries {
     * @tparam T The underlying type of the time-series
     * @return The union of the LooseDomains
     */
-  def unionLooseDomains[T](tss: Seq[TimeSeries[T]]): Option[LooseDomain] =
-    tss.flatMap(_.looseDomain).reduceOption(_.union(_))
+  def unionLooseDomains[T](tss: Seq[TimeSeries[T]]): TimeDomain =
+    tss.map(_.looseDomain).fold(EmptyTimeDomain)(_.union(_))
 
   /**
     * Computes the intersection of the passed time-series' loose domains
@@ -495,16 +495,10 @@ object TimeSeries {
     * @tparam T The underlying type of the time-series
     * @return The intersection of the LooseDomains
     */
-  def intersectLooseDomains[T](tss: Seq[TimeSeries[T]]): Option[LooseDomain] = {
-    val allLooseDomainsOpt = tss map (_.looseDomain)
-
-    if (allLooseDomainsOpt exists (_.isEmpty)) {
-      None
+  def intersectLooseDomains[T](tss: Seq[TimeSeries[T]]): TimeDomain =
+    if (tss.isEmpty) {
+      EmptyTimeDomain
     } else {
-      // This implementation may fail if an intersect returns a None (i.e. empty loose domain)
-      // TODO Fix it using EmptyLooseDomain
-      allLooseDomainsOpt.reduceOption(_.get.intersect(_)).flatten
+      tss.map(_.looseDomain).reduce(_.intersect(_))
     }
-  }
-
 }
