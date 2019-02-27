@@ -25,12 +25,6 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
 
   def size(): Int = 1
 
-  /** Convert this entry to a value */
-  val toVal = TSValue(value, validity)
-
-  /** Convert this entry to a time->TSVal tuple to be added to a map */
-  val toMapTuple: (Long, TSValue[T]) = timestamp -> toVal
-
   /** Shorten this entry's validity if it exceed 'at'. No effect otherwise.
     *
     * If the entry's timestamp is after 'at', the entry remains unchanged.
@@ -285,10 +279,6 @@ object TSEntry {
   implicit def orderByTs[T]: Ordering[TSEntry[T]] =
     Ordering.by(ts => ts.timestamp)
 
-  /** Build a TSEntry from a tuple containing the a TSValue and the time at which it starts. */
-  def apply[T](tValTup: (Long, TSValue[T])): TSEntry[T] =
-    TSEntry(tValTup._1, tValTup._2.value, tValTup._2.validity)
-
   def apply[T](tup: (Long, T, Long)): TSEntry[T] =
     TSEntry(tup._1, tup._2, tup._3)
 
@@ -335,8 +325,8 @@ object TSEntry {
       throw new IllegalArgumentException("Function cannot be applied to overlapping entries.")
     } else {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
-      emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
-      op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
+        emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
+        op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
     }.sortBy(_.timestamp)
 
   private def emptyApply[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
@@ -372,8 +362,8 @@ object TSEntry {
   /** Merge the 'single' TSEntry to the 'others'.
     * The domain of definition of the 'single' entry is used:
     * non-overlapping parts of the other entries will not be merged. */
-  def mergeSingleToMultiple[A, B, R](single: TSEntry[Either[A, B]],
-                                     others: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
+  def mergeSingleToMultiple[A, B, R](single: TSEntry[Either[A, B]], others: Seq[TSEntry[Either[A, B]]])(
+      op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     others.collect {
       // Retain only entries overlapping with 'single', and constraint them to the 'single' domain.
       case e: TSEntry[_] if (single.overlaps(e)) =>
@@ -387,21 +377,21 @@ object TSEntry {
         toMerge.head
         // Take care of the potentially undefined domain before the 'others'
         mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++
-        // Merge the others to the single entry, including potential
-        // undefined spaces between them.
-        // Group by pairs of entries to be able to trim the single
-        // one to the relevant domain for the individual merges
-        toMerge
-          .sliding(2)
-          .flatMap(
-            p =>
-              mergeEithers(single
-                             .trimEntryLeftNRight(p.head.timestamp, p.last.timestamp),
-                           p.head)(op)
-          ) ++
-        // Take care of the last entry and the potentially undefined domain
-        // after it and the end of the single one.
-        mergeEithers(toMerge.last, single.trimEntryLeft(toMerge.last.timestamp))(op)
+          // Merge the others to the single entry, including potential
+          // undefined spaces between them.
+          // Group by pairs of entries to be able to trim the single
+          // one to the relevant domain for the individual merges
+          toMerge
+            .sliding(2)
+            .flatMap(
+              p =>
+                mergeEithers(single
+                               .trimEntryLeftNRight(p.head.timestamp, p.last.timestamp),
+                             p.head)(op)
+            ) ++
+          // Take care of the last entry and the potentially undefined domain
+          // after it and the end of the single one.
+          mergeEithers(toMerge.last, single.trimEntryLeft(toMerge.last.timestamp))(op)
     }
 
   /** Merge the provided entry to a None on the domain spawned by [from, until[ */

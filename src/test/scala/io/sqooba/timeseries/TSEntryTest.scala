@@ -2,7 +2,7 @@ package io.sqooba.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, TSValue, VectorTimeSeries}
+import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
 
@@ -97,14 +97,6 @@ class TSEntryTest extends JUnitSuite {
 
   @Test def testDefinedUntil(): Unit = {
     assert(TSEntry(1, "", 10).definedUntil() == 11)
-  }
-
-  @Test def testToMapTuple(): Unit = {
-    assert(TSEntry(0, "Hi", 10).toMapTuple == (0 -> TSValue("Hi", 10)))
-  }
-
-  @Test def testToVal(): Unit = {
-    assert(TSEntry(0, "Hi", 10).toVal == TSValue("Hi", 10))
   }
 
   @Test def testTrimRight(): Unit = {
