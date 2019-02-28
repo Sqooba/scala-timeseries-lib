@@ -18,7 +18,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
                              // Leave a gap of 1 between the two entries
                              12L -> (2.0, 10L))
 
-  val tsb = VectorTimeSeries(6L -> (3.0, 10L))
+  val tsb = TSEntry(6L, 3.0, 10L)
 
   /**
     * Check that we only have a correct sum wherever

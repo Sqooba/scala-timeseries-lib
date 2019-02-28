@@ -2,7 +2,7 @@ package io.sqooba.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{EmptyTimeDomain, TSEntry, TimeDomain, VectorTimeSeries}
+import io.sqooba.timeseries.immutable._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -501,4 +501,31 @@ object TimeSeries {
     } else {
       tss.map(_.looseDomain).reduce(_.intersect(_))
     }
+
+  /**
+    * Construct a time-series using an ordered Seq of TSEntries
+    *
+    * The correct underlying implementation will be used depending of the Seq's size
+    * (i.e. EmptyTimeSeries, TSEntry, or a VectorTimeSeries)
+    *
+    * @note The sequence has to be chronologically ordered, otherwise the time-series might
+    *       not behave correctly. In general, you should use a `TimeSeriesBuilder`. Furthermore, no
+    *       two entries should have the same timestamp. Finally, entries will NOT be compressed.
+    *
+    * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+    *           well-formed (no duplicated timestamps)
+    * @tparam T The underlying type of the time-series
+    * @return A time-series with a correct implementation
+    */
+  def ofOrderedEntriesUnsafe[T](xs: Seq[TSEntry[T]]): TimeSeries[T] = {
+    val size = xs.size
+
+    if (size == 0) {
+      new EmptyTimeSeries[T]()
+    } else if (size == 1) {
+      xs.head
+    } else {
+      VectorTimeSeries.ofEntriesUnsafe(xs)
+    }
+  }
 }

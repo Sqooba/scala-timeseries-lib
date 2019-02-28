@@ -346,7 +346,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       VectorTimeSeries(0L -> ("Hi", 10L), 15L -> ("Ho", 15L), 30L -> ("Hu", 20L))
     assert(
       ts.filter(_.timestamp < 15) ==
-        VectorTimeSeries(0L -> ("Hi", 10L))
+        TSEntry(0L, "Hi", 10L)
     )
     assert(
       ts.filter(_.validity > 10) ==
@@ -721,10 +721,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     tri.stepIntegral(10, TimeUnit.SECONDS).entries ==
       Seq(TSEntry(0, 10.0, 10), TSEntry(10, 30.0, 10), TSEntry(20, 60.0, 10))
 
-    val withSampling =
-      VectorTimeSeries(
-        0L -> (1, 30L)
-      )
+    val withSampling = TSEntry(0L, 1, 30L)
 
     assert(
       withSampling.stepIntegral(10, TimeUnit.SECONDS).entries ==
@@ -733,10 +730,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
   }
 
   @Test def testResampling(): Unit = {
-    val withSampling =
-      VectorTimeSeries(
-        0L -> (1, 30L)
-      )
+    val withSampling = TSEntry(0L, 1, 30L)
 
     assert(
       withSampling.resample(10).entries == Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10))

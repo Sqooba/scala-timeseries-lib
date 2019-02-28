@@ -15,7 +15,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
 // data needs to be SORTED -> TODO: private constructor?
     extends TimeSeries[T] {
 
-  assert(data.nonEmpty, "A VectorTimeSeries can not be empty")
+  assert(data.size >= 2, "A VectorTimeSeries can not be empty (should be an EmptyTimeSeries) nor contain only one element (should be a TSEntry)")
 
   /**
     * Dichotomic search for the element in the time series for the entry
@@ -47,7 +47,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
   def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] =
     if (compress) {
       // Use a builder to handle compression
-      new VectorTimeSeries(
+      TimeSeries.ofOrderedEntriesUnsafe(
         data
           .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.map(f))
           .result()
@@ -59,7 +59,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
     if (compress) {
       // Use a builder to handle compression
-      new VectorTimeSeries(
+      TimeSeries.ofOrderedEntriesUnsafe(
         data
           .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.mapWithTime(f))
           .result()
@@ -70,10 +70,7 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
-    this.data.filter(predicate) match {
-      case Vector()              => EmptyTimeSeries()
-      case v: Vector[TSEntry[T]] => VectorTimeSeries.ofEntriesUnsafe(v)
-    }
+    TimeSeries.ofOrderedEntriesUnsafe(this.data.filter(predicate))
 
   def filterValues(predicate: T => Boolean): TimeSeries[T] =
     filter(tse => predicate(tse.value))
@@ -97,9 +94,9 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
           data.splitAt(idx) match {
             case (_, _ +: keep) =>
               if (e.defined(t)) {
-                new VectorTimeSeries(e.trimEntryLeft(t) +: keep)
-              } else if (!keep.isEmpty) {
-                new VectorTimeSeries(keep)
+                TimeSeries.ofOrderedEntriesUnsafe(e.trimEntryLeft(t) +: keep)
+              } else if (keep.nonEmpty) {
+                TimeSeries.ofOrderedEntriesUnsafe(keep)
               } else {
                 EmptyTimeSeries()
               }
