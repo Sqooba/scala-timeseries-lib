@@ -9,7 +9,7 @@ import scala.collection.mutable
   * A builder intended to ease the assembling of entries into a time series.
   * Uses a vector builder and a small stack under the hood.
   */
-class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], Vector[TSEntry[T]]] {
+class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
 
   // Contains finalized entries (ie, they won't be trimmed or extended anymore)
   private val resultBuilder = new VectorBuilder[TSEntry[T]]
@@ -49,12 +49,15 @@ class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], Vector[TSEntry[T]
   }
 
   override def clear(): Unit = {
-    resultBuilder.clear
+    resultBuilder.clear()
     lastAdded = None
     resultCalled = false
   }
 
-  override def result(): Vector[TSEntry[T]] = {
+  override def result(): TimeSeries[T] =
+    TimeSeries.ofOrderedEntriesUnsafe(vectorResult())
+
+  def vectorResult(): Vector[TSEntry[T]] = {
     if (resultCalled) {
       throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
     }

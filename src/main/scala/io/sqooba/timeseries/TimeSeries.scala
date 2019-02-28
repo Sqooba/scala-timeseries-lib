@@ -281,7 +281,7 @@ object TimeSeries {
     } else {
       val builder = new TimeSeriesBuilder[T]
       builder ++= in
-      builder.result()
+      builder.vectorResult()
     }
 
   /** For any collection of TSEntries of size 2 and more, intersperses entries containing
@@ -460,7 +460,7 @@ object TimeSeries {
       result ++= p
     }
 
-    result.result
+    result.vectorResult
   }
 
   /**
@@ -528,4 +528,21 @@ object TimeSeries {
       VectorTimeSeries.ofEntriesUnsafe(xs)
     }
   }
+
+  /**
+    * An safe constructor of `TimeSeries`
+    *
+    * The given entries are sorted, compressed (if needed) and returned as a time-series. If the sequence
+    * is empty, then it returns an `EmptyTimeSeries`. If the sequence is made of only one entry, then it returns
+    * it.
+    *
+    * @note All entries should have different timestamps.
+    *
+    * @param entries A sequence of entries which all have a different timestamp
+    * @tparam T The time-series' underlying parameter
+    * @return A well initialized time-series
+    */
+  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] =
+    entries.sortBy(_.timestamp).foldLeft(new TimeSeriesBuilder[T]())(_ += _).result()
+
 }

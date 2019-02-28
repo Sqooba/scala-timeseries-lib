@@ -11,8 +11,8 @@ import scala.annotation.tailrec
   * Useful for working on time series like data when no random access is required,
   * as any method requiring some sort of lookup will only run in linear time.
   */
-case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
-// data needs to be SORTED -> TODO: private constructor?
+case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
+// data needs to be SORTED
     extends TimeSeries[T] {
 
   assert(data.size >= 2, "A VectorTimeSeries can not be empty (should be an EmptyTimeSeries) nor contain only one element (should be a TSEntry)")
@@ -47,11 +47,9 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
   def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] =
     if (compress) {
       // Use a builder to handle compression
-      TimeSeries.ofOrderedEntriesUnsafe(
-        data
-          .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.map(f))
-          .result()
-      )
+      data
+        .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.map(f))
+        .result()
     } else {
       new VectorTimeSeries[O](data.map(_.map(f)))
     }
@@ -59,11 +57,9 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
     if (compress) {
       // Use a builder to handle compression
-      TimeSeries.ofOrderedEntriesUnsafe(
-        data
-          .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.mapWithTime(f))
-          .result()
-      )
+      data
+        .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.mapWithTime(f))
+        .result()
     } else {
       new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
     }

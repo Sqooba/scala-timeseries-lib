@@ -17,7 +17,7 @@ class LooseDomainSpec extends SqoobaSpec {
 
   private val (start, end, validity) = (0, 10, 3)
 
-  private val niceAndLongTimeSeries: VectorTimeSeries[None.type] = {
+  private val niceAndLongTimeSeries: TimeSeries[None.type] = {
     val smallestEntry = TSEntry(start, None, validity)
     val biggestEntry  = TSEntry(end, None, validity)
 
@@ -28,7 +28,7 @@ class LooseDomainSpec extends SqoobaSpec {
     builder += TSEntry(9, None, 2)
     builder += biggestEntry
 
-    new VectorTimeSeries(builder.result())
+    builder.result()
   }
 
   private val timeseriesSeq: Seq[TimeSeries[None.type]] = List[TimeSeries[None.type]](

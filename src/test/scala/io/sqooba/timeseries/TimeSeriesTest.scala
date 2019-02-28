@@ -513,4 +513,20 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
+  @Test def testApplyWithUnsortedEntries(): Unit = {
+    val entries = List(
+      TSEntry(5, 5, 1),
+      TSEntry(1, 1, 1)
+    )
+
+    val VectorTimeSeries(data) = TimeSeries(entries)
+
+    assert(data.head == entries.last)
+    assert(data.last == entries.head)
+  }
+
+  @Test def testApplyShouldFailWithTwoEntriesHavingSameTimestamps(): Unit = {
+    assertThrows[IllegalArgumentException](TimeSeries(Seq(TSEntry(1, 1, 1), TSEntry(1, 1, 1))))
+  }
+
 }
