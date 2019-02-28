@@ -15,6 +15,8 @@ case class VectorTimeSeries[T](data: Vector[TSEntry[T]])
 // data needs to be SORTED -> TODO: private constructor?
     extends TimeSeries[T] {
 
+  assert(data.nonEmpty, "A VectorTimeSeries can not be empty")
+
   /**
     * Dichotomic search for the element in the time series for the entry
     * with the biggest timestamp lower or equal to 't'.

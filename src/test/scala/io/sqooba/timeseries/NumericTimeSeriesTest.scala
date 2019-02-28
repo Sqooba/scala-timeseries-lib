@@ -3,7 +3,7 @@ package io.sqooba.timeseries
 import java.util.concurrent.TimeUnit
 
 import io.sqooba.timeseries.NumericTimeSeries.slidingIntegral
-import io.sqooba.timeseries.immutable.{TSEntry, VectorTimeSeries}
+import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
 
@@ -123,8 +123,8 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      NumericTimeSeries.rolling(VectorTimeSeries.ofEntriesUnsafe(Seq()), min, 20)
-        == VectorTimeSeries.ofEntriesUnsafe(Seq())
+      NumericTimeSeries.rolling(EmptyTimeSeries[Int](), min, 20)
+        == EmptyTimeSeries[Int]()
     )
 
     // other tests with sum
@@ -209,6 +209,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
       slidingIntegral(tri, 1, TimeUnit.SECONDS) == tri
     )
   }
+
   @Test def testSimpleSlidingSumContinuous: Unit = {
     // Test pair-wise continuous entries
 

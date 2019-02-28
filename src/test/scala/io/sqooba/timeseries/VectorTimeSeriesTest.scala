@@ -8,10 +8,10 @@ import org.scalatest.junit.JUnitSuite
 
 class VectorTimeSeriesTest extends JUnitSuite {
 
-  val empty = VectorTimeSeries()
+  val empty = EmptyTimeSeries[String]()
 
   // Single entry
-  val single = VectorTimeSeries(1L -> ("Hi", 10L))
+  val single = TSEntry(1L, "Hi", 10L)
 
   // Two contiguous entries
   val contig2 = VectorTimeSeries(1L -> ("Hi", 10L), 11L -> ("Ho", 10L))
@@ -801,6 +801,18 @@ class VectorTimeSeriesTest extends JUnitSuite {
           )
         )
     )
+  }
+
+  @Test def testFilterAllValuesShouldReturnAnEmptyTimeSeries(): Unit = {
+    val ts = VectorTimeSeries.ofEntriesSafe(
+      Seq(
+        TSEntry(1, 1, 1),
+        TSEntry(2, 2, 2),
+        TSEntry(3, 3, 3)
+      )
+    )
+
+    assert(ts.filter(_ => false).isInstanceOf[EmptyTimeSeries[Int]])
   }
 
   // TODO add test for constructor using the 'ofEntriesSafe' function.
