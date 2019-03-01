@@ -250,7 +250,7 @@ class TimeSeriesTest extends JUnitSuite {
   @Test def testSlice: Unit = {
     val tri =
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
-    assert(tri.slice(-1, 0) == EmptyTimeSeries())
+    assert(tri.slice(-1, 0) == EmptyTimeSeries)
     assert(tri.slice(-1, 10).entries == Seq(TSEntry(0, "Hi", 10)))
     assert(tri.slice(0, 10).entries == Seq(TSEntry(0, "Hi", 10)))
     assert(tri.slice(0, 9).entries == Seq(TSEntry(0, "Hi", 9)))

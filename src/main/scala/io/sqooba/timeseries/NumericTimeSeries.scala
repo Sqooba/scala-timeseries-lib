@@ -14,7 +14,7 @@ object NumericTimeSeries {
     * Defensive 'plus' operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */
-  def strictPlus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
+  def strictPlus[T, U >: T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[U]): Option[U] = {
     import n._
     (lhO, rhO) match {
       case (Some(l), Some(r)) => Some(l + r)
@@ -177,20 +177,20 @@ object NumericTimeSeries {
     // TODO make this if/else block nicer?
     if (remaining.isEmpty) {
       windowHeadTime +
-      Math.min(
-        // Time to end of domain of interest, as there will be no new entries to add
-        endOfTime - windowHeadTime,
-        // Time to next entry to leave the window
-        inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-      )
+        Math.min(
+          // Time to end of domain of interest, as there will be no new entries to add
+          endOfTime - windowHeadTime,
+          // Time to next entry to leave the window
+          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
+        )
     } else {
       windowHeadTime +
-      Math.min(
-        // Time to next entry to enter the window, if there is any
-        remaining.headOption.map(_.timestamp - windowHeadTime).getOrElse(Long.MaxValue),
-        // Time to next entry to leave the window
-        inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-      )
+        Math.min(
+          // Time to next entry to enter the window, if there is any
+          remaining.headOption.map(_.timestamp - windowHeadTime).getOrElse(Long.MaxValue),
+          // Time to next entry to leave the window
+          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
+        )
     }
   }
 

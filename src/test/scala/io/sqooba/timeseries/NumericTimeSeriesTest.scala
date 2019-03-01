@@ -123,8 +123,8 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      NumericTimeSeries.rolling(EmptyTimeSeries[Int](), min, 20)
-        == EmptyTimeSeries[Int]()
+      NumericTimeSeries.rolling(EmptyTimeSeries, min, 20)
+        == EmptyTimeSeries
     )
 
     // other tests with sum

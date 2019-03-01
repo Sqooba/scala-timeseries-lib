@@ -75,7 +75,7 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
   "result" should "return an EmptyTimeSeries if no entry is appended" in {
     val b = newTsb
 
-    b.result() should equal(EmptyTimeSeries[Int]())
+    b.result() should equal(EmptyTimeSeries)
   }
 
   it should "be the given TSEntry if there is only one appended" in {

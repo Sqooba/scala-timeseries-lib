@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
 
-trait TimeSeries[T] {
+trait TimeSeries[+T] {
 
   /** The value valid at time 't' if there is one. */
   def at(t: Long): Option[T]
@@ -65,7 +65,7 @@ trait TimeSeries[T] {
   /** Fill the wholes in the definition domain of this time series with the passed value.
     * The resulting time series will have a single continuous definition domain,
     * provided the original time series was non-empty. */
-  def fill(whenUndef: T): TimeSeries[T]
+  def fill[U >: T](whenUndef: U): TimeSeries[U]
 
   /** Return a Seq of the TSEntries representing this time series. */
   def entries: Seq[TSEntry[T]]
@@ -119,7 +119,7 @@ trait TimeSeries[T] {
     *
     * If 'other' is empty, this time series is unchanged.
     */
-  def append(other: TimeSeries[T]): TimeSeries[T]
+  def append[U >: T](other: TimeSeries[U]): TimeSeries[U]
 
   /** Prepend the 'other' time series to this one at exactly the last of other's entries definedUntil().
     *
@@ -131,7 +131,7 @@ trait TimeSeries[T] {
     *
     * If 'other' is empty, this time series is unchanged.
     */
-  def prepend(other: TimeSeries[T]): TimeSeries[T]
+  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U]
 
   /**
     * Merge another time series to this one, using the provided operator
@@ -154,30 +154,30 @@ trait TimeSeries[T] {
     * this.at(x) + other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def plus(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+  def plus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
     VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_, _)(n)))
 
-  def +(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = plus(other)
+  def +[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = plus(other)(n)
 
   /**
     * Subtract the entries within this and the provided time series such that
     * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def minus(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+  def minus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
     VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_, _)(n)))
 
-  def -(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = minus(other)
+  def -[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = minus(other)
 
   /**
     * Multiply the entries within this and the provided time series such that
     * this.at(x) * other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def multiply(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] =
+  def multiply[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
     VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_, _)(n)))
 
-  def *(other: TimeSeries[T])(implicit n: Numeric[T]): VectorTimeSeries[T] = multiply(other)
+  def *[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = multiply(other)
 
   /**
     * Zips this time series with another one, returning a time series
@@ -200,9 +200,9 @@ trait TimeSeries[T] {
     * This function returns a step function, so only represents an approximation.
     * Use it if you need to compute multiple integrals of the same time series.
     */
-  def stepIntegral(stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): VectorTimeSeries[Double] = {
+  def stepIntegral[U >: T](stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): VectorTimeSeries[Double] = {
     VectorTimeSeries.ofEntriesUnsafe(
-      NumericTimeSeries.stepIntegral(
+      NumericTimeSeries.stepIntegral[U](
         this.resample(stepLengthMs).entries,
         timeUnit
       )
@@ -215,8 +215,8 @@ trait TimeSeries[T] {
     * If you need to call this multiple times, consider using #stepIntegral()
     * depending on your use case.
     */
-  def integrateBetween(from: Long, to: Long)(implicit n: Numeric[T]): T =
-    this.slice(from, to).entries.map(_.value).sum
+  def integrateBetween[U >: T](from: Long, to: Long)(implicit n: Numeric[U]): U =
+    this.slice(from, to).entries.map(_.value).sum(n)
 
   /**
     * Resamples the time series by ensuring that each entry has a validity
@@ -237,17 +237,17 @@ trait TimeSeries[T] {
     * @return a TimeSeries that for any queried time will return an approximate integral of
     *         this time series over the past window
     */
-  def slidingIntegral(
+  def slidingIntegral[U >: T](
       window: Long,
       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-  )(implicit n: Numeric[T]): TimeSeries[Double] =
+  )(implicit n: Numeric[U]): TimeSeries[Double] =
     if (this.size < 2) {
       this.map(n.toDouble)
     } else {
       // TODO: have slidingSum return compressed output so we can use the unsafe constructor
       // and save an iteration
       VectorTimeSeries
-        .ofEntriesSafe(NumericTimeSeries.slidingIntegral(this.entries, window, timeUnit))
+        .ofEntriesSafe(NumericTimeSeries.slidingIntegral[U](this.entries, window, timeUnit))
     }
 
   /**
@@ -521,7 +521,7 @@ object TimeSeries {
     val size = xs.size
 
     if (size == 0) {
-      new EmptyTimeSeries[T]()
+      EmptyTimeSeries
     } else if (size == 1) {
       xs.head
     } else {

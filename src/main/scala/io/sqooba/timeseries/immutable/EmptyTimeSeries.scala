@@ -5,51 +5,51 @@ import io.sqooba.timeseries.TimeSeries
 /**
   * A time series that is never defined.
   */
-case class EmptyTimeSeries[T]() extends TimeSeries[T] {
+case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
-  def at(t: Long): Option[T] = None
+  def at(t: Long): Option[Nothing] = None
 
   def size(): Int = 0
 
   def defined(at: Long): Boolean = false
 
-  def trimLeft(at: Long): TimeSeries[T] = this
+  def trimLeft(at: Long): TimeSeries[Nothing] = this
 
-  def trimRight(at: Long): TimeSeries[T] = this
+  def trimRight(at: Long): TimeSeries[Nothing] = this
 
-  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] = EmptyTimeSeries[O]()
+  def map[O](f: Nothing => O, compress: Boolean = true): TimeSeries[O] = this
 
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] = this
+  def filter(predicate: TSEntry[Nothing] => Boolean): TimeSeries[Nothing] = this
 
-  def filterValues(predicate: T => Boolean): TimeSeries[T] = this
+  def filterValues(predicate: Nothing => Boolean): TimeSeries[Nothing] = this
 
-  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = EmptyTimeSeries[O]()
+  def mapWithTime[O](f: (Long, Nothing) => O, compress: Boolean = true): TimeSeries[O] = this
 
-  def fill(whenUndef: T): TimeSeries[T] = this
+  def fill[U >: Nothing](whenUndef: U): TimeSeries[U] = this
 
-  def entries: Seq[TSEntry[T]] = Seq()
+  def entries: Seq[TSEntry[Nothing]] = Seq()
 
-  def head: TSEntry[T] = throw new NoSuchElementException()
+  def head: TSEntry[Nothing] = throw new NoSuchElementException()
 
-  def headOption: Option[TSEntry[T]] = None
+  def headOption: Option[TSEntry[Nothing]] = None
 
-  def headValue: T = throw new NoSuchElementException()
+  def headValue: Nothing = throw new NoSuchElementException()
 
-  def headValueOption: Option[T] = None
+  def headValueOption: Option[Nothing] = None
 
-  def last: TSEntry[T] = throw new NoSuchElementException()
+  def last: TSEntry[Nothing] = throw new NoSuchElementException()
 
-  def lastOption: Option[TSEntry[T]] = None
+  def lastOption: Option[TSEntry[Nothing]] = None
 
-  def lastValue: T = throw new NoSuchElementException()
+  def lastValue: Nothing = throw new NoSuchElementException()
 
-  def lastValueOption: Option[T] = None
+  def lastValueOption: Option[Nothing] = None
 
-  def append(other: TimeSeries[T]): TimeSeries[T] = other
+  def append[U >: Nothing](other: TimeSeries[U]): TimeSeries[U] = other
 
-  def prepend(other: TimeSeries[T]): TimeSeries[T] = other
+  def prepend[U >: Nothing](other: TimeSeries[U]): TimeSeries[U] = other
 
-  def resample(sampleLengthMs: Long): TimeSeries[T] = this
+  def resample(sampleLengthMs: Long): TimeSeries[Nothing] = this
 
-  override def looseDomain: TimeDomain = EmptyTimeDomain
+  def looseDomain: TimeDomain = EmptyTimeDomain
 }

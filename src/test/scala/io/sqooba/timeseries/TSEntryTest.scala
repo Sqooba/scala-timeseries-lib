@@ -28,14 +28,14 @@ class TSEntryTest extends JUnitSuite {
   @Test def testFilter: Unit = {
     val t = TSEntry(10, "Hi", 10)
     assert(t.filter(_.validity == 10) == t)
-    assert(t.filter(_.timestamp != 10) == EmptyTimeSeries())
+    assert(t.filter(_.timestamp != 10) == EmptyTimeSeries)
     assert(t.filter(_.value == "Hi") == t)
   }
 
   @Test def testFilterValues: Unit = {
     val t = TSEntry(10, "Hi", 10)
     assert(t.filterValues(_ == "Hi") == t)
-    assert(t.filterValues(_ == "Ho") == EmptyTimeSeries())
+    assert(t.filterValues(_ == "Ho") == EmptyTimeSeries)
   }
 
   @Test def testFill(): Unit = {
@@ -104,8 +104,8 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimRight(10) == tse)
     assert(tse.trimRight(9) == TSEntry(0, "", 9))
     assert(tse.trimRight(1) == TSEntry(0, "", 1))
-    assert(tse.trimRight(0) == EmptyTimeSeries())
-    assert(tse.trimRight(-1) == EmptyTimeSeries())
+    assert(tse.trimRight(0) == EmptyTimeSeries)
+    assert(tse.trimRight(-1) == EmptyTimeSeries)
   }
 
   @Test def testTrimEntryRight(): Unit = {
@@ -128,8 +128,8 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimLeft(1) == tse)
     assert(tse.trimLeft(2) == TSEntry(2, "", 9))
     assert(tse.trimLeft(10) == TSEntry(10, "", 1))
-    assert(tse.trimLeft(11) == EmptyTimeSeries())
-    assert(tse.trimLeft(12) == EmptyTimeSeries())
+    assert(tse.trimLeft(11) == EmptyTimeSeries)
+    assert(tse.trimLeft(12) == EmptyTimeSeries)
   }
 
   @Test def testTrimEntryLeft(): Unit = {
@@ -148,11 +148,11 @@ class TSEntryTest extends JUnitSuite {
 
   @Test def testSplit(): Unit = {
     val tse = TSEntry(0, "", 10)
-    assert(tse.split(0) == (EmptyTimeSeries(), tse))
+    assert(tse.split(0) == (EmptyTimeSeries, tse))
     assert(tse.split(1) == (tse.trimEntryRight(1), tse.trimEntryLeft(1)))
     assert(tse.split(5) == (tse.trimEntryRight(5), tse.trimEntryLeft(5)))
     assert(tse.split(9) == (tse.trimEntryRight(9), tse.trimEntryLeft(9)))
-    assert(tse.split(10) == (tse, EmptyTimeSeries()))
+    assert(tse.split(10) == (tse, EmptyTimeSeries))
   }
 
   @Test def testSlice: Unit = {
@@ -172,8 +172,8 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(3, "Hi", 6) == t.slice(3, 9))
 
     // Outside of definition bounds
-    assert(EmptyTimeSeries() == t.slice(12, 15))
-    assert(EmptyTimeSeries() == t.slice(0, 1))
+    assert(EmptyTimeSeries == t.slice(12, 15))
+    assert(EmptyTimeSeries == t.slice(0, 1))
   }
 
   @Test def testTrimLeftNRight(): Unit = {

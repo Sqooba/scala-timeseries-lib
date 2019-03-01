@@ -6,7 +6,7 @@ import org.scalatest.junit.JUnitSuite
 
 class EmptyTimeSeriesTest extends JUnitSuite {
 
-  val ts    = EmptyTimeSeries[String]()
+  val ts    = EmptyTimeSeries
   val testE = TSEntry(1, "Test", 10)
 
   @Test def testAt: Unit = assert(ts.at(1).isEmpty)
@@ -15,19 +15,19 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testDefined: Unit = assert(ts.defined(1) == false)
 
-  @Test def testTrimLeft: Unit = assert(ts.trimLeft(1) == EmptyTimeSeries())
+  @Test def testTrimLeft: Unit = assert(ts.trimLeft(1) == EmptyTimeSeries)
 
-  @Test def testTrimRight: Unit = assert(ts.trimRight(1) == EmptyTimeSeries())
+  @Test def testTrimRight: Unit = assert(ts.trimRight(1) == EmptyTimeSeries)
 
-  @Test def testMap: Unit = assert(ts.map(n => None) == EmptyTimeSeries())
+  @Test def testMap: Unit = assert(ts.map(n => None) == EmptyTimeSeries)
 
-  @Test def testMapWithTime: Unit = assert(ts.mapWithTime((t, v) => t + v) == EmptyTimeSeries())
+  @Test def testMapWithTime: Unit = assert(ts.mapWithTime((t, v) => t + v) == EmptyTimeSeries)
 
-  @Test def testFilter: Unit = assert(ts.filter(_ => true) == EmptyTimeSeries())
+  @Test def testFilter: Unit = assert(ts.filter(_ => true) == EmptyTimeSeries)
 
-  @Test def testFilterValues: Unit = assert(ts.filterValues(_ => true) == EmptyTimeSeries())
+  @Test def testFilterValues: Unit = assert(ts.filterValues(_ => true) == EmptyTimeSeries)
 
-  @Test def testFill: Unit = assert(ts.fill("None") == EmptyTimeSeries())
+  @Test def testFill: Unit = assert(ts.fill("None") == EmptyTimeSeries)
 
   @Test def testEntries: Unit = assert(ts.entries == Seq())
 
@@ -67,8 +67,8 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testPrepend: Unit = assert(ts.prepend(testE) == testE)
 
-  @Test def testSlice: Unit = assert(ts.slice(-1, 1) == EmptyTimeSeries())
+  @Test def testSlice: Unit = assert(ts.slice(-1, 1) == EmptyTimeSeries)
 
-  @Test def testSplit: Unit = assert(ts.split(1) == (EmptyTimeSeries(), EmptyTimeSeries()))
+  @Test def testSplit: Unit = assert(ts.split(1) == (EmptyTimeSeries, EmptyTimeSeries))
 
 }

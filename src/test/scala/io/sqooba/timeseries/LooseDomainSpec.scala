@@ -33,12 +33,12 @@ class LooseDomainSpec extends SqoobaSpec {
 
   private val timeseriesSeq: Seq[TimeSeries[None.type]] = List[TimeSeries[None.type]](
     niceAndLongTimeSeries,
-    EmptyTimeSeries(),
+    EmptyTimeSeries,
     TSEntry(3, None, 2)
   )
 
   "The loose domain" should "be empty for empty TimeSeries" in {
-    EmptyTimeSeries[Any]().looseDomain should equal(EmptyTimeDomain)
+    EmptyTimeSeries.looseDomain should equal(EmptyTimeDomain)
   }
 
   it should "be trivial for single entry" in {
@@ -71,7 +71,7 @@ class LooseDomainSpec extends SqoobaSpec {
   }
 
   it should "be empty if a Seq of empty is given" in {
-    TimeSeries.unionLooseDomains(List(EmptyTimeSeries(), EmptyTimeSeries())) should equal(EmptyTimeDomain)
+    TimeSeries.unionLooseDomains(List(EmptyTimeSeries, EmptyTimeSeries)) should equal(EmptyTimeDomain)
   }
 
   "The intersection of loose domains" should "be empty if there is at least one EmptyTimeSeries" in {

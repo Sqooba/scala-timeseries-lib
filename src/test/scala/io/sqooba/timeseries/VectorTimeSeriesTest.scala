@@ -8,7 +8,7 @@ import org.scalatest.junit.JUnitSuite
 
 class VectorTimeSeriesTest extends JUnitSuite {
 
-  val empty = EmptyTimeSeries[String]()
+  val empty = EmptyTimeSeries
 
   // Single entry
   val single = TSEntry(1L, "Hi", 10L)
@@ -87,7 +87,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
   @Test def testTrimLeftContiguous() {
 
     // Trimming an empty TS:
-    assert(EmptyTimeSeries() == empty.trimLeft(-1))
+    assert(EmptyTimeSeries == empty.trimLeft(-1))
 
     // Single entry
     // Trimming left of the domain
@@ -97,7 +97,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     // Trimming an entry
     assert(TSEntry(2, "Hi", 9) == single.trimLeft(2))
     assert(TSEntry(10, "Hi", 1) == single.trimLeft(10))
-    assert(EmptyTimeSeries() == single.trimLeft(11))
+    assert(EmptyTimeSeries == single.trimLeft(11))
 
     // Two contiguous entries
     // Left of the domain
@@ -116,7 +116,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(20, "Ho", 1)) == contig2.trimLeft(20).entries)
 
     // ... and after the second entry:
-    assert(EmptyTimeSeries() == contig2.trimLeft(21))
+    assert(EmptyTimeSeries == contig2.trimLeft(21))
 
   }
 
@@ -139,7 +139,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(21, "Ho", 1)) == discon2.trimLeft(21).entries)
 
     // ... and after the second entry:
-    assert(EmptyTimeSeries() == discon2.trimLeft(22))
+    assert(EmptyTimeSeries == discon2.trimLeft(22))
 
     // Trim on a three element time series with a discontinuity
     // Left of the first entry
@@ -171,12 +171,12 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(31, "Ha", 1)) == three.trimLeft(31).entries)
 
     // ... and after every entry.
-    assert(EmptyTimeSeries() == three.trimLeft(32))
+    assert(EmptyTimeSeries == three.trimLeft(32))
   }
 
   @Test def testTrimRightContiguous() {
     // empty case...
-    assert(EmptyTimeSeries() == empty.trimRight(0))
+    assert(EmptyTimeSeries == empty.trimRight(0))
 
     // Single entry:
     // Right of the domain:
@@ -188,8 +188,8 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(TSEntry(1, "Hi", 1) == single.trimRight(2))
 
     // Left of the entry
-    assert(EmptyTimeSeries() == single.trimRight(1))
-    assert(EmptyTimeSeries() == single.trimRight(0))
+    assert(EmptyTimeSeries == single.trimRight(1))
+    assert(EmptyTimeSeries == single.trimRight(0))
 
     // Two contiguous entries:
     // Right of the domain:
@@ -208,8 +208,8 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(TSEntry(1, "Hi", 1) == contig2.trimRight(2))
 
     // Before the first entry
-    assert(EmptyTimeSeries() == contig2.trimRight(1))
-    assert(EmptyTimeSeries() == contig2.trimRight(0))
+    assert(EmptyTimeSeries == contig2.trimRight(1))
+    assert(EmptyTimeSeries == contig2.trimRight(0))
 
   }
 
@@ -232,8 +232,8 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(1, "Hi", 1)) == discon2.trimRight(2).entries)
 
     // ... and before the first entry:
-    assert(EmptyTimeSeries() == discon2.trimRight(1))
-    assert(EmptyTimeSeries() == discon2.trimRight(0))
+    assert(EmptyTimeSeries == discon2.trimRight(1))
+    assert(EmptyTimeSeries == discon2.trimRight(0))
 
     // Trim on a three element time series with a discontinuity
     // Right of the last entry
@@ -266,15 +266,15 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(Seq(TSEntry(1, "Hi", 1)) == three.trimRight(2).entries)
 
     // ... and after every entry.
-    assert(EmptyTimeSeries() == three.trimRight(1))
-    assert(EmptyTimeSeries() == three.trimRight(0))
+    assert(EmptyTimeSeries == three.trimRight(1))
+    assert(EmptyTimeSeries == three.trimRight(0))
   }
 
   @Test def testSplit() {
     val tri =
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
-    assert(tri.split(-1) == (EmptyTimeSeries(), tri))
-    assert(tri.split(0) == (EmptyTimeSeries(), tri))
+    assert(tri.split(-1) == (EmptyTimeSeries, tri))
+    assert(tri.split(0) == (EmptyTimeSeries, tri))
     assert(tri.split(1) == (tri.trimRight(1), tri.trimLeft(1)))
     assert(tri.split(9) == (tri.trimRight(9), tri.trimLeft(9)))
     assert(tri.split(10) == (tri.trimRight(10), tri.trimLeft(10)))
@@ -283,8 +283,8 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(tri.split(20) == (tri.trimRight(20), tri.trimLeft(20)))
     assert(tri.split(21) == (tri.trimRight(21), tri.trimLeft(21)))
     assert(tri.split(29) == (tri.trimRight(29), tri.trimLeft(29)))
-    assert(tri.split(30) == (tri, EmptyTimeSeries()))
-    assert(tri.split(31) == (tri, EmptyTimeSeries()))
+    assert(tri.split(30) == (tri, EmptyTimeSeries))
+    assert(tri.split(31) == (tri, EmptyTimeSeries))
   }
 
   @Test def testMap() {
@@ -356,7 +356,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       ts.filter(_.value.startsWith("H")) == ts
     )
     assert(
-      ts.filter(_.value.endsWith("H")) == EmptyTimeSeries()
+      ts.filter(_.value.endsWith("H")) == EmptyTimeSeries
     )
   }
 
@@ -368,7 +368,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       ts.filterValues(_.startsWith("H")) == ts
     )
     assert(
-      ts.filterValues(_.endsWith("H")) == EmptyTimeSeries()
+      ts.filterValues(_.endsWith("H")) == EmptyTimeSeries
     )
   }
 
@@ -797,7 +797,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testFilterAllValuesShouldReturnAnEmptyTimeSeries(): Unit = {
+  @Test def testFilterAllValuesShouldReturnAnEmptyTimeSeries: Unit = {
     val ts = VectorTimeSeries.ofEntriesSafe(
       Seq(
         TSEntry(1, 1, 1),
@@ -806,7 +806,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       )
     )
 
-    assert(ts.filter(_ => false).isInstanceOf[EmptyTimeSeries[Int]])
+    assert(ts.filter(_ => false) == EmptyTimeSeries)
   }
 
   // TODO add test for constructor using the 'ofEntriesSafe' function.

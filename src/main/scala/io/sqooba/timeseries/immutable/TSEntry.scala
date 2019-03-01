@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import io.sqooba.timeseries.TimeSeries
 
-case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
+case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
 
   if (validity <= 0) throw new IllegalArgumentException(s"Validity must be strictly positive ($validity was given)")
 
@@ -31,7 +31,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     */
   def trimRight(at: Long): TimeSeries[T] =
     if (at <= timestamp) { // Trim before or exactly on value start: result is empty.
-      EmptyTimeSeries()
+      EmptyTimeSeries
     } else { // Entry needs to have its validity adapted.
       trimEntryRight(at)
     }
@@ -52,7 +52,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     * if this entry is defined at 'at'. */
   def trimLeft(at: Long): TimeSeries[T] =
     if (at >= definedUntil) { // Nothing left from the value on the right side of the trim
-      EmptyTimeSeries()
+      EmptyTimeSeries
     } else {
       trimEntryLeft(at)
     }
@@ -106,12 +106,12 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     TSEntry(timestamp, f(timestamp, value), validity)
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
-    if (predicate(this)) this else EmptyTimeSeries()
+    if (predicate(this)) this else EmptyTimeSeries
 
   def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    if (predicate(this.value)) this else EmptyTimeSeries()
+    if (predicate(this.value)) this else EmptyTimeSeries
 
-  def fill(whenUndef: T): TSEntry[T] = this
+  def fill[U >: T](whenUndef: U): TimeSeries[U] = this
 
   def entries: Seq[TSEntry[T]] = Seq(this)
 
@@ -124,7 +124,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     * - 'other' will be compressed into 'this' if their domains overlap and their
     * values are strictly equal
     */
-  def appendEntry(other: TSEntry[T]): Seq[TSEntry[T]] =
+  def appendEntry[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
     if (other.timestamp <= timestamp) {
       Seq(other)
     } else {
@@ -138,7 +138,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     *         if their values are strictly equal and their domain overlap.
     *         A seq of 'this', trimmed to 'other's timestamp, and the other entry is returned otherwise.
     */
-  private def extendOrTrim(other: TSEntry[T]): Seq[TSEntry[T]] =
+  private def extendOrTrim[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
     if (other.timestamp <= this.definedUntil() && this.value == other.value) {
       Seq(extendValidity(other.definedUntil() - this.definedUntil()))
     } else {
@@ -148,7 +148,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
   /** Prepend the other entry to this one.
     * Any part of this entry that is defined at t < other.definedUntil will be overwritten by the
     * other entry, or not be defined if t < other.timestamp */
-  def prependEntry(other: TSEntry[T]): Seq[TSEntry[T]] =
+  def prependEntry[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
     if (other.timestamp >= definedUntil) { // Complete overwrite, return the other.
       Seq(other)
     } else if (other.definedUntil < definedUntil) {
@@ -192,7 +192,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
       )
     }
 
-  def append(other: TimeSeries[T]): TimeSeries[T] =
+  def append[U >: T](other: TimeSeries[U]): TimeSeries[U] =
     other.headOption match {
       case None => // Other TS is empty: no effect
         this
@@ -210,7 +210,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
         other
     }
 
-  def prepend(other: TimeSeries[T]): TimeSeries[T] =
+  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U] =
     other.lastOption match {
       case None => // Other TS is empty: no effect
         this
@@ -256,7 +256,7 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
     *
     * TODO: return a (initVal, slope) tuple or something like an "IntegralEntry" instead ?
     */
-  def integral(timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Double = {
+  def integral[U >: T](timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): Double = {
     import n._
 
     // - Obtain the duration in milliseconds
@@ -268,15 +268,15 @@ case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSer
   /**
     * See #integral
     */
-  def integralEntry(timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): TSEntry[Double] =
-    this.map(_ => integral(timeUnit))
+  def integralEntry[U >: T](timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): TSEntry[Double] =
+    this.map((_: T) => integral[U](timeUnit)(n))
 
   /**
     * The loose domain of an entry is simply its domain.
     *
     * @return The looseDomain of the time-series
     */
-  override def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
+  def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
 
 }
 
@@ -378,9 +378,11 @@ object TSEntry {
     } match {
       // Merge remaining constrained entries
       case Seq() => mergeEitherToNone(single)(op).toSeq
-      case Seq(alone) =>
+      // Have to type explicitly otherwise scalac fails to infer the type
+      // TODO Investigate why that's happening (for the next `case` as well)
+      case Seq(alone: TSEntry[Either[A, B]]) =>
         mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
-      case toMerge: Seq[_] =>
+      case toMerge: Seq[TSEntry[Either[A, B]]] =>
         toMerge.head
         // Take care of the potentially undefined domain before the 'others'
         mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++
@@ -390,11 +392,8 @@ object TSEntry {
           // one to the relevant domain for the individual merges
           toMerge
             .sliding(2)
-            .flatMap(
-              p =>
-                mergeEithers(single
-                               .trimEntryLeftNRight(p.head.timestamp, p.last.timestamp),
-                             p.head)(op)
+            .flatMap[TSEntry[R]](
+              p => mergeEithers(single.trimEntryLeftNRight(p.head.timestamp, p.last.timestamp), p.head)(op)
             ) ++
           // Take care of the last entry and the potentially undefined domain
           // after it and the end of the single one.

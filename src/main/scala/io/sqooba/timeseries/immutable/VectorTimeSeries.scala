@@ -11,7 +11,7 @@ import scala.annotation.tailrec
   * Useful for working on time series like data when no random access is required,
   * as any method requiring some sort of lookup will only run in linear time.
   */
-case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
+case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
 // data needs to be SORTED
     extends TimeSeries[T] {
 
@@ -71,15 +71,15 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
   def filterValues(predicate: T => Boolean): TimeSeries[T] =
     filter(tse => predicate(tse.value))
 
-  def fill(whenUndef: T): TimeSeries[T] =
-    new VectorTimeSeries[T](TimeSeries.fillGaps(data, whenUndef).toVector)
+  def fill[U >: T](whenUndef: U): TimeSeries[U] =
+    new VectorTimeSeries[U](TimeSeries.fillGaps(data, whenUndef).toVector)
 
   def size(): Int = data.size
 
   def trimLeft(t: Long): TimeSeries[T] =
     // Check obvious shortcuts
     if (data.isEmpty) {
-      EmptyTimeSeries()
+      EmptyTimeSeries
     } else if (data.size == 1) {
       data.head.trimLeft(t)
     } else if (data.head.timestamp >= t) {
@@ -94,16 +94,16 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
               } else if (keep.nonEmpty) {
                 TimeSeries.ofOrderedEntriesUnsafe(keep)
               } else {
-                EmptyTimeSeries()
+                EmptyTimeSeries
               }
           }
-        case _ => EmptyTimeSeries()
+        case _ => EmptyTimeSeries
       }
     }
 
   def trimRight(t: Long): TimeSeries[T] =
     if (data.isEmpty) {
-      EmptyTimeSeries()
+      EmptyTimeSeries
     } else if (data.size == 1) {
       data.last.trimRight(t)
     } else {
@@ -116,7 +116,7 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
             case (noChange, _) =>
               new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
           }
-        case _ => EmptyTimeSeries()
+        case _ => EmptyTimeSeries
       }
     }
 
@@ -138,7 +138,7 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
 
   def lastValueOption: Option[T] = data.lastOption.map(_.value)
 
-  def append(other: TimeSeries[T]): TimeSeries[T] =
+  def append[U >: T](other: TimeSeries[U]): TimeSeries[U] =
     other.headOption match {
       case None => // other is empty, nothing to do.
         this
@@ -149,7 +149,7 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
         other
     }
 
-  def prepend(other: TimeSeries[T]): TimeSeries[T] =
+  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U] =
     other.lastOption match {
       case None => // other is empty, nothing to do.
         this
@@ -168,7 +168,7 @@ case class VectorTimeSeries[T] private[timeseries] (data: Vector[TSEntry[T]])
       this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
     )
 
-  override def looseDomain: TimeDomain =
+  def looseDomain: TimeDomain =
     data.head.looseDomain.union(data.last.looseDomain)
 
 }
