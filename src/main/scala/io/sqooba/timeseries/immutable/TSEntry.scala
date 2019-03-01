@@ -6,7 +6,7 @@ import io.sqooba.timeseries.TimeSeries
 
 case class TSEntry[T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
 
-  if (validity <= 0) throw new IllegalArgumentException("Validity must be strictly positive")
+  if (validity <= 0) throw new IllegalArgumentException(s"Validity must be strictly positive ($validity was given)")
 
   def at(t: Long): Option[T] =
     if (defined(t)) {
