@@ -81,7 +81,7 @@ class LooseDomainSpec extends SqoobaSpec {
   }
 
   it should "consider the smaller case if there is no empty time series" in {
-    val tss = timeseriesSeq filter (_.size() != 0)
+    val tss = timeseriesSeq filter (_.nonEmpty)
 
     val looseDomain = TimeSeries.intersectLooseDomains(tss)
 

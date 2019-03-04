@@ -25,6 +25,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
 
   def size(): Int = 1
 
+  def isEmpty: Boolean = false
+
   /** Shorten this entry's validity if it exceed 'at'. No effect otherwise.
     *
     * If the entry's timestamp is after 'at', the entry remains unchanged.

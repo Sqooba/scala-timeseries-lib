@@ -76,6 +76,8 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
 
   def size(): Int = data.size
 
+  def isEmpty: Boolean = false
+
   def trimLeft(t: Long): TimeSeries[T] =
     // Check obvious shortcuts
     if (data.isEmpty) {

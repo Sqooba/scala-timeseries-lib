@@ -334,6 +334,7 @@ class TSEntryTest extends JUnitSuite {
     // result contains a single entry
     val r1 = TSEntry.merge(TSEntry(1, 2.0, 10), TSEntry(1, 3.0, 10))(plus)
     assert(r1.size == 1)
+    assert(r1.nonEmpty)
     assert(r1(0) == TSEntry(1, 5.0, 10))
 
     // Entries don't start at the same time, but have the same end of validity

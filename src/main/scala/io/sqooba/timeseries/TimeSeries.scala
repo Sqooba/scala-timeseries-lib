@@ -43,6 +43,12 @@ trait TimeSeries[+T] {
   /** The number of elements in this time-series. */
   def size(): Int
 
+  /** Convenient and efficient method for `size == 0` */
+  def isEmpty: Boolean
+
+  /** Convenient method for !isEmpty */
+  def nonEmpty: Boolean = !isEmpty
+
   /** True if this time series is defined at 'at'. Ie, at('at') would return Some[T] */
   def defined(at: Long): Boolean
 

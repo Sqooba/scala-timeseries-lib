@@ -11,6 +11,8 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def size(): Int = 0
 
+  def isEmpty: Boolean = true
+
   def defined(at: Long): Boolean = false
 
   def trimLeft(at: Long): TimeSeries[Nothing] = this

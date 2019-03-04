@@ -36,6 +36,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
     // Check two contiguous values
     assert(2 == contig2.size())
+    assert(contig2.nonEmpty)
     assert(None == contig2.at(0))
     assert(Some("Hi") == contig2.at(1))
     assert(Some("Hi") == contig2.at(10))
