@@ -194,42 +194,6 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
       )
     }
 
-  def append[U >: T](other: TimeSeries[U]): TimeSeries[U] =
-    other.headOption match {
-      case None => // Other TS is empty: no effect
-        this
-      // TODO: find out how to get the nice +: syntax working here :)
-      case Some(tse) if tse.timestamp > timestamp =>
-        other match {
-          // Check if the other TS is also a TSEntry,
-          // otherwise we might get into infinite recursion.
-          case o: TSEntry[T] =>
-            VectorTimeSeries
-              .ofEntriesUnsafe(Seq(this.trimEntryRight(tse.timestamp), o))
-          case _ => other.prepend(this.trimEntryRight(tse.timestamp))
-        }
-      case _ => // Hides the current entry completely: just return the other.
-        other
-    }
-
-  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U] =
-    other.lastOption match {
-      case None => // Other TS is empty: no effect
-        this
-      case Some(tse) if tse.definedUntil < this.definedUntil => // other TS overlaps partially
-        other match {
-          // Check if the other TS is also a TSEntry,
-          // otherwise we might get into infinite recursion.
-          // TODO: find out how to get the nice :+ syntax working here :)
-          case o: TSEntry[T] =>
-            VectorTimeSeries.ofEntriesUnsafe(Seq(o, this.trimEntryLeft(tse.definedUntil)))
-          case _ =>
-            other.append(this.trimEntryLeft(tse.definedUntil))
-        }
-      case _ => // Hides the current entry completely: just return the other.
-        other
-    }
-
   def resample(sampleLengthMs: Long): TimeSeries[T] =
     // this entry should be split
     if (this.validity > sampleLengthMs) {
@@ -240,7 +204,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
             this.timestamp + sampleLengthMs,
             this.value,
             this.validity - sampleLengthMs
-          ).resample(sampleLengthMs)
+          ).resample(sampleLengthMs),
+          compress = false
         )
     } else {
       this

@@ -719,8 +719,9 @@ class VectorTimeSeriesTest extends JUnitSuite {
     val tri =
       VectorTimeSeries(0L -> (1, 10L), 10L -> (2, 10L), 20L -> (3, 10L))
 
-    tri.stepIntegral(10, TimeUnit.SECONDS).entries ==
-      Seq(TSEntry(0, 10.0, 10), TSEntry(10, 30.0, 10), TSEntry(20, 60.0, 10))
+    assert(
+      tri.stepIntegral(10, TimeUnit.SECONDS).entries ==
+        Seq(TSEntry(0, 10.0, 10), TSEntry(10, 30.0, 10), TSEntry(20, 60.0, 10)))
 
     val withSampling = TSEntry(0L, 1, 30L)
 

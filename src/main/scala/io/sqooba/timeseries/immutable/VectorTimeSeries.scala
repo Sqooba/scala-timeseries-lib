@@ -140,31 +140,6 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
 
   def lastValueOption: Option[T] = data.lastOption.map(_.value)
 
-  def append[U >: T](other: TimeSeries[U]): TimeSeries[U] =
-    other.headOption match {
-      case None => // other is empty, nothing to do.
-        this
-      case Some(tse) if tse.timestamp > head.timestamp => // Something to keep from the current TS
-        VectorTimeSeries
-          .ofEntriesUnsafe(this.trimRight(tse.timestamp).entries ++ other.entries)
-      case _ => // Nothing to keep, other overwrites this TS completely
-        other
-    }
-
-  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U] =
-    other.lastOption match {
-      case None => // other is empty, nothing to do.
-        this
-      case Some(tse) if tse.definedUntil < last.definedUntil =>
-        // Something to keep from the current TS
-        VectorTimeSeries.ofEntriesUnsafe(
-          other.entries ++
-            this.trimLeft(tse.definedUntil).entries
-        )
-      case _ => // Nothing to keep, other overwrites this TS completely
-        other
-    }
-
   def resample(sampleLengthMs: Long): TimeSeries[T] =
     new VectorTimeSeries(
       this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector

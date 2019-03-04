@@ -47,10 +47,6 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def lastValueOption: Option[Nothing] = None
 
-  def append[U >: Nothing](other: TimeSeries[U]): TimeSeries[U] = other
-
-  def prepend[U >: Nothing](other: TimeSeries[U]): TimeSeries[U] = other
-
   def resample(sampleLengthMs: Long): TimeSeries[Nothing] = this
 
   def looseDomain: TimeDomain = EmptyTimeDomain

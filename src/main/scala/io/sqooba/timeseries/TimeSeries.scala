@@ -125,7 +125,12 @@ trait TimeSeries[+T] {
     *
     * If 'other' is empty, this time series is unchanged.
     */
-  def append[U >: T](other: TimeSeries[U]): TimeSeries[U]
+  def append[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
+    other.headOption
+      .map(head => this.trimRight(head.timestamp).entries ++ other.entries)
+      // We assume that `TimeSeries.ofOrderedEntriesSafe` compresses the time-series
+      .map(if (compress) TimeSeries.ofOrderedEntriesSafe else TimeSeries.ofOrderedEntriesUnsafe)
+      .getOrElse(this)
 
   /** Prepend the 'other' time series to this one at exactly the last of other's entries definedUntil().
     *
@@ -137,7 +142,12 @@ trait TimeSeries[+T] {
     *
     * If 'other' is empty, this time series is unchanged.
     */
-  def prepend[U >: T](other: TimeSeries[U]): TimeSeries[U]
+  def prepend[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
+    other.lastOption
+      .map(last => other.entries ++ this.trimLeft(last.definedUntil).entries)
+      // We assume that `TimeSeries.ofOrderedEntriesSafe` compresses the time-series
+      .map(if (compress) TimeSeries.ofOrderedEntriesSafe else TimeSeries.ofOrderedEntriesUnsafe)
+      .getOrElse(this)
 
   /**
     * Merge another time series to this one, using the provided operator
@@ -206,8 +216,8 @@ trait TimeSeries[+T] {
     * This function returns a step function, so only represents an approximation.
     * Use it if you need to compute multiple integrals of the same time series.
     */
-  def stepIntegral[U >: T](stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): VectorTimeSeries[Double] = {
-    VectorTimeSeries.ofEntriesUnsafe(
+  def stepIntegral[U >: T](stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): TimeSeries[Double] = {
+    TimeSeries.ofOrderedEntriesUnsafe(
       NumericTimeSeries.stepIntegral[U](
         this.resample(stepLengthMs).entries,
         timeUnit
@@ -536,6 +546,22 @@ object TimeSeries {
   }
 
   /**
+    * Construct using a time-series `TimeSeriesBuilder` given an ordered list of entries
+    *
+    * The correct underlying implementation will be chosen (EmptyTimeSeries, TSEntry or VectorTimeSeries).
+    * As we are using a `TimeSeriesBuilder`, the entries will be compressed if possible.
+    *
+    * @note No two entries can have the same timestamp, an exception will be thrown if it's the case.
+    *
+    * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+    *           well-formed (no duplicated timestamps)
+    * @tparam T The underlying type of the time-series
+    * @return A compressed time-series with a correct implementation
+    */
+  def ofOrderedEntriesSafe[T](xs: Seq[TSEntry[T]]): TimeSeries[T] =
+    xs.foldLeft(new TimeSeriesBuilder[T]())(_ += _).result()
+
+  /**
     * An safe constructor of `TimeSeries`
     *
     * The given entries are sorted, compressed (if needed) and returned as a time-series. If the sequence
@@ -548,7 +574,6 @@ object TimeSeries {
     * @tparam T The time-series' underlying parameter
     * @return A well initialized time-series
     */
-  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] =
-    entries.sortBy(_.timestamp).foldLeft(new TimeSeriesBuilder[T]())(_ += _).result()
+  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sortBy(_.timestamp))
 
 }

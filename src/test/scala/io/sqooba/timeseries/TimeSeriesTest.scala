@@ -529,4 +529,52 @@ class TimeSeriesTest extends JUnitSuite {
     assertThrows[IllegalArgumentException](TimeSeries(Seq(TSEntry(1, 1, 1), TSEntry(1, 1, 1))))
   }
 
+  @Test def testAppendPrependWithEmptyShouldBeTheSame(): Unit = {
+    val ts = TimeSeries(
+      Seq(
+        TSEntry(1, 1, 1),
+        TSEntry(2, 2, 1)
+      )
+    )
+
+    assert(ts.append(EmptyTimeSeries) == ts)
+    assert(ts.prepend(EmptyTimeSeries) == ts)
+  }
+
+  @Test def testAppendPrependWithOutOfDomainShouldReturnArgument(): Unit = {
+    val ts1 = TimeSeries(
+      Seq(
+        TSEntry(1, 1, 1),
+        TSEntry(2, 2, 1)
+      )
+    )
+
+    val ts2 = TimeSeries(
+      Seq(
+        TSEntry(3, 3, 1),
+        TSEntry(4, 4, 1)
+      )
+    )
+
+    assert(ts2.append(ts1) == ts1)
+    assert(ts1.prepend(ts2) == ts2)
+  }
+
+  @Test def testAppendPrependShouldTrimIfNeeded(): Unit = {
+    val ts1 = TSEntry(0, 1, 10)
+    val ts2 = TSEntry(5, 2, 10)
+
+    assert(ts1.append(ts2).entries.head.validity == 5)
+    assert(ts2.prepend(ts1).entries.last.timestamp == 10)
+  }
+
+  @Test def testAppendPrependShouldCompress(): Unit = {
+    val ts1 = TSEntry(1, 1, 1)
+    val ts2 = TSEntry(2, 1, 1)
+
+    val result = TSEntry(1, 1, 2)
+
+    assert(ts1.append(ts2) == result)
+    assert(ts2.prepend(ts1) == result)
+  }
 }
