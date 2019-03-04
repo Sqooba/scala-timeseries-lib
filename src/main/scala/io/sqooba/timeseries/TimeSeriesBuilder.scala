@@ -70,6 +70,6 @@ class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
     * @return the end of the domain of validity of the last entry added to this builder
     */
   def definedUntil: Option[Long] =
-    lastAdded.map(_.definedUntil())
+    lastAdded.map(_.definedUntil)
 
 }

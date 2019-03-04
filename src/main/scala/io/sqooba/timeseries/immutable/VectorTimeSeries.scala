@@ -74,7 +74,7 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
   def fill[U >: T](whenUndef: U): TimeSeries[U] =
     new VectorTimeSeries[U](TimeSeries.fillGaps(data, whenUndef).toVector)
 
-  def size(): Int = data.size
+  lazy val size: Int = data.size
 
   def isEmpty: Boolean = false
 
@@ -210,8 +210,8 @@ object VectorTimeSeries {
       case 0 => data.headOption.filter(_.timestamp <= ts).map((_, 0))
       case i: Int =>
         data(i) match {
-          case e: TSEntry[T] if (e.timestamp <= ts) => Some((e, i))
-          case _                                    => Some(data(i - 1), i - 1)
+          case e: TSEntry[T] if e.timestamp <= ts => Some((e, i))
+          case _                                  => Some(data(i - 1), i - 1)
         }
     }
 
@@ -239,7 +239,7 @@ object VectorTimeSeries {
     } else {
       val newPivot = (lower + upper) / 2
       data(newPivot).timestamp match {
-        case after: Long if (after > target) => // Pivot is after target: 'upper' becomes pivot - 1
+        case after: Long if after > target => // Pivot is after target: 'upper' becomes pivot - 1
           dichotomic(data, target, lower, newPivot - 1, newPivot)
         case _: Long => // Pivot is before target: 'lower' becomes pivot + 1
           dichotomic(data, target, newPivot + 1, upper, newPivot)

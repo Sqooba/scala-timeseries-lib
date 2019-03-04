@@ -9,7 +9,7 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def at(t: Long): Option[Nothing] = None
 
-  def size(): Int = 0
+  def size: Int = 0
 
   def isEmpty: Boolean = true
 

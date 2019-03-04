@@ -24,18 +24,18 @@ class VectorTimeSeriesTest extends JUnitSuite {
 
   @Test def testAtNSize() {
     // Check empty
-    assert(0 == empty.size())
+    assert(0 == empty.size)
     assert(None == empty.at(0))
 
     // Check single value
-    assert(1 == single.size())
+    assert(1 == single.size)
     assert(None == single.at(0))
     assert(Some("Hi") == single.at(1))
     assert(Some("Hi") == single.at(10))
     assert(None == single.at(11))
 
     // Check two contiguous values
-    assert(2 == contig2.size())
+    assert(2 == contig2.size)
     assert(contig2.nonEmpty)
     assert(None == contig2.at(0))
     assert(Some("Hi") == contig2.at(1))
@@ -45,7 +45,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(None == contig2.at(21))
 
     // Check two non contiguous values
-    assert(2 == discon2.size())
+    assert(2 == discon2.size)
     assert(None == discon2.at(0))
     assert(Some("Hi") == discon2.at(1))
     assert(Some("Hi") == discon2.at(10))
@@ -293,7 +293,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
 
     val up = tri.map(s => s.toUpperCase())
-    assert(3 == up.size())
+    assert(3 == up.size)
     assert(up.at(0) == Some("HI"))
     assert(up.at(10) == Some("HO"))
     assert(up.at(20) == Some("HU"))
@@ -320,7 +320,7 @@ class VectorTimeSeriesTest extends JUnitSuite {
       VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
 
     val up = tri.mapWithTime((t, s) => s.toUpperCase() + t)
-    assert(3 == up.size())
+    assert(3 == up.size)
     assert(up.at(0) == Some("HI0"))
     assert(up.at(10) == Some("HO10"))
     assert(up.at(20) == Some("HU20"))

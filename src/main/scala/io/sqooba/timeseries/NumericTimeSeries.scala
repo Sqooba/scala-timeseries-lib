@@ -81,7 +81,7 @@ object NumericTimeSeries {
       acc.result()
     } else {
       val newSum = sumUntilNow + seq.head.integral(timeUnit)
-      integrateMe(newSum, seq.tail, acc += (seq.head.map(_ => newSum)))(timeUnit)
+      integrateMe(newSum, seq.tail, acc += seq.head.map(_ => newSum))(timeUnit)
     }
   }
 

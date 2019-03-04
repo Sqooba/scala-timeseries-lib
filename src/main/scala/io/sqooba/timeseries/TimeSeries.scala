@@ -41,7 +41,7 @@ trait TimeSeries[+T] {
   def trimLeft(at: Long): TimeSeries[T]
 
   /** The number of elements in this time-series. */
-  def size(): Int
+  def size: Int
 
   /** Convenient and efficient method for `size == 0` */
   def isEmpty: Boolean
@@ -338,13 +338,13 @@ object TimeSeries {
     * between current.timestamp and next.definedUntil, filling the gap
     * between the entries and compression them if necessary. */
   def fillAndCompress[T](first: TSEntry[T], second: TSEntry[T], fillValue: T): Seq[TSEntry[T]] = {
-    if (first.definedUntil() == second.timestamp) {
+    if (first.definedUntil == second.timestamp) {
       // Entries contiguous.
       Seq(first, second)
     } else {
       // There is space to fill
       first.appendEntry(
-        TSEntry(first.definedUntil(), fillValue, second.timestamp - first.definedUntil())
+        TSEntry(first.definedUntil, fillValue, second.timestamp - first.definedUntil)
       ) match {
         case Seq(single) =>
           // 'first' was extended.
@@ -439,15 +439,15 @@ object TimeSeries {
       val head    = current.pop()
 
       // Take the head and all entries with which it overlaps and merge them.
-      while (current.nonEmpty && current.head.timestamp < head.definedUntil()) {
+      while (current.nonEmpty && current.head.timestamp < head.definedUntil) {
         toMerge.append(current.pop())
       }
 
       // If the last entry to merge is defined after the head,
       // it is split and added back to the list
       // of entries to process
-      if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil())) {
-        current.push(toMerge.last.trimEntryLeft(head.definedUntil()))
+      if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil)) {
+        current.push(toMerge.last.trimEntryLeft(head.definedUntil))
       }
 
       // Check if there was some empty space between the last 'done' entry and the first remaining
@@ -466,7 +466,7 @@ object TimeSeries {
       result ++= p
     }
 
-    result.vectorResult
+    result.vectorResult()
   }
 
   /**

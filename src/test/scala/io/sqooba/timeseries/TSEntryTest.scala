@@ -96,7 +96,7 @@ class TSEntryTest extends JUnitSuite {
   }
 
   @Test def testDefinedUntil(): Unit = {
-    assert(TSEntry(1, "", 10).definedUntil() == 11)
+    assert(TSEntry(1, "", 10).definedUntil == 11)
   }
 
   @Test def testTrimRight(): Unit = {
@@ -340,7 +340,7 @@ class TSEntryTest extends JUnitSuite {
     // Entries don't start at the same time, but have the same end of validity
     val a = TSEntry(1, 2.0, 10)
     val b = TSEntry(6, 3.0, 5)
-    assert(a.definedUntil() == b.definedUntil())
+    assert(a.definedUntil == b.definedUntil)
 
     // Result should contain two entries: first a, valid until b starts, then the sum.
     val r2 = TSEntry.merge(a, b)(plus)

@@ -23,7 +23,7 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
       None
     }
 
-  def size(): Int = 1
+  def size: Int = 1
 
   def isEmpty: Boolean = false
 
@@ -90,7 +90,7 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
   def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
 
   /** the last moment where this entry is valid, non-inclusive */
-  def definedUntil(): Long = timestamp + validity
+  def definedUntil: Long = timestamp + validity
 
   /** return true if this and the other entry have an overlapping domain of definition.
     * False if the domains are only contiguous. */
@@ -141,8 +141,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
     *         A seq of 'this', trimmed to 'other's timestamp, and the other entry is returned otherwise.
     */
   private def extendOrTrim[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
-    if (other.timestamp <= this.definedUntil() && this.value == other.value) {
-      Seq(extendValidity(other.definedUntil() - this.definedUntil()))
+    if (other.timestamp <= this.definedUntil && this.value == other.value) {
+      Seq(extendValidity(other.definedUntil - this.definedUntil))
     } else {
       Seq(this.trimEntryRight(other.timestamp), other)
     }
@@ -216,15 +216,15 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
     other.lastOption match {
       case None => // Other TS is empty: no effect
         this
-      case Some(tse) if tse.definedUntil() < this.definedUntil() => // other TS overlaps partially
+      case Some(tse) if tse.definedUntil < this.definedUntil => // other TS overlaps partially
         other match {
           // Check if the other TS is also a TSEntry,
           // otherwise we might get into infinite recursion.
           // TODO: find out how to get the nice :+ syntax working here :)
           case o: TSEntry[T] =>
-            VectorTimeSeries.ofEntriesUnsafe(Seq(o, this.trimEntryLeft(tse.definedUntil())))
+            VectorTimeSeries.ofEntriesUnsafe(Seq(o, this.trimEntryLeft(tse.definedUntil)))
           case _ =>
-            other.append(this.trimEntryLeft(tse.definedUntil()))
+            other.append(this.trimEntryLeft(tse.definedUntil))
         }
       case _ => // Hides the current entry completely: just return the other.
         other
@@ -306,7 +306,7 @@ object TSEntry {
   protected def mergeOverlapping[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] = {
     // Handle first 'partial' definition
     (Math.min(a.timestamp, b.timestamp), Math.max(a.timestamp, b.timestamp)) match {
-      case (from, to) if (from != to) =>
+      case (from, to) if from != to =>
         // Compute the result of the merge operation for a partially
         // defined input (either A or B is undefined for this segment)
         mergeValues(a, b)(from, to)(op)
@@ -315,15 +315,15 @@ object TSEntry {
   } ++ {
     // Merge the two values over the overlapping domain of definition of a and b.
     (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
-      case (from, to) if (from < to) => mergeValues(a, b)(from, to)(op)
+      case (from, to) if from < to => mergeValues(a, b)(from, to)(op)
       case _ =>
         throw new IllegalArgumentException("This function cannot merge non-overlapping entries.")
     }
   } ++ {
     // Handle trailing 'partial' definition
-    (Math.min(a.definedUntil(), b.definedUntil()), Math.max(a.definedUntil(), b.definedUntil())) match {
-      case (from, to) if (from != to) => mergeValues(a, b)(from, to)(op)
-      case _                          => Seq.empty; // Entries end at the same time, nothing to do.
+    (Math.min(a.definedUntil, b.definedUntil), Math.max(a.definedUntil, b.definedUntil)) match {
+      case (from, to) if from != to => mergeValues(a, b)(from, to)(op)
+      case _                        => Seq.empty; // Entries end at the same time, nothing to do.
     }
   }
 
@@ -375,7 +375,7 @@ object TSEntry {
       op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     others.collect {
       // Retain only entries overlapping with 'single', and constraint them to the 'single' domain.
-      case e: TSEntry[_] if (single.overlaps(e)) =>
+      case e: TSEntry[_] if single.overlaps(e) =>
         e.trimEntryLeftNRight(single.timestamp, single.definedUntil)
     } match {
       // Merge remaining constrained entries
@@ -419,8 +419,8 @@ object TSEntry {
   /** Merge the provided entry to a None, using the specified operator */
   def mergeEitherToNone[A, B, R](e: TSEntry[Either[A, B]])(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] = {
     e match {
-      case TSEntry(_, Left(valA), d)  => op(Some(valA), None)
-      case TSEntry(_, Right(valB), d) => op(None, Some(valB))
+      case TSEntry(_, Left(valA), _)  => op(Some(valA), None)
+      case TSEntry(_, Right(valB), _) => op(None, Some(valB))
     }
   }.map(TSEntry(e.timestamp, _, e.validity))
 
