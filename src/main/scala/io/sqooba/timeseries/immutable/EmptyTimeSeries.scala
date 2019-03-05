@@ -50,4 +50,6 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
   def resample(sampleLengthMs: Long): TimeSeries[Nothing] = this
 
   def looseDomain: TimeDomain = EmptyTimeDomain
+
+  def supportRatio: Double = 0
 }

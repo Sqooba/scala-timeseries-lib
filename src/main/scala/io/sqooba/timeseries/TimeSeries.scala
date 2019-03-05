@@ -292,6 +292,11 @@ trait TimeSeries[+T] {
       case (_, otherValue) => otherValue
     }(other)
 
+  /**
+    * @return The probability that the time-series is defined over its loose-domain
+    */
+  def supportRatio: Double
+
 }
 
 object TimeSeries {

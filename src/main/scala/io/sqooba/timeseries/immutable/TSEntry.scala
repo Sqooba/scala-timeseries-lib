@@ -245,6 +245,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
     */
   def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
 
+  def supportRatio: Double = 1
+
 }
 
 object TSEntry {

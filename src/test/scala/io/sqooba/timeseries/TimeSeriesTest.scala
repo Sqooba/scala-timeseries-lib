@@ -611,4 +611,20 @@ class TimeSeriesTest extends JUnitSuite {
 
     assert(ts1.fallback(ts2) == ts2)
   }
+
+  @Test def testDifferentSupportRatio(): Unit = {
+    assert(EmptyTimeSeries.supportRatio == 0)
+    assert(TSEntry(1, 'a', 123098).supportRatio == 1)
+
+    val ts = TimeSeries(
+      Seq(
+        TSEntry(0, 'a', 2),
+        TSEntry(3, 'a', 1)
+      )
+    )
+
+    val ts2 = TSEntry(1, 'a', 3)
+
+    assert(ts.supportRatio == 0.75)
+  }
 }

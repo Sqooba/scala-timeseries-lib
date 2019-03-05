@@ -34,6 +34,11 @@ sealed trait TimeDomain {
     */
   def intersect(other: TimeDomain): TimeDomain
 
+  /**
+    * @return The size of the time-domain
+    */
+  def size: Long
+
 }
 
 object TimeDomain {
@@ -73,6 +78,8 @@ case class ContiguousTimeDomain(start: Long, until: Long) extends TimeDomain {
       TimeDomain.fromUnsafeInterval(max(start, otherStart), min(until, otherUntil))
   }
 
+  def size: Long = until - start
+
 }
 
 case object EmptyTimeDomain extends TimeDomain {
@@ -82,5 +89,7 @@ case object EmptyTimeDomain extends TimeDomain {
   def union(other: TimeDomain): TimeDomain = other
 
   def intersect(other: TimeDomain): TimeDomain = this
+
+  def size: Long = 0
 
 }
