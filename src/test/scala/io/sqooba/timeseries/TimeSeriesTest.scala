@@ -627,4 +627,43 @@ class TimeSeriesTest extends JUnitSuite {
 
     assert(ts.supportRatio == 0.75)
   }
+
+  @Test def testMergeEntriesWithUndefinedDomains(): Unit = {
+    val ts1 = Seq(
+      TSEntry(1, 1, 5),
+      TSEntry(10, 2, 10)
+    )
+
+    val ts2 = Seq(
+      TSEntry(2, 3, 4),
+      TSEntry(11, 4, 6)
+    )
+
+    val result = TimeSeries.mergeEntries(ts1)(ts2) {
+      case (None, None) => Some('Y')
+      case _            => None
+    }
+
+    assert(result == Vector(TSEntry(6, 'Y', 4)))
+  }
+
+  @Test def testMergeEntriesWithUndefinedDomainsButWithStartingValue(): Unit = {
+    val ts1 = Seq(
+      TSEntry(1, 'a', 2)
+    )
+
+    val ts2 = Seq(
+      TSEntry(2, 'b', 1),
+      TSEntry(5, 'c', 2)
+    )
+
+    val result = TimeSeries.mergeEntries[Char, Char, Char](ts1)(ts2) {
+      case (Some(v), None) => Some(v)
+      case (None, None)    => Some('d')
+      case _               => None
+    }
+
+    assert(result == Seq(TSEntry(1, 'a', 1), TSEntry(3, 'd', 2)))
+  }
+
 }

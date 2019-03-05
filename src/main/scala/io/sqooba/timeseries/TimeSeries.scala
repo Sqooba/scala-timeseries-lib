@@ -461,37 +461,54 @@ object TimeSeries {
     // TODO looks like Stack is deprecated: see if we can use a List instead
     val current = mutable.Stack[TSEntry[Either[A, B]]](in: _*)
 
+    var lastSeenDefinedUntil: Long = Long.MaxValue
+
     while (current.nonEmpty) {
       // entries that need to be merged
       val toMerge = new ArrayBuffer[TSEntry[Either[A, B]]]()
       val head    = current.pop()
 
-      // Take the head and all entries with which it overlaps and merge them.
-      while (current.nonEmpty && current.head.timestamp < head.definedUntil) {
-        toMerge.append(current.pop())
-      }
+      // Fill the hole when neither of the two time-series were defined over a given domain
+      // In order to do se, we re-use the `definedUntil` property of the last TSentry seen
+      if (lastSeenDefinedUntil < head.timestamp) {
+        val nTimestamp = lastSeenDefinedUntil
+        op(None, None).map(TSEntry(nTimestamp, _, head.timestamp - nTimestamp)).foreach(result += _)
 
-      // If the last entry to merge is defined after the head,
-      // it is split and added back to the list
-      // of entries to process
-      if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil)) {
-        current.push(toMerge.last.trimEntryLeft(head.definedUntil))
-      }
+        lastSeenDefinedUntil = head.timestamp
 
-      // Check if there was some empty space between the last 'done' entry and the first remaining
-      val filling = result.definedUntil match {
-        case Some(definedUntil) =>
-          if (definedUntil == head.timestamp) { // Continuous domain, no filling to do
-            Seq.empty
-          } else {
-            op(None, None).map(TSEntry(definedUntil, _, head.timestamp - definedUntil)).toSeq
-          }
-        case _ => Seq.empty
-      }
+        // We didn't process the head, so we should re-stack it
+        current.push(head)
+      } else {
 
-      val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
-      result ++= filling
-      result ++= p
+        // Take the head and all entries with which it overlaps and merge them.
+        while (current.nonEmpty && current.head.timestamp < head.definedUntil) {
+          toMerge.append(current.pop())
+        }
+
+        // If the last entry to merge is defined after the head,
+        // it is split and added back to the list
+        // of entries to process
+        if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil)) {
+          current.push(toMerge.last.trimEntryLeft(head.definedUntil))
+        }
+
+        // Check if there was some empty space between the last 'done' entry and the first remaining
+        val filling = result.definedUntil match {
+          case Some(definedUntil) =>
+            if (definedUntil == head.timestamp) { // Continuous domain, no filling to do
+              Seq.empty
+            } else {
+              op(None, None).map(TSEntry(definedUntil, _, head.timestamp - definedUntil)).toSeq
+            }
+          case _ => Seq.empty
+        }
+
+        lastSeenDefinedUntil = head.definedUntil
+
+        val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
+        result ++= filling
+        result ++= p
+      }
     }
 
     result.vectorResult()
