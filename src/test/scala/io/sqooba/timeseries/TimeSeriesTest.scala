@@ -577,4 +577,38 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts1.append(ts2) == result)
     assert(ts2.prepend(ts1) == result)
   }
+
+  @Test def testFallbackUncompress(): Unit = {
+    val ts1 = TimeSeries(
+      Seq(
+        TSEntry(1, 'a', 1),
+        TSEntry(3, 'c', 1)
+      )
+    )
+
+    val ts2 = TSEntry(1, 'b', 3)
+
+    assert(
+      ts1.fallback(ts2) == TimeSeries(
+        Seq(
+          TSEntry(1, 'a', 1),
+          TSEntry(2, 'b', 1),
+          TSEntry(3, 'c', 1)
+        )
+      )
+    )
+  }
+
+  @Test def testFallbackCompress(): Unit = {
+    val ts1 = TimeSeries(
+      Seq(
+        TSEntry(1, 'a', 1),
+        TSEntry(3, 'a', 1)
+      )
+    )
+
+    val ts2 = TSEntry(1, 'a', 3)
+
+    assert(ts1.fallback(ts2) == ts2)
+  }
 }

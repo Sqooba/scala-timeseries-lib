@@ -163,7 +163,7 @@ trait TimeSeries[+T] {
     * max(this.last.definedUntil, other.last.definedUntil)
     */
   def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
-    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
+    TimeSeries.ofOrderedEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
 
   /**
     * Sum the entries within this and the provided time series such that
@@ -278,6 +278,19 @@ trait TimeSeries[+T] {
     * @return The oldest and newest timestamps where the time-series is defined, encapsulated in a `LooseDomain`
     */
   def looseDomain: TimeDomain
+
+  /**
+    * Fallback to `other` when `this` is not defined
+    *
+    * @param other Another time-series which should contain the value when `this` is not defined
+    * @tparam U The new underlying parameter
+    * @return A time-series which contains the values of `this` if defined, and of `other` otherwise
+    */
+  def fallback[U >: T](other: TimeSeries[U]): TimeSeries[U] =
+    merge[U, U] {
+      case (Some(v), _)    => Some(v)
+      case (_, otherValue) => otherValue
+    }(other)
 
 }
 
