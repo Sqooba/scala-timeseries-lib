@@ -19,12 +19,22 @@ sealed trait TimeDomain {
   def contains(p: Long): Boolean
 
   /**
-    * Returns the union of two domains
+    * Returns the union of two domains without considering potential //holes// in it
+    *
+    * Using '#' if the element is in the domain and '-' otherwise, a union would be
+    * ```
+    * ###-----
+    * ------##
+    * ==========
+    * ###---##
+    * ```
+    *
+    * The looseUnion of these two domains is "########".
     *
     * @param other The other domain
     * @return The union of these two domains
     */
-  def union(other: TimeDomain): TimeDomain
+  def looseUnion(other: TimeDomain): TimeDomain
 
   /**
     * Returns the intersection of two domains
@@ -66,7 +76,7 @@ case class ContiguousTimeDomain(start: Long, until: Long) extends TimeDomain {
 
   def contains(p: Long): Boolean = p >= start && p < until
 
-  def union(other: TimeDomain): TimeDomain = other match {
+  def looseUnion(other: TimeDomain): TimeDomain = other match {
     case EmptyTimeDomain => this
     case ContiguousTimeDomain(otherStart, otherUntil) =>
       ContiguousTimeDomain(min(start, otherStart), max(until, otherUntil))
@@ -86,7 +96,7 @@ case object EmptyTimeDomain extends TimeDomain {
 
   def contains(p: Long): Boolean = false
 
-  def union(other: TimeDomain): TimeDomain = other
+  def looseUnion(other: TimeDomain): TimeDomain = other
 
   def intersect(other: TimeDomain): TimeDomain = this
 

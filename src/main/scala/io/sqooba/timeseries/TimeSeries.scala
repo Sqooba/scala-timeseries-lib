@@ -535,7 +535,7 @@ object TimeSeries {
     * @return The union of the LooseDomains
     */
   def unionLooseDomains[T](tss: Seq[TimeSeries[T]]): TimeDomain =
-    tss.map(_.looseDomain).fold(EmptyTimeDomain)(_.union(_))
+    tss.map(_.looseDomain).fold(EmptyTimeDomain)(_.looseUnion(_))
 
   /**
     * Computes the intersection of the passed time-series' loose domains

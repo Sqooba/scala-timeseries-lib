@@ -146,7 +146,7 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
     )
 
   def looseDomain: TimeDomain =
-    data.head.looseDomain.union(data.last.looseDomain)
+    data.head.looseDomain.looseUnion(data.last.looseDomain)
 
   lazy val supportRatio: Double =
     data.map(_.looseDomain.size).sum.toFloat / looseDomain.size
