@@ -170,30 +170,30 @@ trait TimeSeries[+T] {
     * this.at(x) + other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def plus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
-    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictPlus(_, _)(n)))
+  def plus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
+    merge[U, U](NumericTimeSeries.strictPlus(_, _)(n))(other)
 
-  def +[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = plus(other)(n)
+  def +[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = plus(other)(n)
 
   /**
     * Subtract the entries within this and the provided time series such that
     * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def minus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
-    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMinus(_, _)(n)))
+  def minus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
+    merge[U, U](NumericTimeSeries.strictMinus(_, _)(n))(other)
 
-  def -[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = minus(other)
+  def -[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = minus(other)
 
   /**
     * Multiply the entries within this and the provided time series such that
     * this.at(x) * other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def multiply[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] =
-    VectorTimeSeries.ofEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(NumericTimeSeries.strictMultiply(_, _)(n)))
+  def multiply[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
+    merge[U, U](NumericTimeSeries.strictMultiply(_, _)(n))(other)
 
-  def *[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): VectorTimeSeries[U] = multiply(other)
+  def *[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = multiply(other)
 
   /**
     * Zips this time series with another one, returning a time series

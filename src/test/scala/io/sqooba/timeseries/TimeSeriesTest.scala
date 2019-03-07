@@ -666,4 +666,24 @@ class TimeSeriesTest extends JUnitSuite {
     assert(result == Seq(TSEntry(1, 'a', 1), TSEntry(3, 'd', 2)))
   }
 
+  @Test def testMathOperationsCompressedResult(): Unit = {
+    val ts1 = TimeSeries(
+      Seq(
+        TSEntry(1, 0, 1),
+        TSEntry(2, 1, 1)
+      )
+    )
+
+    val ts2 = TimeSeries(
+      Seq(
+        TSEntry(1, 1, 1),
+        TSEntry(2, 0, 1)
+      )
+    )
+
+    assert(ts1.plus(ts2) == TSEntry(1, 1, 2))
+    assert(ts1.minus(ts1) == TSEntry(1, 0, 2))
+    assert(ts1.multiply(ts2) == TSEntry(1, 0, 2))
+  }
+
 }
