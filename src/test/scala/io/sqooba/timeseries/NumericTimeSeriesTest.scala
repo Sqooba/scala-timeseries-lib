@@ -24,13 +24,24 @@ class NumericTimeSeriesTest extends JUnitSuite {
     * Check that we only have a correct sum wherever
     * both time series are defined at the same time.
     */
-  def testStrictPlus {
+  @Test def testStrictPlus {
 
     assert(tsa + tsb == tsb + tsa)
 
     assert(
       Seq(TSEntry(6, 4.0, 5), TSEntry(12, 5.0, 4))
         == (tsa + tsb).entries
+    )
+  }
+
+  /**
+    * Check that we the resulting ts is defined even when
+    * one time series is not defined.
+    */
+  @Test def testNonStrictPlus {
+    assert(
+      Seq(TSEntry(1, 1.0, 5), TSEntry(6, 4.0, 5), TSEntry(11, 3.0, 1), TSEntry(12, 5.0, 4), TSEntry(16, 2.0, 6))
+        == tsa.plus(tsb, false).entries
     )
   }
 

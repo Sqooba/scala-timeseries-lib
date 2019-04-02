@@ -23,6 +23,20 @@ object NumericTimeSeries {
   }
 
   /**
+    * Non strict 'plus' operator: wherever one of the time series is undefined,
+    * its entry is considered as 0.
+    */
+  def nonStrictPlus[T, U >: T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[U]): Option[U] = {
+    import n._
+    (lhO, rhO) match {
+      case (Some(l), Some(r)) => Some(l + r)
+      case (Some(l), _)       => Some(l)
+      case (_, Some(r))       => Some(r)
+      case _                  => None
+    }
+  }
+
+  /**
     * Defensive 'minus' operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */

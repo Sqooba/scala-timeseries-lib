@@ -167,11 +167,18 @@ trait TimeSeries[+T] {
 
   /**
     * Sum the entries within this and the provided time series such that
-    * this.at(x) + other.at(x) = returned.at(x) where x may take any value where
+    *
+    * - If strict (default): this.at(x) + other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
+    * - If non strict : this.at(x) + other.at(x) = returned.at(x) where x may take any value where
+    * any time series is defined.
     */
-  def plus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
-    merge[U, U](NumericTimeSeries.strictPlus(_, _)(n))(other)
+  def plus[U >: T](other: TimeSeries[U], strict: Boolean = true)(implicit n: Numeric[U]): TimeSeries[U] =
+    if (strict) {
+      merge[U, U](NumericTimeSeries.strictPlus(_, _)(n))(other)
+    } else {
+      merge[U, U](NumericTimeSeries.nonStrictPlus(_, _)(n))(other)
+    }
 
   def +[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = plus(other)(n)
 
