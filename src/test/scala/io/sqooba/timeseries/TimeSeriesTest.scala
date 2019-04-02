@@ -266,6 +266,54 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
+  @Test def testSliceDiscrete: Unit = {
+    val tri =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    assert(tri == tri.sliceDiscrete(5, 25, true, true))
+    assert(tri.slice(0, 20) == tri.sliceDiscrete(5, 25, true, false))
+    assert(tri.slice(10, 30) == tri.sliceDiscrete(5, 25, false, true))
+    assert(tri.slice(10, 20) == tri.sliceDiscrete(5, 25, false, false))
+
+    assert(TSEntry(10, "Ho", 10) == tri.sliceDiscrete(10, 20, true, true))
+    assert(TSEntry(10, "Ho", 10) == tri.sliceDiscrete(10, 20, false, false))
+  }
+
+  @Test def testSplitDiscrete: Unit = {
+    val tri =
+      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+
+    assert(
+      (VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L)), TSEntry(20, "Hu", 10))
+        == tri.splitDiscrete(15, true)
+    )
+
+    assert(
+      (TSEntry(0L, "Hi", 10L), VectorTimeSeries(10L -> ("Ho", 10L), 20L -> ("Hu", 10L)))
+        == tri.splitDiscrete(15, false)
+    )
+
+    assert(
+      (tri, EmptyTimeSeries)
+        == tri.splitDiscrete(25, true)
+    )
+
+    assert(
+      (VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L)), TSEntry(20, "Hu", 10))
+        == tri.splitDiscrete(25, false)
+    )
+
+    assert(
+      (TSEntry(0L, "Hi", 10L), VectorTimeSeries(10L -> ("Ho", 10L), 20L -> ("Hu", 10L)))
+        == tri.splitDiscrete(5, true)
+    )
+
+    assert(
+      (EmptyTimeSeries, tri) == tri.splitDiscrete(5, false)
+    )
+
+  }
+
   @Test def testFitTSEntries(): Unit = {
     // Test the simple cases
     assert(TimeSeries.fitAndCompressTSEntries(Seq()).isEmpty)

@@ -108,6 +108,24 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimRight(-1) == EmptyTimeSeries)
   }
 
+  @Test def testTrimRightDiscreteInclude(): Unit = {
+    val tse = TSEntry(0, "", 10)
+    assert(tse.trimRightDiscrete(10, true) == tse)
+    assert(tse.trimRightDiscrete(9, true) == tse)
+    assert(tse.trimRightDiscrete(1, true) == tse)
+    assert(tse.trimRightDiscrete(0, true) == EmptyTimeSeries)
+    assert(tse.trimRightDiscrete(-1, true) == EmptyTimeSeries)
+  }
+
+  @Test def testTrimRightDiscreteExclude(): Unit = {
+    val tse = TSEntry(0, "", 10)
+    assert(tse.trimRightDiscrete(10, false) == tse)
+    assert(tse.trimRightDiscrete(9, false) == EmptyTimeSeries)
+    assert(tse.trimRightDiscrete(1, false) == EmptyTimeSeries)
+    assert(tse.trimRightDiscrete(0, false) == EmptyTimeSeries)
+    assert(tse.trimRightDiscrete(-1, false) == EmptyTimeSeries)
+  }
+
   @Test def testTrimEntryRight(): Unit = {
     val tse = TSEntry(0, "", 10)
     assert(tse.trimEntryRight(10) == tse)
@@ -130,6 +148,26 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimLeft(10) == TSEntry(10, "", 1))
     assert(tse.trimLeft(11) == EmptyTimeSeries)
     assert(tse.trimLeft(12) == EmptyTimeSeries)
+  }
+
+  @Test def testTrimLeftDiscreteInclude(): Unit = {
+    val tse = TSEntry(1, "", 10)
+    assert(tse.trimLeftDiscrete(0, true) == tse)
+    assert(tse.trimLeftDiscrete(1, true) == tse)
+    assert(tse.trimLeftDiscrete(2, true) == tse)
+    assert(tse.trimLeftDiscrete(10, true) == tse)
+    assert(tse.trimLeftDiscrete(11, true) == EmptyTimeSeries)
+    assert(tse.trimLeftDiscrete(12, true) == EmptyTimeSeries)
+  }
+
+  @Test def testTrimLeftDiscreteExclude(): Unit = {
+    val tse = TSEntry(1, "", 10)
+    assert(tse.trimLeftDiscrete(0, false) == tse)
+    assert(tse.trimLeftDiscrete(1, false) == tse)
+    assert(tse.trimLeftDiscrete(2, false) == EmptyTimeSeries)
+    assert(tse.trimLeftDiscrete(10, false) == EmptyTimeSeries)
+    assert(tse.trimLeftDiscrete(11, false) == EmptyTimeSeries)
+    assert(tse.trimLeftDiscrete(12, false) == EmptyTimeSeries)
   }
 
   @Test def testTrimEntryLeft(): Unit = {

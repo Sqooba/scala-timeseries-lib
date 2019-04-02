@@ -17,7 +17,11 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def trimLeft(at: Long): TimeSeries[Nothing] = this
 
+  def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
+
   def trimRight(at: Long): TimeSeries[Nothing] = this
+
+  def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
 
   def map[O](f: Nothing => O, compress: Boolean = true): TimeSeries[O] = this
 

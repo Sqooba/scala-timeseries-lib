@@ -175,6 +175,35 @@ class VectorTimeSeriesTest extends JUnitSuite {
     assert(EmptyTimeSeries == three.trimLeft(32))
   }
 
+  @Test def testTrimLeftDiscrete(): Unit = {
+    // Two contiguous entries
+    // Left of the domain
+    assert(contig2 == contig2.trimLeftDiscrete(0, true))
+    assert(contig2 == contig2.trimLeftDiscrete(0, false))
+    assert(contig2 == contig2.trimLeftDiscrete(1, true))
+    assert(contig2 == contig2.trimLeftDiscrete(1, false))
+
+    // Trimming on the first entry
+    assert(contig2.entries == contig2.trimLeftDiscrete(2, true).entries)
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(2, false).entries)
+    assert(contig2.entries == contig2.trimLeftDiscrete(10, true).entries)
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(2, false).entries)
+
+    // Trimming at the boundary between entries:
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(11, true).entries)
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(11, false).entries)
+
+    // ... and on the second entry:
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(12, true).entries)
+    assert(Seq() == contig2.trimLeftDiscrete(12, false).entries)
+    assert(Seq(TSEntry(11, "Ho", 10)) == contig2.trimLeftDiscrete(20, true).entries)
+    assert(Seq() == contig2.trimLeftDiscrete(20, false).entries)
+
+    // ... and after the second entry:
+    assert(EmptyTimeSeries == contig2.trimLeftDiscrete(21, true))
+    assert(EmptyTimeSeries == contig2.trimLeftDiscrete(21, false))
+  }
+
   @Test def testTrimRightContiguous() {
     // empty case...
     assert(EmptyTimeSeries == empty.trimRight(0))
@@ -269,6 +298,35 @@ class VectorTimeSeriesTest extends JUnitSuite {
     // ... and after every entry.
     assert(EmptyTimeSeries == three.trimRight(1))
     assert(EmptyTimeSeries == three.trimRight(0))
+  }
+
+  @Test def testTrimRightDiscrete(): Unit = {
+    // Two contiguous entries:
+    // Right of the domain:
+    assert(contig2 == contig2.trimRightDiscrete(22, true))
+    assert(contig2 == contig2.trimRightDiscrete(22, false))
+    assert(contig2 == contig2.trimRightDiscrete(21, true))
+    assert(contig2 == contig2.trimRightDiscrete(21, false))
+
+    // On the second entry
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == contig2.trimRightDiscrete(20, true).entries)
+    assert(Seq(TSEntry(1, "Hi", 10)) == contig2.trimRightDiscrete(20, false).entries)
+    assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == contig2.trimRightDiscrete(12, true).entries)
+    assert(Seq(TSEntry(1, "Hi", 10)) == contig2.trimRightDiscrete(12, false).entries)
+
+    // On the boundary
+    assert(Seq(TSEntry(1, "Hi", 10)) == contig2.trimRightDiscrete(11, true).entries)
+    assert(Seq(TSEntry(1, "Hi", 10)) == contig2.trimRightDiscrete(11, false).entries)
+
+    // On the first entry
+    assert(TSEntry(1, "Hi", 10) == contig2.trimRightDiscrete(10, true))
+    assert(EmptyTimeSeries == contig2.trimRightDiscrete(2, false))
+
+    // Before the first entry
+    assert(EmptyTimeSeries == contig2.trimRightDiscrete(1, true))
+    assert(EmptyTimeSeries == contig2.trimRightDiscrete(1, false))
+    assert(EmptyTimeSeries == contig2.trimRightDiscrete(0, true))
+    assert(EmptyTimeSeries == contig2.trimRightDiscrete(0, false))
   }
 
   @Test def testSplit() {

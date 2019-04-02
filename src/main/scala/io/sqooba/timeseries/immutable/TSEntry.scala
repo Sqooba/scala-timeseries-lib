@@ -38,6 +38,18 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
       trimEntryRight(at)
     }
 
+  /**
+    * Returns an empty entry if:
+    *  - 'at' is before or at the exact begin boundary of this entry's domain
+    *  - 'at' is within the entry and it must not be split in two
+    */
+  def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
+    if (at <= timestamp || (defined(at) && !includeEntry)) {
+      EmptyTimeSeries
+    } else {
+      this
+    }
+
   /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws
     * if 'at' is before the entry's timestamp. */
   def trimEntryRight(at: Long): TSEntry[T] =
@@ -57,6 +69,19 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
       EmptyTimeSeries
     } else {
       trimEntryLeft(at)
+    }
+
+  /**
+    * Returns an empty entry if:
+    *  - 'at' is after this entry's domain
+    *  - 'at' is within the entry (but not equal to the timestamp) and it must not be split in two
+    */
+  def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
+    if (at >= definedUntil // After the domain: empty in any case
+        || (at != timestamp && defined(at) && !includeEntry)) { // within the domain but not on the begin boundary
+      EmptyTimeSeries
+    } else {
+      this
     }
 
   /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws

@@ -78,6 +78,40 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
 
   def isEmpty: Boolean = false
 
+  def trimRight(t: Long): TimeSeries[T] =
+    if (data.isEmpty) {
+      EmptyTimeSeries
+    } else if (data.size == 1) {
+      data.last.trimRight(t)
+    } else {
+      lastEntryAt(t - 1) match {
+        case Some((e, 0)) =>
+          // First element: trim and return it
+          e.trimRight(t)
+        case Some((e, idx)) =>
+          data.splitAt(idx) match {
+            // First of the last elements is valid and may need trimming. Others can be forgotten.
+            case (noChange, _) =>
+              new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
+          }
+        case _ => EmptyTimeSeries
+      }
+    }
+
+  def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
+    lastEntryAt(at - 1) match {
+      case Some((e, 0)) =>
+        // First element: trim and return it
+        e.trimRightDiscrete(at, includeEntry)
+      case Some((e, idx)) =>
+        data.splitAt(idx) match {
+          case (noChange, _) =>
+            // First of the last elements must either be kept entirely or discarded
+            TimeSeries.ofOrderedEntriesUnsafe(noChange ++ e.trimRightDiscrete(at, includeEntry).entries)
+        }
+      case _ => EmptyTimeSeries
+    }
+
   def trimLeft(t: Long): TimeSeries[T] =
     // Check obvious shortcuts
     if (data.isEmpty) {
@@ -103,20 +137,17 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
       }
     }
 
-  def trimRight(t: Long): TimeSeries[T] =
-    if (data.isEmpty) {
-      EmptyTimeSeries
-    } else if (data.size == 1) {
-      data.last.trimRight(t)
+  def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
+    if (data.head.timestamp >= at) {
+      this
     } else {
-      lastEntryAt(t - 1) match {
-        case Some((e, 0)) => // First element: trim and return it
-          e.trimRight(t)
+      lastEntryAt(at) match {
         case Some((e, idx)) =>
           data.splitAt(idx) match {
-            // First of the last elements is valid and may need trimming. Others can be forgotten.
-            case (noChange, _) =>
-              new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
+            case (_, _ +: keep) =>
+              TimeSeries.ofOrderedEntriesUnsafe(
+                e.trimLeftDiscrete(at, includeEntry).entries ++ keep
+              )
           }
         case _ => EmptyTimeSeries
       }

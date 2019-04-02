@@ -19,7 +19,15 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testTrimLeft: Unit = assert(ts.trimLeft(1) == EmptyTimeSeries)
 
+  @Test def testTrimLeftDiscreteInclude: Unit = assert(ts.trimLeftDiscrete(1, true) == EmptyTimeSeries)
+
+  @Test def testTrimLeftDiscreteExclude: Unit = assert(ts.trimLeftDiscrete(1, false) == EmptyTimeSeries)
+
   @Test def testTrimRight: Unit = assert(ts.trimRight(1) == EmptyTimeSeries)
+
+  @Test def testTrimRightDiscreteInclude: Unit = assert(ts.trimRightDiscrete(1, true) == EmptyTimeSeries)
+
+  @Test def testTrimRightDiscreteExclude: Unit = assert(ts.trimRightDiscrete(1, false) == EmptyTimeSeries)
 
   @Test def testMap: Unit = assert(ts.map(n => None) == EmptyTimeSeries)
 

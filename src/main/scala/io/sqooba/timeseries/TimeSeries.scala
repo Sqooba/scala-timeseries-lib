@@ -24,6 +24,15 @@ trait TimeSeries[+T] {
     */
   def split(at: Long): (TimeSeries[T], TimeSeries[T]) = (this.trimRight(at), this.trimLeft(at))
 
+  /**
+    * Split this time series into two.
+    *
+    * If 'at' is within the domain of a particular entry, the time series will be split either
+    * at the beginning or end of that entry, according to the passed 'splitAfterEntry'
+    */
+  def splitDiscrete(at: Long, splitAfterEntry: Boolean = true): (TimeSeries[T], TimeSeries[T]) =
+    (this.trimRightDiscrete(at, splitAfterEntry), this.trimLeftDiscrete(at, !splitAfterEntry))
+
   /** Extract a slice from this time series.
     *
     * The returned slice will only be defined between the specified bounds such that:
@@ -34,11 +43,32 @@ trait TimeSeries[+T] {
     */
   def slice(from: Long, to: Long): TimeSeries[T] = this.trimLeft(from).trimRight(to)
 
+  /**
+    * Extract a slice from this time series, while preventing entries on the slice boundaries
+    * from being split.
+    */
+  def sliceDiscrete(from: Long, to: Long, fromInclusive: Boolean = true, toInclusive: Boolean = true): TimeSeries[T] =
+    this.trimLeftDiscrete(from, fromInclusive).trimRightDiscrete(to, toInclusive)
+
   /** Returns a time series that is never defined for t >= at and unchanged for t < at */
   def trimRight(at: Long): TimeSeries[T]
 
+  /** Similar to trimRight, but if `at` lands within an existing entry,
+    * the returned time series' domain is either, depending on 'includeEntry':
+    *  - extended to that entry's end of validity, which fully remains in the time series (the default)
+    *  - trimmed further to the previous entry's end of validity, fully removing the entry from the time series
+    */
+  def trimRightDiscrete(at: Long, includeEntry: Boolean = true): TimeSeries[T]
+
   /** Returns a time series that is never defined for t < at and unchanged for t >= at */
   def trimLeft(at: Long): TimeSeries[T]
+
+  /** Similar to trimLeft, but if `at` lands within an existing entry,
+    * the returned time series' domain is either, depending on 'includeEntry':
+    *  - extended to that entry's timestamp, which fully remains in the time series (the default)
+    *  - trimmed further to the next entry's timestamp, fully removing the entry from the time series
+    */
+  def trimLeftDiscrete(at: Long, includeEntry: Boolean = true): TimeSeries[T]
 
   /** The number of elements in this time-series. */
   def size: Int
@@ -548,7 +578,6 @@ object TimeSeries {
     * Computes the intersection of the passed time-series' loose domains
     *
     * @note If there is an empty time-series, then the intersection will be None.
-    *
     * @param tss A sequence of time-series
     * @tparam T The underlying type of the time-series
     * @return The intersection of the LooseDomains
@@ -569,7 +598,6 @@ object TimeSeries {
     * @note The sequence has to be chronologically ordered, otherwise the time-series might
     *       not behave correctly. In general, you should use a `TimeSeriesBuilder`. Furthermore, no
     *       two entries should have the same timestamp. Finally, entries will NOT be compressed.
-    *
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
     * @tparam T The underlying type of the time-series
@@ -594,7 +622,6 @@ object TimeSeries {
     * As we are using a `TimeSeriesBuilder`, the entries will be compressed if possible.
     *
     * @note No two entries can have the same timestamp, an exception will be thrown if it's the case.
-    *
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
     * @tparam T The underlying type of the time-series
@@ -611,7 +638,6 @@ object TimeSeries {
     * it.
     *
     * @note All entries should have different timestamps.
-    *
     * @param entries A sequence of entries which all have a different timestamp
     * @tparam T The time-series' underlying parameter
     * @return A well initialized time-series
