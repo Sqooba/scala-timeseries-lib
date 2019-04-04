@@ -700,4 +700,19 @@ class TSEntryTest extends JUnitSuite {
         == TSEntry(1, 42, 10)
     )
   }
+
+  @Test def testResample(): Unit = {
+    assert(
+      TSEntry(1, 42, 2).resample(1).entries
+        == Seq(TSEntry(1, 42, 1), TSEntry(2, 42, 1))
+    )
+    assert(
+      TSEntry(1, 42, 13).resample(6).entries
+        == Seq(TSEntry(1, 42, 6), TSEntry(7, 42, 6), TSEntry(13, 42, 1))
+    )
+    assert(
+      TSEntry(1, 42, 100000).resample(1).entries.size
+        == 100000
+    )
+  }
 }

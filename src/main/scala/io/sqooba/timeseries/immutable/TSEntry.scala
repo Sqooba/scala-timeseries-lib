@@ -4,9 +4,10 @@ import java.util.concurrent.TimeUnit
 
 import io.sqooba.timeseries.TimeSeries
 
-case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
+import scala.collection.immutable.VectorBuilder
 
-  if (validity <= 0) throw new IllegalArgumentException(s"Validity must be strictly positive ($validity was given)")
+case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
+  require(validity <= 0, s"Validity must be strictly positive ($validity was given)")
 
   def at(t: Long): Option[T] =
     if (defined(t)) {
@@ -122,12 +123,15 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
   def overlaps[O](other: TSEntry[O]): Boolean =
     this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
 
-  def toLeftEntry[O]: TSEntry[Either[T, O]] = TSEntry(timestamp, Left[T, O](value), validity)
+  def toLeftEntry[O]: TSEntry[Either[T, O]] =
+    TSEntry(timestamp, Left[T, O](value), validity)
 
-  def toRightEntry[O]: TSEntry[Either[O, T]] = TSEntry(timestamp, Right[O, T](value), validity)
+  def toRightEntry[O]: TSEntry[Either[O, T]] =
+    TSEntry(timestamp, Right[O, T](value), validity)
 
   /** Map value contained in this timeseries using the passed function */
-  def map[O](f: T => O, compress: Boolean = true): TSEntry[O] = TSEntry(timestamp, f(value), validity)
+  def map[O](f: T => O, compress: Boolean = true): TSEntry[O] =
+    TSEntry(timestamp, f(value), validity)
 
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(timestamp, value), validity)
@@ -219,22 +223,33 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
       )
     }
 
-  def resample(sampleLengthMs: Long): TimeSeries[T] =
-    // this entry should be split
-    if (this.validity > sampleLengthMs) {
-      new TSEntry[T](this.timestamp, this.value, sampleLengthMs)
-        .append(
-          // recursively resamples the next entries
-          new TSEntry[T](
-            this.timestamp + sampleLengthMs,
-            this.value,
-            this.validity - sampleLengthMs
-          ).resample(sampleLengthMs),
-          compress = false
+  def resample(sampleLengthMs: Long): TimeSeries[T] = {
+    require(sampleLengthMs > 0, "The sample length must be > 0")
+    // TODO: allow the TimeSeries builder to not compress the passed entries
+    // We specifically do not want to compress when we resample
+    val builder = new VectorBuilder[TSEntry[T]]
+    def streamTimeStamps(start: Long) =
+      Stream
+        .from(0)
+        .map(i => start + i * sampleLengthMs)
+    // streams new timestamp until we reached the end of the ts
+    streamTimeStamps(this.timestamp)
+      .takeWhile(timestamp => timestamp < definedUntil)
+      .foreach { timestamp =>
+        // for each timestamp, build a ts entry, with a validity that is
+        // at most sampleLengthMs
+        builder += TSEntry(
+          timestamp,
+          value,
+          Math.min(
+            sampleLengthMs,
+            definedUntil - timestamp
+          )
         )
-    } else {
-      this
-    }
+      }
+    // this call does not compress the TS
+    TimeSeries.ofOrderedEntriesUnsafe(builder.result())
+  }
 
   /**
     * Compute the integral of this entry. The caller may specify what time unit is used for this entry.
@@ -254,7 +269,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
     // - Obtain the duration in milliseconds
     // - Compute the number of seconds (double division by 1000)
     // - Multiply by the value
-    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value.toDouble()
+    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value
+      .toDouble()
   }
 
   /**
@@ -268,7 +284,8 @@ case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSe
     *
     * @return The looseDomain of the time-series
     */
-  def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
+  def looseDomain: TimeDomain =
+    ContiguousTimeDomain(timestamp, timestamp + validity)
 
   def supportRatio: Double = 1
 
