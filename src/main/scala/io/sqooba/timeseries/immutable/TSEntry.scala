@@ -7,7 +7,7 @@ import io.sqooba.timeseries.TimeSeries
 import scala.collection.immutable.VectorBuilder
 
 case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
-  require(validity <= 0, s"Validity must be strictly positive ($validity was given)")
+  require(validity > 0, s"Validity must be strictly positive ($validity was given)")
 
   def at(t: Long): Option[T] =
     if (defined(t)) {
