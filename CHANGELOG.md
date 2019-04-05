@@ -1,5 +1,16 @@
 # Change log
 
+## 3.1.0
+
+### New features
+
+- New `nonStrictPlus` function that will let you do sums over time domains that are not perfectly aligned
+- New //discrete// trimming, slicing and splitting to avoid the modification of existing entries in a time series. Useful when dealing with aggregates for which splitting an entry makes no sense.
+
+### Bug fixes:
+
+- Resampling is not subject to stack overflows anymore
+
 ## 3.0.0
 
 ### Breaking retro-compatibility:
