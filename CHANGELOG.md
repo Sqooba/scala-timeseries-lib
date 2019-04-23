@@ -1,5 +1,9 @@
 # Change log
 
+## 3.1.2
+
+- Moving to `kaeter` to manage versioning, skipped 3.1.1.
+
 ## 3.1.0
 
 ### New features

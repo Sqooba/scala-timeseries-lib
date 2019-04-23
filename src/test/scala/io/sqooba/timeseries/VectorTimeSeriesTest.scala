@@ -801,6 +801,22 @@ class VectorTimeSeriesTest extends JUnitSuite {
     )
   }
 
+  @Test def testBucketing(): Unit = {
+    val buckets = Stream.from(-10, 10).map(_.toLong)
+    val tri =
+      VectorTimeSeries(0L -> (1, 10L), 10L -> (2, 5L), 15L -> (3, 5L))
+
+    assert(
+      Seq(
+        (-10L, EmptyTimeSeries),
+        (0L, TSEntry(0, 1, 10)),
+        (10L, TimeSeries(Seq(TSEntry(10, 2, 5), TSEntry(15, 3, 5)))),
+        (20L, EmptyTimeSeries)
+      )
+        == tri.bucket(buckets)
+    )
+  }
+
   @Test def testIntegrateBetween(): Unit = {
     val tri =
       VectorTimeSeries(0L -> (1, 10L), 10L -> (2, 10L), 20L -> (3, 10L))

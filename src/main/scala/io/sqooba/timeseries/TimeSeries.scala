@@ -304,6 +304,19 @@ trait TimeSeries[+T] {
     }
 
   /**
+    * Buckets this TimeSeries into sub-time-series that have a domain of definition that is at most that
+    * specified by the passed bucket boundaries.
+    *
+    * @param buckets a stream of times representing bucket boundaries. A stream of (a, b, c, ...)
+    *                will generate buckets with domain (([a, b[), ([b, c[), ...)
+    *                Note that it is wise to have 'buckets' start at a meaningfully close point in time
+    *                relative to the time-series first entry.
+    * @return a stream of (bucket-start, timeseries).
+    */
+  def bucket(buckets: Stream[Long]): Stream[(Long, TimeSeries[T])] =
+    TimeSeries.bucketEntriesToTimeSeries(buckets, this.entries)
+
+  /**
     * Returns the bounds of the domain
     *
     * If the time-series does not contain any "hole" in its domain, then the loose domain is equal to
@@ -550,6 +563,68 @@ object TimeSeries {
 
     result.vectorResult()
   }
+
+  /**
+    * Bucket the passed entries into time-series that have domains delimited by the given buckets.
+    *
+    * Individual entries will be split/trimmed wherever required.
+    *
+    * @param buckets generates the bucket boundaries
+    * @param entries entries to be bucketed.
+    * @return a stream of (bucket-start, corresponding-time-series)
+    */
+  def bucketEntriesToTimeSeries[T](
+      buckets: Stream[Long],
+      entries: Seq[TSEntry[T]]
+  ): Stream[(Long, TimeSeries[T])] = {
+    // Reusing the builder instance so we don't recreate one for each bucket
+    // TODO: actually check if this makes any sense from a perf point of view?
+    val builder = new TimeSeriesBuilder[T]()
+    bucketEntries(buckets, entries).map { tup =>
+      // Better keep that map single threaded ;)
+      builder.clear()
+      builder ++= tup._2
+      (tup._1, builder.result())
+    }
+  }
+
+  /**
+    * Bucket the passed entries into sequences of entries that have domains delimited by the given buckets.
+    *
+    * Individual entries will be split/trimmed wherever required.
+    *
+    * @param buckets generates the bucket boundaries
+    * @param entries entries to be bucketed.
+    * @return a stream of (bucket-start, bucket-entries)
+    */
+  def bucketEntries[T](
+      buckets: Stream[Long],
+      entries: Seq[TSEntry[T]]
+  ): Stream[(Long, Seq[TSEntry[T]])] =
+    if (entries.isEmpty) {
+      // When entries is empty, we do return one value with the current bucket's head and an empty time-series.
+      (buckets.head, Seq.empty) +: Stream.empty
+    } else {
+      // Sanity check...
+      require(
+        buckets.head <= entries.head.timestamp,
+        f"Bucket Stream MUST start at or before the first entry. First bucket was: ${buckets.head}, " +
+          f"first entry timestamp was: ${entries.head.timestamp}"
+      )
+      // Sort out what's in the bucket and what definitely isn't
+      entries.span(_.timestamp < buckets.tail.head) match {
+        case (Seq(), _) =>
+          // This bucket is empty
+          (buckets.head, Seq.empty) #:: bucketEntries(buckets.tail, entries)
+        case (within, next) =>
+          // we have at least a single element within the bucket:
+          // Gotta check for the case where it extends into the next bucket as well.
+          // Add everything in the bucket except the last
+          val (keep, nextBucket) = within.last.split(buckets.tail.head)
+          (buckets.head, within.dropRight(1) ++ keep.entries) #::
+            bucketEntries(buckets.tail, nextBucket.entries ++ next)
+      }
+    }
 
   /**
     * This is needed to be able to pattern match on Vectors:
