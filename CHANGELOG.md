@@ -1,5 +1,12 @@
 # Change log
 
+## 3.2.1
+- Add 'entryAt' function to the `TimeSeries` interface
+
+## 3.2.0
+
+- Add bucketing functions to the `TimeSeries` interface
+
 ## 3.1.2
 
 - Moving to `kaeter` to manage versioning, skipped 3.1.1.
