@@ -9,6 +9,8 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def at(t: Long): Option[Nothing] = None
 
+  def entryAt(t: Long): Option[TSEntry[Nothing]] = None
+
   def size: Int = 0
 
   def isEmpty: Boolean = true

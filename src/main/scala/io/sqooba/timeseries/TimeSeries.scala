@@ -14,6 +14,9 @@ trait TimeSeries[+T] {
   /** The value valid at time 't' if there is one. */
   def at(t: Long): Option[T]
 
+  /** The whole entry containing the value valid at time 't', if there is one */
+  def entryAt(t: Long): Option[TSEntry[T]]
+
   /** Split this time series into two.
     *
     * Returns a tuple of two contiguous time series,

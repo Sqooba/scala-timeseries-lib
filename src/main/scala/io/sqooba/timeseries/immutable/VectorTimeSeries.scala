@@ -23,9 +23,9 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
     * If an entry exists and it is valid at 't', Some(value) is returned.
     */
   def at(t: Long): Option[T] =
-    entryValidAt(t).map(_.value)
+    entryAt(t).map(_.value)
 
-  def entryValidAt(t: Long): Option[TSEntry[T]] =
+  def entryAt(t: Long): Option[TSEntry[T]] =
     if (data.isEmpty) {
       None
     } else {
