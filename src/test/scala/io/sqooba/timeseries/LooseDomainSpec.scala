@@ -1,9 +1,9 @@
 package io.sqooba.timeseries
 
-import io.sqooba.basespec.SqoobaSpec
 import io.sqooba.timeseries.immutable._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 
-class LooseDomainSpec extends SqoobaSpec {
+class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
 
   private def assertDomain(looseDomain: TimeDomain, start: Long, until: Long) = {
     // Check internal bounds
