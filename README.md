@@ -88,6 +88,11 @@ Essentially, it's a step function.
 
 ## Notes on Performance
 
+The original goal was to provide abstractions that are easy to use and to understand. 
+
+While we still strive to keep the library simple to use, we are also shifting to more intensive applications: performance is thus becoming more of a priority.
+
+### Details
 As suggested by its name, `VectorTimeSeries` is backed by a `Vector` and uses dichotomic search for lookups. The following performances can thus be expected (using the denomination [found here](http://docs.scala-lang.org/overviews/collections/performance-characteristics.html)):
 
   - `Log` for random lookups, left/right trimming and slicing within the definition bounds
@@ -96,6 +101,7 @@ As suggested by its name, `VectorTimeSeries` is backed by a `Vector` and uses di
 Each data point is however represented by an object, which kinda hurts memory usage: improving this is on the roadmap.
 
 # Misc
+
 ### Why 
 I've had to handle time series like data in Java in past, which turned out to be ~~slightly~~ really frustrating.
 

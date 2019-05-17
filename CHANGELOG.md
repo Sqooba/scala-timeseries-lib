@@ -1,5 +1,8 @@
 # Change log
 
+## 3.3.0
+- `TimeSeries.ofOrderedEntriesUnsafe` now calls a constructor function on `VectorTimeSeries` that does not sort the passed entries, which was adding a non-negligible performance hit. There are still open questions about boxing/unboxing when sorting.
+
 ## 3.2.1
 - Add 'entryAt' function to the `TimeSeries` interface
 
