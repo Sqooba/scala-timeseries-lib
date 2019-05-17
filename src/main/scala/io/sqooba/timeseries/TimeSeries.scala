@@ -689,7 +689,7 @@ object TimeSeries {
     } else if (size == 1) {
       xs.head
     } else {
-      VectorTimeSeries.ofEntriesUnsafe(xs)
+      VectorTimeSeries.ofOrderedEntriesUnsafe(xs)
     }
   }
 

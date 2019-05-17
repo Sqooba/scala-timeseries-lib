@@ -202,6 +202,13 @@ object VectorTimeSeries {
   private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
     new VectorTimeSeries(Vector(elems.sortBy(_.timestamp): _*))
 
+  /**
+    * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:
+    *         use at your own risk.
+    */
+  private[timeseries] def ofOrderedEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
+    new VectorTimeSeries(elems.toVector)
+
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
     ofEntriesUnsafe(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)))
 
