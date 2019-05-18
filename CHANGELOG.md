@@ -1,5 +1,9 @@
 # Change log
 
+## Not released
+- `TSEntry[T]` is now `@specialized`
+- `TSEntry` now has its own ordering to (hopefully) avoid unnecessary boxing/unboxing
+
 ## 3.3.0
 - `TimeSeries.ofOrderedEntriesUnsafe` now calls a constructor function on `VectorTimeSeries` that does not sort the passed entries, which was adding a non-negligible performance hit. There are still open questions about boxing/unboxing when sorting.
 

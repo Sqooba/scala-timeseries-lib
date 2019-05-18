@@ -193,14 +193,14 @@ object VectorTimeSeries {
   def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
     // TODO: Expect entries to be sorted and just check?
     // TODO: the fitting function returns a vector in most cases: don't rebuild one in such case
-    new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sortBy(_.timestamp)): _*))
+    new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sorted(TSEntryOrdering)): _*))
 
   /**
     * @return a VectorTimeSeries built from the passed entries, only ensuring that they are sorted
     */
   // TODO clarify why we want to sort here.
   private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
-    new VectorTimeSeries(Vector(elems.sortBy(_.timestamp): _*))
+    new VectorTimeSeries(Vector(elems.sorted(TSEntryOrdering): _*))
 
   /**
     * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:

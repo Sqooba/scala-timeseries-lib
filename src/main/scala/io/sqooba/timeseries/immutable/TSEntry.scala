@@ -6,7 +6,15 @@ import io.sqooba.timeseries.TimeSeries
 
 import scala.collection.immutable.VectorBuilder
 
-case class TSEntry[+T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
+/**
+  * Represents a time-series entry on the time-line, including its validity.
+  *
+  * Can also be used as a 'constant' time-series that has a single value.
+  *
+  * 'specialized' is used to have non-generic implementations for primitive types,
+  *  which tend to be used a lot, in order to reduce the memory pressure a little bit.
+  */
+case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
   require(validity > 0, s"Validity must be strictly positive ($validity was given)")
 
   def at(t: Long): Option[T] =
