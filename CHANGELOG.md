@@ -1,6 +1,6 @@
 # Change log
 
-## Not released
+## 3.3.2 (same as 3.3.1, plus properly migrated sort calls)
 - `TSEntry[T]` is now `@specialized`
 - `TSEntry` now has its own ordering to (hopefully) avoid unnecessary boxing/unboxing
 
