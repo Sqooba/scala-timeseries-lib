@@ -353,7 +353,7 @@ object TSEntry {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
         emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
         op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
-    }.sortBy(_.timestamp)
+    }.sorted(TSEntryOrdering)
 
   private def emptyApply[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
     if (from == to) {

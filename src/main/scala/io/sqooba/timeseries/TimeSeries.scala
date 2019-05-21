@@ -720,6 +720,6 @@ object TimeSeries {
     * @tparam T The time-series' underlying parameter
     * @return A well initialized time-series
     */
-  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sortBy(_.timestamp))
+  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sorted(TSEntryOrdering))
 
 }
