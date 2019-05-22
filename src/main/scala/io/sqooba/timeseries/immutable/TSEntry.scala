@@ -220,7 +220,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     */
   def extendValidity(validityIncrement: Long): TSEntry[T] =
     if (validityIncrement < 0) {
-      throw new IllegalArgumentException("Cannot reduce validity of a TS entry.")
+      throw new IllegalArgumentException(s"Cannot reduce validity of an entry ($this) with increment $validityIncrement.")
     } else if (validityIncrement == 0) {
       this
     } else {
@@ -334,7 +334,7 @@ object TSEntry {
     (Math.max(a.timestamp, b.timestamp), Math.min(a.definedUntil, b.definedUntil)) match {
       case (from, to) if from < to => mergeValues(a, b)(from, to)(op)
       case _ =>
-        throw new IllegalArgumentException("This function cannot merge non-overlapping entries.")
+        throw new IllegalArgumentException(s"This function cannot merge non-overlapping entries: $a and $b")
     }
   } ++ {
     // Handle trailing 'partial' definition
@@ -348,7 +348,7 @@ object TSEntry {
     * The merge operator will be applied to each individually */
   protected def mergeDisjointDomain[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     if (a.overlaps(b)) {
-      throw new IllegalArgumentException("Function cannot be applied to overlapping entries.")
+      throw new IllegalArgumentException(s"Function cannot be applied to overlapping entries: $a and $b")
     } else {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
         emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
