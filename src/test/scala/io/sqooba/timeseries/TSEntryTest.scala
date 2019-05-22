@@ -329,6 +329,23 @@ class TSEntryTest extends JUnitSuite {
 
   }
 
+  @Test def testAppendEntryWithinDomainAndShorterValidity(): Unit = {
+    // The appended entry's end of validity ends before the previous end of validity.
+    // This is OK and should be like trimming the previous entry at the end of validity of the second.
+
+    // Case where the values are not equal
+    assert(
+      Seq(TSEntry(1, "Hi", 5), TSEntry(6, "Ho", 2)) ==
+        TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Ho", 2))
+    )
+
+    // Case where the values are equal
+    assert(
+      Seq(TSEntry(1, "Hi", 7)) ==
+        TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Hi", 2))
+    )
+  }
+
   @Test def testPrependEntry(): Unit = {
     val tse = TSEntry(11, "Ho", 10)
 
