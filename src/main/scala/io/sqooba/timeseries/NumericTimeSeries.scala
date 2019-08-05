@@ -116,6 +116,9 @@ object NumericTimeSeries {
       )
     }
 
+  // TODO: implement a proper representation for the integral of a time-series.
+  //  The code below is a partial duplication of the new WindowSlider logic
+  //  and needs to be cleaned up.
   @tailrec
   def slideMySum[T](
       remaining: Seq[TSEntry[T]],
