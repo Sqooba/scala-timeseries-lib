@@ -637,7 +637,7 @@ class TimeSeriesTest extends JUnitSuite {
     val ts2 = TSEntry(1, 'b', 3)
 
     assert(
-      ts1.fallback(ts2) == TimeSeries(
+      ts1.fallback(ts2) == TimeSeries.ofOrderedEntriesUnsafe(
         Seq(
           TSEntry(1, 'a', 1),
           TSEntry(2, 'b', 1),

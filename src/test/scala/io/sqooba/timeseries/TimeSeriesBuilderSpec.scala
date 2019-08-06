@@ -5,11 +5,13 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
 
-  private def newTsb = new TimeSeriesBuilder[Int]
+  private def newTsb              = new TimeSeriesBuilder[Int]
+  private def newTsbNoCompression = new TimeSeriesBuilder[Int](compress = false)
 
   "A TimeSeriesBuilder" should "return an empty collection when nothing was added" in {
     newTsb.vectorResult() shouldBe Vector()
   }
+
   it should "correctly trim overlapping entries" in {
     val b = newTsb
     b += TSEntry(10, 42, 10)
@@ -24,14 +26,35 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
     b += TSEntry(40, 42, 10)
     b.vectorResult() shouldBe Vector(TSEntry(10, 42, 10), TSEntry(25, 42, 10), TSEntry(40, 42, 10))
   }
-  it should "correctly extend equal contiguous entries" in {
+  it should "correctly extend equal contiguous entries if compressing" in {
     val b = newTsb
     b += TSEntry(10, 42, 10)
     b += TSEntry(15, 42, 10)
     b += TSEntry(20, 42, 10)
     b.vectorResult() shouldBe Vector(TSEntry(10, 42, 20))
-
   }
+
+  it should "not merge (only trim) equal contiguous entries if not compressing" in {
+    val b = newTsbNoCompression
+    b += TSEntry(10, 42, 10)
+    b += TSEntry(15, 42, 10)
+    b += TSEntry(20, 42, 10)
+    b.vectorResult() shouldBe Vector(TSEntry(10, 42, 5), TSEntry(15, 42, 5), TSEntry(20, 42, 10))
+  }
+
+  it should "correctly set the isCompressed flag on the result" in {
+    val b = newTsb
+    b += TSEntry(10, 42, 10)
+    b += TSEntry(15, 42, 10)
+    b.result() shouldBe TimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(10, 42, 15)), isCompressed = true)
+
+    val bNoComp = newTsbNoCompression
+    bNoComp += TSEntry(10, 42, 10)
+    bNoComp += TSEntry(15, 42, 10)
+    bNoComp.result() shouldBe
+      TimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(10, 42, 5), TSEntry(15, 42, 10)), isCompressed = false)
+  }
+
   it should "return nothing after having been cleared and be reusable" in {
     val b = newTsb
     b += TSEntry(10, 42, 10)
@@ -39,7 +62,6 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
     b += TSEntry(20, 42, 10)
 
     b.clear()
-    newTsb.vectorResult() shouldBe Vector()
     b += TSEntry(10, 42, 10)
     b += TSEntry(15, 42, 10)
     b += TSEntry(20, 42, 10)

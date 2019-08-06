@@ -9,7 +9,7 @@ import scala.collection.mutable
   * A builder intended to ease the assembling of entries into a time series.
   * Uses a vector builder and a small stack under the hood.
   */
-class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
+class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
 
   // Contains finalized entries (ie, they won't be trimmed or extended anymore)
   private val resultBuilder = new VectorBuilder[TSEntry[T]]
@@ -33,7 +33,7 @@ class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
           throw new IllegalArgumentException(errorMess)
         }
 
-        last.appendEntry(elem) match {
+        last.appendEntry(elem, compress) match {
           // A compression occurred. Keep that entry around
           case Seq(compressed) =>
             Some(compressed)
@@ -55,7 +55,7 @@ class TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
   }
 
   override def result(): TimeSeries[T] =
-    TimeSeries.ofOrderedEntriesUnsafe(vectorResult())
+    TimeSeries.ofOrderedEntriesUnsafe(vectorResult(), isCompressed = compress)
 
   def vectorResult(): Vector[TSEntry[T]] = {
     if (resultCalled) {

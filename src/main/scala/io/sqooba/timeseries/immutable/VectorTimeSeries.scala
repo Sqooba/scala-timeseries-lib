@@ -55,14 +55,9 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], i
     }
 
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
-    if (compress) {
-      // Use a builder to handle compression
-      data
-        .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.mapWithTime(f))
-        .result()
-    } else {
-      new VectorTimeSeries[O](data.map(_.mapWithTime(f)))
-    }
+    data
+      .foldLeft(new TimeSeriesBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
+      .result()
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
@@ -196,18 +191,24 @@ object VectorTimeSeries {
     new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sorted(TSEntryOrdering)): _*))
 
   /**
+    * @param isCompressed A flag saying whether the elems have been compressed during construction.
     * @return a VectorTimeSeries built from the passed entries, only ensuring that they are sorted
     */
   // TODO clarify why we want to sort here.
-  private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
-    new VectorTimeSeries(Vector(elems.sorted(TSEntryOrdering): _*))
+  private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]], isCompressed: Boolean = false): VectorTimeSeries[T] =
+    new VectorTimeSeries(Vector(elems.sorted(TSEntryOrdering): _*), isCompressed)
 
   /**
+    * @param elems The entries of the series.
+    * @param isCompressed A flag saying whether the elems have been compressed during construction.
     * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:
     *         use at your own risk.
     */
-  private[timeseries] def ofOrderedEntriesUnsafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
-    new VectorTimeSeries(elems.toVector)
+  private[timeseries] def ofOrderedEntriesUnsafe[T](
+      elems: Seq[TSEntry[T]],
+      isCompressed: Boolean = false
+  ): VectorTimeSeries[T] =
+    new VectorTimeSeries(elems.toVector, isCompressed)
 
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
     ofEntriesUnsafe(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)))

@@ -142,8 +142,16 @@ class NumericTimeSeriesTest extends JUnitSuite {
     val sum = (in: Seq[Int]) => in.sum
 
     assert(
-      NumericTimeSeries.rolling(VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))), sum, 20)
-        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 3, 10), TSEntry(20, 6, 10), TSEntry(30, 9, 10)))
+      NumericTimeSeries.rolling(
+        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+        sum,
+        20
+      )
+        == VectorTimeSeries.ofEntriesUnsafe(
+          Seq(TSEntry(0, 1, 10), TSEntry(10, 3, 10), TSEntry(20, 6, 10), TSEntry(30, 9, 10)),
+          // rolling() defaults to compress = true
+          isCompressed = true
+        )
     )
   }
 

@@ -164,8 +164,7 @@ trait TimeSeries[+T] {
   def append[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
     other.headOption
       .map(head => this.trimRight(head.timestamp).entries ++ other.entries)
-      // We assume that `TimeSeries.ofOrderedEntriesSafe` compresses the time-series
-      .map(if (compress) TimeSeries.ofOrderedEntriesSafe else TimeSeries.ofOrderedEntriesUnsafe)
+      .map(TimeSeries.ofOrderedEntriesSafe(_, compress))
       .getOrElse(this)
 
   /** Prepend the 'other' time series to this one at exactly the last of other's entries definedUntil().
@@ -181,8 +180,7 @@ trait TimeSeries[+T] {
   def prepend[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
     other.lastOption
       .map(last => other.entries ++ this.trimLeft(last.definedUntil).entries)
-      // We assume that `TimeSeries.ofOrderedEntriesSafe` compresses the time-series
-      .map(if (compress) TimeSeries.ofOrderedEntriesSafe else TimeSeries.ofOrderedEntriesUnsafe)
+      .map(TimeSeries.ofOrderedEntriesSafe(_, compress))
       .getOrElse(this)
 
   /**
@@ -681,10 +679,12 @@ object TimeSeries {
     *       two entries should have the same timestamp. Finally, entries will NOT be compressed.
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
+    * @param isCompressed Flags whether the xs' have been compressed in their construction.
+    *                   Will be passed to the underlying implementation.
     * @tparam T The underlying type of the time-series
     * @return A time-series with a correct implementation
     */
-  def ofOrderedEntriesUnsafe[T](xs: Seq[TSEntry[T]]): TimeSeries[T] = {
+  def ofOrderedEntriesUnsafe[T](xs: Seq[TSEntry[T]], isCompressed: Boolean = false): TimeSeries[T] = {
     val size = xs.size
 
     if (size == 0) {
@@ -692,7 +692,7 @@ object TimeSeries {
     } else if (size == 1) {
       xs.head
     } else {
-      VectorTimeSeries.ofOrderedEntriesUnsafe(xs)
+      VectorTimeSeries.ofOrderedEntriesUnsafe(xs, isCompressed)
     }
   }
 
@@ -705,11 +705,12 @@ object TimeSeries {
     * @note No two entries can have the same timestamp, an exception will be thrown if it's the case.
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
+    * @param compress A flag specifying whether the entries should be compressed or not.
     * @tparam T The underlying type of the time-series
     * @return A compressed time-series with a correct implementation
     */
-  def ofOrderedEntriesSafe[T](xs: Seq[TSEntry[T]]): TimeSeries[T] =
-    xs.foldLeft(new TimeSeriesBuilder[T]())(_ += _).result()
+  def ofOrderedEntriesSafe[T](xs: Seq[TSEntry[T]], compress: Boolean = true): TimeSeries[T] =
+    xs.foldLeft(new TimeSeriesBuilder[T](compress))(_ += _).result()
 
   /**
     * An safe constructor of `TimeSeries`

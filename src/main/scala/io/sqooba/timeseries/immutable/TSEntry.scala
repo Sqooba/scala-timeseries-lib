@@ -166,15 +166,15 @@ case class TSEntry[@specialized +T](
     *
     * Notes:
     * - if 'other' has a timestamp before this value, only 'other' is returned.
-    * - 'other' will be compressed into 'this' if their domains overlap and their
-    * values are strictly equal. In that case, this entry may be shrinked if 'other's
+    * - if compression is enabled 'other' will be compressed into 'this' if their domains overlap and their
+    * values are strictly equal. In that case, this entry may be shrunk if 'other's
     * domain of definition ends before 'this' one.
     */
-  def appendEntry[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
+  def appendEntry[U >: T](other: TSEntry[U], compress: Boolean = true): Seq[TSEntry[U]] =
     if (other.timestamp <= timestamp) {
       Seq(other)
     } else {
-      extendOrTrim(other)
+      extendOrTrim(other, compress)
     }
 
   /**
@@ -184,8 +184,8 @@ case class TSEntry[@specialized +T](
     *         if their values are strictly equal and their domain overlap.
     *         A seq of 'this', trimmed to 'other's timestamp, and the other entry is returned otherwise.
     */
-  private def extendOrTrim[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
-    if (other.timestamp <= this.definedUntil && this.value == other.value) {
+  private def extendOrTrim[U >: T](other: TSEntry[U], compress: Boolean): Seq[TSEntry[U]] =
+    if (compress && other.timestamp <= this.definedUntil && this.value == other.value) {
       // If the values are the same, we need to check if the new entry is shortening
       // the previous one.
       val extension = other.definedUntil - this.definedUntil
