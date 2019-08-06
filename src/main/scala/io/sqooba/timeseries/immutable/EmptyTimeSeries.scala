@@ -15,6 +15,8 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def isEmpty: Boolean = true
 
+  def isCompressed: Boolean = false
+
   def defined(at: Long): Boolean = false
 
   def trimLeft(at: Long): TimeSeries[Nothing] = this

@@ -98,7 +98,7 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers {
 
     b ++= data
 
-    val VectorTimeSeries(generatedData) = b.result()
+    val VectorTimeSeries(generatedData, _) = b.result()
 
     generatedData should equal(data)
   }

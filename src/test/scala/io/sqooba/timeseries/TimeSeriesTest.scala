@@ -567,7 +567,7 @@ class TimeSeriesTest extends JUnitSuite {
       TSEntry(1, 1, 1)
     )
 
-    val VectorTimeSeries(data) = TimeSeries(entries)
+    val VectorTimeSeries(data, _) = TimeSeries(entries)
 
     assert(data.head == entries.last)
     assert(data.last == entries.head)

@@ -14,7 +14,13 @@ import scala.collection.immutable.VectorBuilder
   * 'specialized' is used to have non-generic implementations for primitive types,
   *  which tend to be used a lot, in order to reduce the memory pressure a little bit.
   */
-case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) extends TimeSeries[T] {
+case class TSEntry[@specialized +T](
+    timestamp: Long,
+    value: T,
+    validity: Long,
+    isCompressed: Boolean = false
+) extends TimeSeries[T] {
+
   require(validity > 0, s"Validity must be strictly positive ($validity was given)")
 
   def at(t: Long): Option[T] =
@@ -132,17 +138,17 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
 
   def toLeftEntry[O]: TSEntry[Either[T, O]] =
-    TSEntry(timestamp, Left[T, O](value), validity)
+    TSEntry(timestamp, Left[T, O](value), validity, isCompressed)
 
   def toRightEntry[O]: TSEntry[Either[O, T]] =
-    TSEntry(timestamp, Right[O, T](value), validity)
+    TSEntry(timestamp, Right[O, T](value), validity, isCompressed)
 
   /** Map value contained in this timeseries using the passed function */
   def map[O](f: T => O, compress: Boolean = true): TSEntry[O] =
-    TSEntry(timestamp, f(value), validity)
+    TSEntry(timestamp, f(value), validity, isCompressed)
 
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
-    TSEntry(timestamp, f(timestamp, value), validity)
+    TSEntry(timestamp, f(timestamp, value), validity, isCompressed)
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     if (predicate(this)) this else EmptyTimeSeries
@@ -385,10 +391,10 @@ object TSEntry {
     * the entries contains what type. */
   def mergeEithers[A, B, R](a: TSEntry[Either[A, B]], b: TSEntry[Either[A, B]])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     (a, b) match {
-      case (TSEntry(tsA, Left(valA), dA), TSEntry(tsB, Right(valB), dB)) =>
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
-      case (TSEntry(tsB, Right(valB), dB), TSEntry(tsA, Left(valA), dA)) =>
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
+      case (TSEntry(tsA, Left(valA), dA, cA), TSEntry(tsB, Right(valB), dB, cB)) =>
+        merge(TSEntry(tsA, valA, dA, cA), TSEntry(tsB, valB, dB, cB))(op)
+      case (TSEntry(tsB, Right(valB), dB, cB), TSEntry(tsA, Left(valA), dA, cA)) =>
+        merge(TSEntry(tsA, valA, dA, cA), TSEntry(tsB, valB, dB, cB))(op)
       case _ =>
         throw new IllegalArgumentException(s"Can't pass two entries with same sided-eithers: $a, $b")
     }
@@ -444,9 +450,9 @@ object TSEntry {
   /** Merge the provided entry to a None, using the specified operator */
   def mergeEitherToNone[A, B, R](e: TSEntry[Either[A, B]])(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] = {
     e match {
-      case TSEntry(_, Left(valA), _)  => op(Some(valA), None)
-      case TSEntry(_, Right(valB), _) => op(None, Some(valB))
+      case TSEntry(_, Left(valA), _, _)  => op(Some(valA), None)
+      case TSEntry(_, Right(valB), _, _) => op(None, Some(valB))
     }
-  }.map(TSEntry(e.timestamp, _, e.validity))
+  }.map(TSEntry(e.timestamp, _, e.validity, e.isCompressed))
 
 }

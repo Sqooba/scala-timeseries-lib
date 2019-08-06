@@ -85,6 +85,9 @@ trait TimeSeries[+T] {
   /** True if this time series is defined at 'at'. Ie, at('at') would return Some[T] */
   def defined(at: Long): Boolean
 
+  /** Returns true if this timeseries was compressed at some point in its construction. */
+  def isCompressed: Boolean
+
   /** Map the values within the time series.
     * the 'compress' parameters allows callers to control whether or not compression should occur.
     * If set to false, timestamps and validities remain unchanged. Defaults to true */

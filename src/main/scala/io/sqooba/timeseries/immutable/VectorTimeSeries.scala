@@ -11,7 +11,7 @@ import scala.annotation.tailrec
   * Useful for working on time series like data when no random access is required,
   * as any method requiring some sort of lookup will only run in linear time.
   */
-case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]])
+case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], isCompressed: Boolean = false)
 // data needs to be SORTED
     extends TimeSeries[T] {
 

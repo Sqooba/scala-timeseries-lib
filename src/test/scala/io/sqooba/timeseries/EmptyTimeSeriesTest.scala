@@ -15,6 +15,8 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testEmptiness: Unit = assert(ts.isEmpty)
 
+  @Test def testNotCompressed: Unit = assert(!ts.isCompressed)
+
   @Test def testDefined: Unit = assert(ts.defined(1) == false)
 
   @Test def testTrimLeft: Unit = assert(ts.trimLeft(1) == EmptyTimeSeries)
