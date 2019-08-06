@@ -734,6 +734,16 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts1.multiply(ts2) == TSEntry(1, 0, 2))
   }
 
+  @Test def testMinusWithDefaults(): Unit = {
+    val tsLeft  = TimeSeries(Seq(TSEntry(1, 1, 1), TSEntry(3, 1, 1)))
+    val tsRight = TimeSeries(Seq(TSEntry(2, 5, 2)))
+
+    assert(
+      tsLeft.minus(tsRight, leftHandDefault = Some(2)).entries ==
+        Seq(TSEntry(2, -3, 1), TSEntry(3, -4, 1))
+    )
+  }
+
   @Test def testBucket(): Unit = {
     val str = Stream.from(1, 10).map(_.toLong)
     val tsb = new TimeSeriesBuilder[Int]()

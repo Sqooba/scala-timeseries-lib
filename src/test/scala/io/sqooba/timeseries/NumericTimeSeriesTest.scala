@@ -62,6 +62,31 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
   }
 
+  @Test def testNonStrictMinus(): Unit = {
+    // behaves the same as strict if both defaults are None
+    assert(
+      tsa.minus(tsb) == tsa.merge(NumericTimeSeries.nonStrictMinus(None, None))(tsb)
+    )
+
+    // handles left default
+    assert(
+      tsa.merge[Double, Double](NumericTimeSeries.nonStrictMinus(Some(0), None))(tsb).entries
+        == Seq(TSEntry(6L, -2.0, 5), TSEntry(11, -3.0, 1), TSEntry(12L, -1, 4))
+    )
+
+    // handles right default
+    assert(
+      tsa.merge[Double, Double](NumericTimeSeries.nonStrictMinus(None, Some(10)))(tsb).entries
+        == Seq(TSEntry(1L, -9, 5), TSEntry(6L, -2.0, 5), TSEntry(12L, -1, 4), TSEntry(16L, -8, 6))
+    )
+
+    // handles both defaults
+    assert(
+      tsa.merge[Double, Double](NumericTimeSeries.nonStrictMinus(Some(0.5), Some(10)))(tsb).entries
+        == Seq(TSEntry(1L, -9, 5), TSEntry(6L, -2.0, 5), TSEntry(11, -2.5, 1), TSEntry(12L, -1, 4), TSEntry(16L, -8, 6))
+    )
+  }
+
   /**
     * Check that we only have a correct multiplication wherever
     * both time series are defined at the same time.

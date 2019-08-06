@@ -40,11 +40,25 @@ object NumericTimeSeries {
     * Defensive 'minus' operator: wherever one of the time series
     * is  undefined, the result is undefined.
     */
-  def strictMinus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
+  def strictMinus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] =
+    nonStrictMinus(None, None)(lhO, rhO)
+
+  /**
+    * Non strict 'minus' operator: wherever one of the timeseries is undefined it falls back to the given default value.
+    * If both defaults are None, the operator is equivalent to #strictMinus.
+    *
+    * @param lhO the optional left hand value
+    * @param rhO the optional right hand value
+    * @param lhDefault the optional default for the left hand value
+    * @param rhDefault the optional default for the right hand value
+    */
+  def nonStrictMinus[T](lhDefault: Option[T], rhDefault: Option[T])(lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
     import n._
     (lhO, rhO) match {
       case (Some(l), Some(r)) => Some(l - r)
-      case _                  => None
+      case (Some(l), _)       => rhDefault.map(l - _)
+      case (_, Some(r))       => lhDefault.map(_ - r)
+      case _                  => rhDefault.flatMap(rDefault => lhDefault.map(_ - rDefault))
     }
   }
 

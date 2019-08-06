@@ -221,8 +221,12 @@ trait TimeSeries[+T] {
     * this.at(x) - other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def minus[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
-    merge[U, U](NumericTimeSeries.strictMinus(_, _)(n))(other)
+  def minus[U >: T](
+      other: TimeSeries[U],
+      leftHandDefault: Option[U] = None,
+      rightHandDefault: Option[U] = None
+  )(implicit n: Numeric[U]): TimeSeries[U] =
+    merge[U, U](NumericTimeSeries.nonStrictMinus(leftHandDefault, rightHandDefault)(_, _)(n))(other)
 
   def -[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = minus(other)
 
