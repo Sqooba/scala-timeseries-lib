@@ -17,6 +17,8 @@ class TSEntryTest extends JUnitSuite {
       case _                  => None
     }
 
+  @Test def testNotCompressed: Unit = assert(TSEntry(1, 2, 3).isCompressed)
+
   @Test def testMap(): Unit = {
     assert(TSEntry(0, 42, 10).map(_ / 2) == TSEntry(0, 21, 10))
   }
