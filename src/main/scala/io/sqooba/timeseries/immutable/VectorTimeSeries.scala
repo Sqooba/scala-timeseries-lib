@@ -15,7 +15,10 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], i
 // data needs to be SORTED
     extends TimeSeries[T] {
 
-  assert(data.size >= 2, "A VectorTimeSeries can not be empty (should be an EmptyTimeSeries) nor contain only one element (should be a TSEntry)")
+  require(
+    data.size >= 2,
+    "A VectorTimeSeries can not be empty (should be an EmptyTimeSeries) nor contain only one element (should be a TSEntry)"
+  )
 
   /**
     * Dichotomic search for the element in the time series for the entry
@@ -25,12 +28,7 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], i
   def at(t: Long): Option[T] =
     entryAt(t).map(_.value)
 
-  def entryAt(t: Long): Option[TSEntry[T]] =
-    if (data.isEmpty) {
-      None
-    } else {
-      lastEntryAt(t).flatMap(_._1.entryAt(t))
-    }
+  def entryAt(t: Long): Option[TSEntry[T]] = lastEntryAt(t).flatMap(_._1.entryAt(t))
 
   /**
     * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
@@ -74,23 +72,17 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], i
   def isEmpty: Boolean = false
 
   def trimRight(t: Long): TimeSeries[T] =
-    if (data.isEmpty) {
-      EmptyTimeSeries
-    } else if (data.size == 1) {
-      data.last.trimRight(t)
-    } else {
-      lastEntryAt(t - 1) match {
-        case Some((e, 0)) =>
-          // First element: trim and return it
-          e.trimRight(t)
-        case Some((e, idx)) =>
-          data.splitAt(idx) match {
-            // First of the last elements is valid and may need trimming. Others can be forgotten.
-            case (noChange, _) =>
-              new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
-          }
-        case _ => EmptyTimeSeries
-      }
+    lastEntryAt(t - 1) match {
+      case Some((e, 0)) =>
+        // First element: trim and return it
+        e.trimRight(t)
+      case Some((e, idx)) =>
+        data.splitAt(idx) match {
+          // First of the last elements is valid and may need trimming. Others can be forgotten.
+          case (noChange, _) =>
+            new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
+        }
+      case _ => EmptyTimeSeries
     }
 
   def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
@@ -108,12 +100,7 @@ case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], i
     }
 
   def trimLeft(t: Long): TimeSeries[T] =
-    // Check obvious shortcuts
-    if (data.isEmpty) {
-      EmptyTimeSeries
-    } else if (data.size == 1) {
-      data.head.trimLeft(t)
-    } else if (data.head.timestamp >= t) {
+    if (data.head.timestamp >= t) {
       this
     } else {
       lastEntryAt(t) match {
