@@ -500,14 +500,16 @@ object TimeSeries {
     * Assumes a and b to be ORDERED!
     */
   def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
-    mergeEithers(mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A])))(op)
+    mergeEithers(
+      mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A]))
+    )(op)
 
   /**
     * Combine two Seq's that are known to be ordered and return a Seq that is
     * both ordered and that contains both of the elements in 'a' and 'b'.
     * Adapted from http://stackoverflow.com/a/19452304/1997056
     */
-  def mergeOrderedSeqs[E: Ordering](a: Seq[E], b: Seq[E])(implicit o: Ordering[E]): Seq[E] = {
+  def mergeOrderedSeqs[E](a: Seq[E], b: Seq[E])(implicit o: Ordering[E]): Seq[E] = {
     @tailrec
     def rec(x: Seq[E], y: Seq[E], acc: mutable.Builder[E, Seq[E]]): mutable.Builder[E, Seq[E]] = {
       (x, y) match {
@@ -723,7 +725,7 @@ object TimeSeries {
     * @tparam T The time-series' underlying parameter
     * @return A well initialized time-series
     */
-  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sorted(TSEntryOrdering))
+  def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sorted)
 
   /**
     * @return the default timeseries builder implementation

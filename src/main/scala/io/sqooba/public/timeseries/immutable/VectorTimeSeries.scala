@@ -170,7 +170,7 @@ object VectorTimeSeries {
     */
   def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): TimeSeries[T] =
     // TODO: Expect entries to be sorted and just check?
-    elems.sorted(TSEntryOrdering).foldLeft(TimeSeries.newBuilder[T]())(_ += _).result()
+    elems.sorted.foldLeft(TimeSeries.newBuilder[T]())(_ += _).result()
 
   /**
     * @param elems The entries of the series.

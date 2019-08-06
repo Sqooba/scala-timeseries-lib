@@ -312,12 +312,15 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
 object TSEntry {
 
-  /** Define an implicit ordering for TSEntries of any type */
-  implicit def orderByTs[T]: Ordering[TSEntry[T]] =
-    Ordering.by(ts => ts.timestamp)
-
   def apply[T](tup: (Long, T, Long)): TSEntry[T] =
     TSEntry(tup._1, tup._2, tup._3)
+
+  /**
+    * Define an implicit ordering for TSEntries of any type.
+    * TSEntryOrdering extends the correct type but as Ordering[T] is invariant
+    * we still need to enforce this type here.
+    */
+  implicit def orderByTs[T]: Ordering[TSEntry[T]] = TSEntryOrdering.asInstanceOf[Ordering[TSEntry[T]]]
 
   /** Merge two overlapping TSEntries and return the result as an
     * ordered sequence of TSEntries.
@@ -364,7 +367,7 @@ object TSEntry {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
         emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
         op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
-    }.sorted(TSEntryOrdering)
+    }.sorted
 
   private def emptyApply[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
     if (from == to) {
