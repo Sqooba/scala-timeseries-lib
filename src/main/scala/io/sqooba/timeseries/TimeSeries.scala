@@ -200,6 +200,22 @@ trait TimeSeries[+T] {
     TimeSeries.ofOrderedEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
 
   /**
+    * Merge another time series to this one, using the provided operator
+    * to merge entries. The resulting series has the value defined by the operator
+    * at all times where both input series are defined. At all other times (i.e. where only one
+    * or none of the input series is defined), the resulting series is not defined.
+    *
+    * @param op    the operator for the merge
+    * @param other TimeSeries to merge
+    * @return the strictly merged TimeSeries
+    */
+  def mergeStrict[O, R](op: (T, O) => R)(other: TimeSeries[O]): TimeSeries[R] =
+    this.merge[O, R] {
+      case (Some(t), Some(o)) => Some(op(t, o))
+      case _                  => None
+    }(other)
+
+  /**
     * Sum the entries within this and the provided time series such that
     *
     * - If strict (default): this.at(x) + other.at(x) = returned.at(x) where x may take any value where

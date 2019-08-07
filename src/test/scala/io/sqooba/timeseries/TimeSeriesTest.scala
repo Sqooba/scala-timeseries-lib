@@ -676,6 +676,33 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts.supportRatio == 0.75)
   }
 
+  @Test def testMergeStrict(): Unit = {
+    val ts1 = TimeSeries(
+      Seq(
+        TSEntry(1, "hel", 5),
+        TSEntry(10, "hel", 5)
+      ))
+
+    val ts2 = TimeSeries(
+      Seq(
+        TSEntry(1, "lo", 9),
+        TSEntry(12, "lo", 8)
+      ))
+
+    assert(
+      ts1.mergeStrict[String, String](_ + _)(ts2).entries == Seq(TSEntry(1, "hello", 5), TSEntry(12, "hello", 3))
+    )
+  }
+
+  @Test def testMergeStrictDisjoint(): Unit = {
+    val ts1 = TimeSeries(Seq(TSEntry(1, "hel", 5)))
+    val ts2 = TimeSeries(Seq(TSEntry(6, "lo", 5)))
+
+    assert(
+      ts1.mergeStrict[String, String](_ + _)(ts2).entries == Seq()
+    )
+  }
+
   @Test def testMergeEntriesWithUndefinedDomains(): Unit = {
     val ts1 = Seq(
       TSEntry(1, 1, 5),
