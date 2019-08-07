@@ -60,4 +60,6 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
   def looseDomain: TimeDomain = EmptyTimeDomain
 
   def supportRatio: Double = 0
+
+  def isDomainContinuous: Boolean = false
 }

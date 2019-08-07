@@ -10,10 +10,14 @@ import scala.annotation.tailrec
   *
   * Useful for working on time series like data when no random access is required,
   * as any method requiring some sort of lookup will only run in linear time.
+  *
+  * @note data needs to be SORTED
   */
-case class VectorTimeSeries[+T] private[timeseries] (data: Vector[TSEntry[T]], isCompressed: Boolean = false)
-// data needs to be SORTED
-    extends TimeSeries[T] {
+case class VectorTimeSeries[+T] private[timeseries] (
+    data: Vector[TSEntry[T]],
+    isCompressed: Boolean = false,
+    isDomainContinuous: Boolean = false
+) extends TimeSeries[T] {
 
   require(
     data.size >= 2,
@@ -188,14 +192,16 @@ object VectorTimeSeries {
   /**
     * @param elems The entries of the series.
     * @param isCompressed A flag saying whether the elems have been compressed during construction.
+    * @param isDomainContinuous Flags whether the elems span a continuous time domain without holes.
     * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:
     *         use at your own risk.
     */
   private[timeseries] def ofOrderedEntriesUnsafe[T](
       elems: Seq[TSEntry[T]],
-      isCompressed: Boolean = false
+      isCompressed: Boolean = false,
+      isDomainContinuous: Boolean = false
   ): VectorTimeSeries[T] =
-    new VectorTimeSeries(elems.toVector, isCompressed)
+    new VectorTimeSeries(elems.toVector, isCompressed, isDomainContinuous)
 
   def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
     ofEntriesUnsafe(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)))

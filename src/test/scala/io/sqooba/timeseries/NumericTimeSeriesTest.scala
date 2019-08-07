@@ -138,25 +138,29 @@ class NumericTimeSeriesTest extends JUnitSuite {
     // using min as an aggregation function for the window
     val min = (in: Seq[Int]) => in.min
 
-    assert(
-      NumericTimeSeries.rolling(
-        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
-        min,
-        10,
-        false
-      )
-        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10)))
+    val minNotCompressedSeries1 = NumericTimeSeries.rolling(
+      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
+      min,
+      10,
+      false
     )
 
     assert(
-      NumericTimeSeries.rolling(
-        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
-        min,
-        20,
-        false
-      )
-        == VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10), TSEntry(30, 2, 10)))
+      minNotCompressedSeries1.entries == Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10))
     )
+    assert(!minNotCompressedSeries1.isCompressed)
+
+    val minNotCompressedSeries2 = NumericTimeSeries.rolling(
+      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+      min,
+      20,
+      false
+    )
+
+    assert(
+      minNotCompressedSeries2.entries == Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10), TSEntry(30, 2, 10))
+    )
+    assert(!minNotCompressedSeries2.isCompressed)
 
     assert(
       NumericTimeSeries.rolling(EmptyTimeSeries, min, 20)
@@ -166,18 +170,16 @@ class NumericTimeSeriesTest extends JUnitSuite {
     // other tests with sum
     val sum = (in: Seq[Int]) => in.sum
 
-    assert(
-      NumericTimeSeries.rolling(
-        VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
-        sum,
-        20
-      )
-        == VectorTimeSeries.ofEntriesUnsafe(
-          Seq(TSEntry(0, 1, 10), TSEntry(10, 3, 10), TSEntry(20, 6, 10), TSEntry(30, 9, 10)),
-          // rolling() defaults to compress = true
-          isCompressed = true
-        )
+    val sumCompressSeries = NumericTimeSeries.rolling(
+      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+      sum,
+      20
     )
+
+    assert(
+      sumCompressSeries.entries == Seq(TSEntry(0, 1, 10), TSEntry(10, 3, 10), TSEntry(20, 6, 10), TSEntry(30, 9, 10))
+    )
+    assert(sumCompressSeries.isCompressed)
   }
 
   @Test def testUnitWindowSliding: Unit = {

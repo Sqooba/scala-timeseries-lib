@@ -567,10 +567,10 @@ class TimeSeriesTest extends JUnitSuite {
       TSEntry(1, 1, 1)
     )
 
-    val VectorTimeSeries(data, _) = TimeSeries(entries)
+    val resultSeries = TimeSeries(entries)
 
-    assert(data.head == entries.last)
-    assert(data.last == entries.head)
+    assert(resultSeries.entries.head == entries.last)
+    assert(resultSeries.entries.last == entries.head)
   }
 
   @Test def testApplyShouldFailWithTwoEntriesHavingSameTimestamps(): Unit = {

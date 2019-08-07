@@ -368,6 +368,12 @@ trait TimeSeries[+T] {
     */
   def supportRatio: Double
 
+  /**
+    *
+    * @return whether the TimeSeries is defined for all t in its looseDomain.
+    *         I. e. whether there are holes in its time domain or not.
+    */
+  def isDomainContinuous: Boolean
 }
 
 object TimeSeries {
@@ -697,11 +703,17 @@ object TimeSeries {
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
     * @param isCompressed Flags whether the xs' have been compressed in their construction.
-    *                   Will be passed to the underlying implementation.
+    *                     Will be passed to the underlying implementation.
+    * @param isDomainContinous Flags whether all the entries span a continuous time domain without holes.
+    *                          Will be passed to the underlying implementation.
     * @tparam T The underlying type of the time-series
     * @return A time-series with a correct implementation
     */
-  def ofOrderedEntriesUnsafe[T](xs: Seq[TSEntry[T]], isCompressed: Boolean = false): TimeSeries[T] = {
+  def ofOrderedEntriesUnsafe[T](
+      xs: Seq[TSEntry[T]],
+      isCompressed: Boolean = false,
+      isDomainContinous: Boolean = false
+  ): TimeSeries[T] = {
     val size = xs.size
 
     if (size == 0) {
@@ -709,7 +721,7 @@ object TimeSeries {
     } else if (size == 1) {
       xs.head
     } else {
-      VectorTimeSeries.ofOrderedEntriesUnsafe(xs, isCompressed)
+      VectorTimeSeries.ofOrderedEntriesUnsafe(xs, isCompressed, isDomainContinous)
     }
   }
 

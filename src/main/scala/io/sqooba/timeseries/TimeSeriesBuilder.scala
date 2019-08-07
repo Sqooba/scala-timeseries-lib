@@ -20,6 +20,8 @@ class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSE
 
   private var resultCalled = false
 
+  private var isDomainContinuous = true
+
   override def +=(elem: TSEntry[T]): TimeSeriesBuilder.this.type = {
     lastAdded = lastAdded match {
       // First Entry!
@@ -32,6 +34,9 @@ class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSE
           val errorMess = s"Elements should be added chronologically (here last timestamp was ${last.timestamp} and the one added was ${elem.timestamp}"
           throw new IllegalArgumentException(errorMess)
         }
+
+        // set continuous flag to false if there is a hole between the two entries
+        isDomainContinuous = last.definedUntil >= elem.timestamp
 
         last.appendEntry(elem, compress) match {
           // A compression occurred. Keep that entry around
@@ -55,7 +60,7 @@ class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSE
   }
 
   override def result(): TimeSeries[T] =
-    TimeSeries.ofOrderedEntriesUnsafe(vectorResult(), isCompressed = compress)
+    TimeSeries.ofOrderedEntriesUnsafe(vectorResult(), isCompressed = compress, isDomainContinuous)
 
   def vectorResult(): Vector[TSEntry[T]] = {
     if (resultCalled) {

@@ -308,6 +308,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   def supportRatio: Double = 1
 
+  def isDomainContinuous: Boolean = true
 }
 
 object TSEntry {
