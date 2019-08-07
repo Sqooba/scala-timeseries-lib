@@ -11,18 +11,6 @@ import scala.concurrent.duration.TimeUnit
 object NumericTimeSeries {
 
   /**
-    * Defensive 'plus' operator: wherever one of the time series
-    * is  undefined, the result is undefined.
-    */
-  def strictPlus[T, U >: T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[U]): Option[U] = {
-    import n._
-    (lhO, rhO) match {
-      case (Some(l), Some(r)) => Some(l + r)
-      case _                  => None
-    }
-  }
-
-  /**
     * Non strict 'plus' operator: wherever one of the time series is undefined,
     * its entry is considered as 0.
     */
@@ -35,13 +23,6 @@ object NumericTimeSeries {
       case _                  => None
     }
   }
-
-  /**
-    * Defensive 'minus' operator: wherever one of the time series
-    * is  undefined, the result is undefined.
-    */
-  def strictMinus[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] =
-    nonStrictMinus(None, None)(lhO, rhO)
 
   /**
     * Non strict 'minus' operator: wherever one of the timeseries is undefined it falls back to the given default value.
@@ -59,18 +40,6 @@ object NumericTimeSeries {
       case (Some(l), _)       => rhDefault.map(l - _)
       case (_, Some(r))       => lhDefault.map(_ - r)
       case _                  => rhDefault.flatMap(rDefault => lhDefault.map(_ - rDefault))
-    }
-  }
-
-  /**
-    * Defensive multiplication operator: wherever one of the time series
-    * is  undefined, the result is undefined.
-    */
-  def strictMultiply[T](lhO: Option[T], rhO: Option[T])(implicit n: Numeric[T]): Option[T] = {
-    import n._
-    (lhO, rhO) match {
-      case (Some(l), Some(r)) => Some(l * r)
-      case _                  => None
     }
   }
 

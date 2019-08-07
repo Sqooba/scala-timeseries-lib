@@ -676,7 +676,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts.supportRatio == 0.75)
   }
 
-  @Test def testMergeStrict(): Unit = {
+  @Test def testStrictMerge(): Unit = {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, "hel", 5),
@@ -690,16 +690,16 @@ class TimeSeriesTest extends JUnitSuite {
       ))
 
     assert(
-      ts1.mergeStrict[String, String](_ + _)(ts2).entries == Seq(TSEntry(1, "hello", 5), TSEntry(12, "hello", 3))
+      ts1.strictMerge[String, String](_ + _)(ts2).entries == Seq(TSEntry(1, "hello", 5), TSEntry(12, "hello", 3))
     )
   }
 
-  @Test def testMergeStrictDisjoint(): Unit = {
+  @Test def testStrictMergeDisjoint(): Unit = {
     val ts1 = TimeSeries(Seq(TSEntry(1, "hel", 5)))
     val ts2 = TimeSeries(Seq(TSEntry(6, "lo", 5)))
 
     assert(
-      ts1.mergeStrict[String, String](_ + _)(ts2).entries == Seq()
+      ts1.strictMerge[String, String](_ + _)(ts2).entries == Seq()
     )
   }
 

@@ -209,7 +209,7 @@ trait TimeSeries[+T] {
     * @param other TimeSeries to merge
     * @return the strictly merged TimeSeries
     */
-  def mergeStrict[O, R](op: (T, O) => R)(other: TimeSeries[O]): TimeSeries[R] =
+  def strictMerge[O, R](op: (T, O) => R)(other: TimeSeries[O]): TimeSeries[R] =
     this.merge[O, R] {
       case (Some(t), Some(o)) => Some(op(t, o))
       case _                  => None
@@ -223,12 +223,15 @@ trait TimeSeries[+T] {
     * - If non strict : this.at(x) + other.at(x) = returned.at(x) where x may take any value where
     * any time series is defined.
     */
-  def plus[U >: T](other: TimeSeries[U], strict: Boolean = true)(implicit n: Numeric[U]): TimeSeries[U] =
+  def plus[U >: T](other: TimeSeries[U], strict: Boolean = true)(implicit n: Numeric[U]): TimeSeries[U] = {
+    import n._
+
     if (strict) {
-      merge[U, U](NumericTimeSeries.strictPlus(_, _)(n))(other)
+      strictMerge[U, U](_ + _)(other)
     } else {
       merge[U, U](NumericTimeSeries.nonStrictPlus(_, _)(n))(other)
     }
+  }
 
   def +[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = plus(other)(n)
 
@@ -251,8 +254,11 @@ trait TimeSeries[+T] {
     * this.at(x) * other.at(x) = returned.at(x) where x may take any value where
     * both time series are defined.
     */
-  def multiply[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] =
-    merge[U, U](NumericTimeSeries.strictMultiply(_, _)(n))(other)
+  def multiply[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = {
+    import n._
+
+    strictMerge[U, U](_ * _)(other)
+  }
 
   def *[U >: T](other: TimeSeries[U])(implicit n: Numeric[U]): TimeSeries[U] = multiply(other)
 
@@ -261,16 +267,7 @@ trait TimeSeries[+T] {
     * of tuples containing the values from both this and the other time
     * series across their common domain.
     */
-  def strictZip[O](other: TimeSeries[O]): TimeSeries[(T, O)] =
-    merge(
-      strictZipOp[T, O]
-    )(other)
-
-  private def strictZipOp[L, R](left: Option[L], right: Option[R]): Option[(L, R)] =
-    (left, right) match {
-      case (Some(l), Some(r)) => Some((l, r))
-      case _                  => None
-    }
+  def strictZip[O](other: TimeSeries[O]): TimeSeries[(T, O)] = strictMerge[O, (T, O)]((_, _))(other)
 
   /**
     * Computes the integral of this time series.
