@@ -6,12 +6,12 @@ import org.scalatest.junit.JUnitSuite
 
 class EmptyTimeSeriesTest extends JUnitSuite {
 
-  val ts    = EmptyTimeSeries
-  val testE = TSEntry(1, "Test", 10)
+  private val ts    = EmptyTimeSeries
+  private val testE = TSEntry(1, "Test", 10)
 
-  @Test def testAt: Unit = assert(ts.at(1).isEmpty)
+  @Test def testAt(): Unit = assert(ts.at(1).isEmpty)
 
-  @Test def testSize: Unit = assert(ts.size == 0)
+  @Test def testSize(): Unit = assert(ts.size == 0)
 
   @Test def testEmptiness: Unit = assert(ts.isEmpty)
 
@@ -19,15 +19,15 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testNotContinuous(): Unit = assert(!ts.isDomainContinuous)
 
-  @Test def testDefined: Unit = assert(ts.defined(1) == false)
+  @Test def testDefined(): Unit = assert(!ts.defined(1))
 
-  @Test def testTrimLeft: Unit = assert(ts.trimLeft(1) == EmptyTimeSeries)
+  @Test def testTrimLeft(): Unit = assert(ts.trimLeft(-1) == EmptyTimeSeries)
 
   @Test def testTrimLeftDiscreteInclude: Unit = assert(ts.trimLeftDiscrete(1, true) == EmptyTimeSeries)
 
   @Test def testTrimLeftDiscreteExclude: Unit = assert(ts.trimLeftDiscrete(1, false) == EmptyTimeSeries)
 
-  @Test def testTrimRight: Unit = assert(ts.trimRight(1) == EmptyTimeSeries)
+  @Test def testTrimRightAt(): Unit = assert(ts.trimRight(1).isEmpty)
 
   @Test def testTrimRightDiscreteInclude: Unit = assert(ts.trimRightDiscrete(1, true) == EmptyTimeSeries)
 

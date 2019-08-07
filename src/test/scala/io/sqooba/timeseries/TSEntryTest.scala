@@ -17,6 +17,8 @@ class TSEntryTest extends JUnitSuite {
       case _                  => None
     }
 
+  private val single = TSEntry(1L, "Hi", 10L)
+
   @Test def testCompressed(): Unit = assert(TSEntry(1, 2, 3).isCompressed)
 
   @Test def testContinuous(): Unit = assert(TSEntry(0, 21, 10).isDomainContinuous)
@@ -85,6 +87,14 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(0, "", 10).at(10).isEmpty)
   }
 
+  @Test def testAtNSize() {
+    assert(1 == single.size)
+    assert(single.at(0).isEmpty)
+    assert(single.at(1).contains("Hi"))
+    assert(single.at(10).contains(("Hi")))
+    assert(single.at(11).isEmpty)
+  }
+
   @Test def testEntryAt(): Unit = {
     assert(TSEntry(0, "", 10).entryAt(-1).isEmpty)
     assert(TSEntry(0, "", 10).entryAt(0).contains(TSEntry(0, "", 10)))
@@ -97,6 +107,11 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(0, "", 10).defined(0))
     assert(TSEntry(0, "", 10).defined(9))
     assert(!TSEntry(0, "", 10).defined(10))
+
+    assert(!single.defined(0))
+    assert(single.defined(1))
+    assert(single.defined(10))
+    assert(!single.defined(11))
   }
 
   @Test def testDefinedUntil(): Unit = {
@@ -110,6 +125,18 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimRight(1) == TSEntry(0, "", 1))
     assert(tse.trimRight(0) == EmptyTimeSeries)
     assert(tse.trimRight(-1) == EmptyTimeSeries)
+
+    // Right of the domain:
+    assert(single.entries.head == single.trimRight(12))
+    assert(single.entries.head == single.trimRight(11))
+
+    // On the entry
+    assert(TSEntry(1, "Hi", 9) == single.trimRight(10))
+    assert(TSEntry(1, "Hi", 1) == single.trimRight(2))
+
+    // Left of the entry
+    assert(EmptyTimeSeries == single.trimRight(1))
+    assert(EmptyTimeSeries == single.trimRight(0))
   }
 
   @Test def testTrimRightDiscreteInclude(): Unit = {
@@ -152,6 +179,13 @@ class TSEntryTest extends JUnitSuite {
     assert(tse.trimLeft(10) == TSEntry(10, "", 1))
     assert(tse.trimLeft(11) == EmptyTimeSeries)
     assert(tse.trimLeft(12) == EmptyTimeSeries)
+
+    assert(single.entries.head == single.trimLeft(0))
+    assert(single.entries.head == single.trimLeft(1))
+
+    assert(TSEntry(2, "Hi", 9) == single.trimLeft(2))
+    assert(TSEntry(10, "Hi", 1) == single.trimLeft(10))
+    assert(EmptyTimeSeries == single.trimLeft(11))
   }
 
   @Test def testTrimLeftDiscreteInclude(): Unit = {
