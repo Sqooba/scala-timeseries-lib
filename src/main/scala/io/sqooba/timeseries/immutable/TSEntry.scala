@@ -402,7 +402,7 @@ object TSEntry {
   def mergeSingleToMultiple[A, B, R](single: TSEntry[Either[A, B]], others: Seq[TSEntry[Either[A, B]]])(
       op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     others.collect {
-      // Retain only entries overlapping with 'single', and constraint them to the 'single' domain.
+      // Retain only entries overlapping with 'single', and constrain them to the 'single' domain.
       case e: TSEntry[_] if single.overlaps(e) =>
         e.trimEntryLeftNRight(single.timestamp, single.definedUntil)
     } match {
@@ -411,7 +411,7 @@ object TSEntry {
       // Have to type explicitly otherwise scalac fails to infer the type
       // TODO Investigate why that's happening (for the next `case` as well)
       case Seq(alone: TSEntry[Either[A, B]]) =>
-        mergeEithers(single, alone.trimEntryLeftNRight(single.timestamp, single.definedUntil))(op)
+        mergeEithers(single, alone)(op)
       case toMerge: Seq[TSEntry[Either[A, B]]] =>
         toMerge.head
         // Take care of the potentially undefined domain before the 'others'
