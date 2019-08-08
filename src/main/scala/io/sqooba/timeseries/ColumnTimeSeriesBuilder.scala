@@ -64,15 +64,8 @@ class ColumnTimeSeriesBuilder[T](compress: Boolean = true) extends TimeSeriesBui
     resultCalled = false
   }
 
-  override def result(): TimeSeries[T] = {
-    val (timestamps, values, validities) = vectorResult()
-
-    timestamps.size match {
-      case 0 => EmptyTimeSeries
-      case 1 => TSEntry(timestamps.head, values.head, validities.head)
-      case _ => new ColumnTimeSeries(timestamps, values, validities, isCompressed = compress, isDomainContinuous)
-    }
-  }
+  override def result(): TimeSeries[T] =
+    ColumnTimeSeries.ofColumnVectorsUnsafe(vectorResult(), compress, isDomainContinuous)
 
   def vectorResult(): (Vector[Long], Vector[T], Vector[Long]) = {
     if (resultCalled) {

@@ -2,10 +2,10 @@ package io.sqooba.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry}
-import org.scalatest.FlatSpec
+import io.sqooba.timeseries.immutable.{ContiguousTimeDomain, EmptyTimeSeries, TSEntry}
+import org.scalatest.{FlatSpec, Matchers}
 
-trait TimeSeriesTestBench { this: FlatSpec =>
+trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
   def nonEmptyNonSingletonTimeSeries(
       newTsString: Seq[TSEntry[String]] => TimeSeries[String],
@@ -175,8 +175,8 @@ trait TimeSeriesTestBench { this: FlatSpec =>
 
       // Two contiguous entries:
       // Right of the domain:
-      assert(contig2 === contig2.trimRight(22))
-      assert(contig2 === contig2.trimRight(21))
+      assert(contig2.entries === contig2.trimRight(22).entries)
+      assert(contig2.entries === contig2.trimRight(21).entries)
 
       // On the second entry
       assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 9)) === contig2.trimRight(20).entries)
@@ -198,8 +198,8 @@ trait TimeSeriesTestBench { this: FlatSpec =>
     it should "correctly trim on the right for not contiguous entries" in {
       // Two non-contiguous entries
       // Trimming right of the second entry
-      assert(discon2 === discon2.trimRight(23))
-      assert(discon2 === discon2.trimRight(22))
+      assert(discon2.entries === discon2.trimRight(23).entries)
+      assert(discon2.entries === discon2.trimRight(22).entries)
 
       // Trimming on the last entry
       assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 9)) === discon2.trimRight(21).entries)
@@ -219,8 +219,8 @@ trait TimeSeriesTestBench { this: FlatSpec =>
 
       // Trim on a three element time series with a discontinuity
       // Right of the last entry
-      assert(three === three.trimRight(33))
-      assert(three === three.trimRight(32))
+      assert(three.entries === three.trimRight(33).entries)
+      assert(three.entries === three.trimRight(32).entries)
 
       // Trimming on the last entry
       assert(
@@ -255,10 +255,10 @@ trait TimeSeriesTestBench { this: FlatSpec =>
     it should "correctly trim on the right for discrete entries" in {
       // Two contiguous entries:
       // Right of the domain:
-      assert(contig2 === contig2.trimRightDiscrete(22, true))
-      assert(contig2 === contig2.trimRightDiscrete(22, false))
-      assert(contig2 === contig2.trimRightDiscrete(21, true))
-      assert(contig2 === contig2.trimRightDiscrete(21, false))
+      assert(contig2.entries === contig2.trimRightDiscrete(22, true).entries)
+      assert(contig2.entries === contig2.trimRightDiscrete(22, false).entries)
+      assert(contig2.entries === contig2.trimRightDiscrete(21, true).entries)
+      assert(contig2.entries === contig2.trimRightDiscrete(21, false).entries)
 
       // On the second entry
       assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) === contig2.trimRightDiscrete(20, true).entries)
@@ -355,7 +355,7 @@ trait TimeSeriesTestBench { this: FlatSpec =>
         ts.filter(_.validity > 10).entries === Seq(TSEntry(15, "Ho", 15), TSEntry(30, "Hu", 20))
       )
       assert(
-        ts.filter(_.value.startsWith("H")) === ts
+        ts.filter(_.value.startsWith("H")).entries === ts.entries
       )
       assert(
         ts.filter(_.value.endsWith("H")) === EmptyTimeSeries
@@ -366,7 +366,7 @@ trait TimeSeriesTestBench { this: FlatSpec =>
       val ts = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(15, "Ho", 15), TSEntry(30, "Hu", 20)))
 
       assert(
-        ts.filterValues(_.startsWith("H")) === ts
+        ts.filterValues(_.startsWith("H")).entries === ts.entries
       )
       assert(
         ts.filterValues(_.endsWith("H")) === EmptyTimeSeries
@@ -818,6 +818,15 @@ trait TimeSeriesTestBench { this: FlatSpec =>
       )
 
       assert(ts.filter(_ => false) === EmptyTimeSeries)
+    }
+
+    it should "return a correct loose domain" in {
+      tri.looseDomain shouldBe ContiguousTimeDomain(tri.head.timestamp, tri.last.definedUntil)
+    }
+
+    it should "calculate the support ratio" in {
+      val threeFourths = newTsString(Seq(TSEntry(1, "a", 2), TSEntry(4, "b", 1)))
+      threeFourths.supportRatio shouldBe 0.75
     }
   }
 }

@@ -2,7 +2,7 @@ package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.TimeSeries
+import io.sqooba.timeseries.{TimeSeries, TimeSeriesBuilder}
 
 import scala.collection.immutable.VectorBuilder
 
@@ -244,13 +244,14 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   def resample(sampleLengthMs: Long): TimeSeries[T] = {
     require(sampleLengthMs > 0, "The sample length must be > 0")
-    // TODO: allow the TimeSeries builder to not compress the passed entries
+
     // We specifically do not want to compress when we resample
-    val builder = new VectorBuilder[TSEntry[T]]
+    val builder = new TimeSeriesBuilder[T](compress = false)
     def streamTimeStamps(start: Long) =
       Stream
         .from(0)
         .map(i => start + i * sampleLengthMs)
+
     // streams new timestamp until we reached the end of the ts
     streamTimeStamps(this.timestamp)
       .takeWhile(timestamp => timestamp < definedUntil)
@@ -266,8 +267,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
           )
         )
       }
-    // this call does not compress the TS
-    TimeSeries.ofOrderedEntriesUnsafe(builder.result())
+    builder.result()
   }
 
   /**
@@ -303,8 +303,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     *
     * @return The looseDomain of the time-series
     */
-  def looseDomain: TimeDomain =
-    ContiguousTimeDomain(timestamp, timestamp + validity)
+  def looseDomain: TimeDomain = ContiguousTimeDomain(timestamp, timestamp + validity)
 
   def supportRatio: Double = 1
 

@@ -90,7 +90,11 @@ object NumericTimeSeries {
     */
   // TODO: return output guaranteed to be compressed
   // TODO: implement a "real" integral as this is darn imprecise.
-  def slidingIntegral[T](entries: Seq[TSEntry[T]], window: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
+  def slidingIntegral[T](
+      entries: Seq[TSEntry[T]],
+      window: Long,
+      timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+  )(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
     if (window < 1) {
       throw new IllegalArgumentException("Window must be strictly positive. Was " + window)
     } else if (entries.isEmpty) {
@@ -126,38 +130,36 @@ object NumericTimeSeries {
   )(
       implicit n: Numeric[T]
   ): Seq[TSEntry[Double]] = {
+    // For now we stop here
+    if (windowHeadTime == endOfTime) acc.result()
+    else {
+      val windowTailTime = windowHeadTime - windowLength + 1
 
-    if (windowHeadTime == endOfTime) {
-      // For now we stop here
-      return acc.result()
+      val (nextRemaining, nextWindow, updatedIntegral) =
+        updateCollectionsAndSum(remaining, inWindow, previousIntegral, windowHeadTime, windowTailTime, timeUnit)
+
+      // For how long is the new window content valid?
+      val nextHeadTime =
+        nextSumWindowAdvance(nextRemaining, nextWindow, windowHeadTime, windowTailTime)(endOfTime)
+
+      if (nextWindow.nonEmpty) {
+        // Currently only add an entry to the result if the current window is non-empty
+        // TODO think about the merits of doing this?
+        // This is both so that we have a 'unit operator when window is size 1' as well
+        // as having no defined output when the window is completely over undefined input
+        // At some point in the future we may want to let the user control what happens here.
+        acc += TSEntry(windowHeadTime, updatedIntegral, nextHeadTime - windowHeadTime)
+      }
+
+      // Down the rabbit hole, baby
+      slideMySum(
+        nextRemaining,
+        nextWindow,
+        updatedIntegral,
+        nextHeadTime,
+        acc
+      )(windowLength, endOfTime, timeUnit)
     }
-
-    val windowTailTime = windowHeadTime - windowLength + 1
-
-    val (nextRemaining, nextWindow, updatedIntegral) =
-      updateCollectionsAndSum(remaining, inWindow, previousIntegral, windowHeadTime, windowTailTime, timeUnit)
-
-    // For how long is the new window content valid?
-    val nextHeadTime =
-      nextSumWindowAdvance(nextRemaining, nextWindow, windowHeadTime, windowTailTime)(endOfTime)
-
-    if (nextWindow.nonEmpty) {
-      // Currently only add an entry to the result if the current window is non-empty
-      // TODO think about the merits of doing this?
-      // This is both so that we have a 'unit operator when window is size 1' as well
-      // as having no defined output when the window is completely over undefined input
-      // At some point in the future we may want to let the user control what happens here.
-      acc += TSEntry(windowHeadTime, updatedIntegral, nextHeadTime - windowHeadTime)
-    }
-
-    // Down the rabbit hole, baby
-    slideMySum(
-      nextRemaining,
-      nextWindow,
-      updatedIntegral,
-      nextHeadTime,
-      acc
-    )(windowLength, endOfTime, timeUnit)
   }
 
   /**
@@ -171,24 +173,16 @@ object NumericTimeSeries {
       windowHeadTime: Long,
       windowTailTime: Long
   )(endOfTime: Long): Long = {
-    // TODO make this if/else block nicer?
-    if (remaining.isEmpty) {
-      windowHeadTime +
-        Math.min(
-          // Time to end of domain of interest, as there will be no new entries to add
-          endOfTime - windowHeadTime,
-          // Time to next entry to leave the window
-          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-        )
-    } else {
-      windowHeadTime +
-        Math.min(
-          // Time to next entry to enter the window, if there is any
-          remaining.headOption.map(_.timestamp - windowHeadTime).getOrElse(Long.MaxValue),
-          // Time to next entry to leave the window
-          inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
-        )
-    }
+
+    val timeToNextEnteringOrEnd =
+      // Time to next element entering the window, or time to end of domain of interest, if no elements are left to add
+      remaining.headOption.map(_.timestamp).getOrElse(endOfTime) - windowHeadTime
+
+    windowHeadTime + Math.min(
+      timeToNextEnteringOrEnd,
+      // Time to next element leaving the window, if any
+      inWindow.headOption.map(_.definedUntil - windowTailTime).getOrElse(Long.MaxValue)
+    )
   }
 
   /**
