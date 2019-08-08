@@ -699,12 +699,14 @@ class TSEntryTest extends JUnitSuite {
     assert(TSEntry(3, "Ho", 10) == e.prepend(TSEntry(3, "Ho", 10)))
   }
 
-  def testTs(startsAt: Long): VectorTimeSeries[String] = VectorTimeSeries(
-    startsAt      -> ("Hi", 10L),
-    startsAt + 10 -> ("Ho", 10L),
-    // scalastyle:off non.ascii.character.disallowed
-    startsAt + 20 -> ("Hé", 10L)
-    // scalastyle:on non.ascii.character.disallowed
+  def testTs(startsAt: Long): VectorTimeSeries[String] = VectorTimeSeries.ofOrderedEntriesUnsafe(
+    Seq(
+      TSEntry(startsAt, "Hi", 10L),
+      TSEntry(startsAt + 10, "Ho", 10L),
+      // scalastyle:off non.ascii.character.disallowed
+      TSEntry(startsAt + 20, "Hé", 10L)
+      // scalastyle:on non.ascii.character.disallowed
+    )
   )
 
   @Test def appendTs(): Unit = {

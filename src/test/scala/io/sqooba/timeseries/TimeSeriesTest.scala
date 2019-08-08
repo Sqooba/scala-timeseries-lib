@@ -249,7 +249,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testSlice: Unit = {
     val tri =
-      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
     assert(tri.slice(-1, 0) == EmptyTimeSeries)
     assert(tri.slice(-1, 10).entries == Seq(TSEntry(0, "Hi", 10)))
     assert(tri.slice(0, 10).entries == Seq(TSEntry(0, "Hi", 10)))
@@ -268,7 +268,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testSliceDiscrete: Unit = {
     val tri =
-      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
 
     assert(tri == tri.sliceDiscrete(5, 25, true, true))
     assert(tri.slice(0, 20) == tri.sliceDiscrete(5, 25, true, false))
@@ -281,15 +281,15 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testSplitDiscrete: Unit = {
     val tri =
-      VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L), 20L -> ("Hu", 10L))
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
 
     assert(
-      (VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L)), TSEntry(20, "Hu", 10))
-        == tri.splitDiscrete(15, true)
+      (VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0L, "Hi", 10L), TSEntry(10, "Ho", 10L))), TSEntry(20, "Hu", 10L))
+        === tri.splitDiscrete(15, true)
     )
 
     assert(
-      (TSEntry(0L, "Hi", 10L), VectorTimeSeries(10L -> ("Ho", 10L), 20L -> ("Hu", 10L)))
+      (TSEntry(0L, "Hi", 10L), VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L))))
         == tri.splitDiscrete(15, false)
     )
 
@@ -299,12 +299,12 @@ class TimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      (VectorTimeSeries(0L -> ("Hi", 10L), 10L -> ("Ho", 10L)), TSEntry(20, "Hu", 10))
+      (VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0L, "Hi", 10L), TSEntry(10, "Ho", 10L))), TSEntry(20, "Hu", 10L))
         == tri.splitDiscrete(25, false)
     )
 
     assert(
-      (TSEntry(0L, "Hi", 10L), VectorTimeSeries(10L -> ("Ho", 10L), 20L -> ("Hu", 10L)))
+      (TSEntry(0L, "Hi", 10L), VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L))))
         == tri.splitDiscrete(5, true)
     )
 

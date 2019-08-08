@@ -14,9 +14,9 @@ import org.scalatest.junit.JUnitSuite
   */
 class NumericTimeSeriesTest extends JUnitSuite {
 
-  val tsa = VectorTimeSeries(1L -> (1.0, 10L),
-                             // Leave a gap of 1 between the two entries
-                             12L -> (2.0, 10L))
+  val tsa = VectorTimeSeries.ofOrderedEntriesUnsafe(
+    Seq(TSEntry(1, 1.0, 10), TSEntry(12, 2.0, 10))
+  )
 
   val tsb = TSEntry(6L, 3.0, 10L)
 
@@ -139,7 +139,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     val min = (in: Seq[Int]) => in.min
 
     val minNotCompressedSeries1 = NumericTimeSeries.rolling(
-      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10))),
       min,
       10,
       false
@@ -151,7 +151,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     assert(!minNotCompressedSeries1.isCompressed)
 
     val minNotCompressedSeries2 = NumericTimeSeries.rolling(
-      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
       min,
       20,
       false
@@ -171,7 +171,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     val sum = (in: Seq[Int]) => in.sum
 
     val sumCompressSeries = NumericTimeSeries.rolling(
-      VectorTimeSeries.ofEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
+      VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 10), TSEntry(20, 3, 10), TSEntry(30, 4, 10))),
       sum,
       20
     )

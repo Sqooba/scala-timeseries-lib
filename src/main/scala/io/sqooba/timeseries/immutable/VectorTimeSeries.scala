@@ -182,14 +182,6 @@ object VectorTimeSeries {
     new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sorted(TSEntryOrdering)): _*))
 
   /**
-    * @param isCompressed A flag saying whether the elems have been compressed during construction.
-    * @return a VectorTimeSeries built from the passed entries, only ensuring that they are sorted
-    */
-  // TODO clarify why we want to sort here.
-  private[timeseries] def ofEntriesUnsafe[T](elems: Seq[TSEntry[T]], isCompressed: Boolean = false): VectorTimeSeries[T] =
-    new VectorTimeSeries(Vector(elems.sorted(TSEntryOrdering): _*), isCompressed)
-
-  /**
     * @param elems The entries of the series.
     * @param isCompressed A flag saying whether the elems have been compressed during construction.
     * @param isDomainContinuous Flags whether the elems span a continuous time domain without holes.
@@ -202,9 +194,6 @@ object VectorTimeSeries {
       isDomainContinuous: Boolean = false
   ): VectorTimeSeries[T] =
     new VectorTimeSeries(elems.toVector, isCompressed, isDomainContinuous)
-
-  def apply[T](elems: (Long, (T, Long))*): VectorTimeSeries[T] =
-    ofEntriesUnsafe(elems.map(t => TSEntry(t._1, t._2._1, t._2._2)))
 
   /**
     * Run a dichotomic search on the passed sequence to find the entry in the
