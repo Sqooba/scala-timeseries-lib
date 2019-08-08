@@ -6,9 +6,8 @@ import org.scalatest.junit.JUnitSuite
 
 class EmptyTimeSeriesTest extends JUnitSuite {
 
-  private val ts    = EmptyTimeSeries
-  private val testE = TSEntry(1, "Test", 10)
-
+  private val ts           = EmptyTimeSeries
+  private val testE        = TSEntry(1, "Test", 10)
   @Test def testAt(): Unit = assert(ts.at(1).isEmpty)
 
   @Test def testSize(): Unit = assert(ts.size == 0)

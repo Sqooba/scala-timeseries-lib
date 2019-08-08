@@ -8,9 +8,6 @@ import scala.annotation.tailrec
 /**
   * TimeSeries implementation based on a Vector.
   *
-  * Useful for working on time series like data when no random access is required,
-  * as any method requiring some sort of lookup will only run in linear time.
-  *
   * @note data needs to be SORTED
   */
 case class VectorTimeSeries[+T] private[timeseries] (

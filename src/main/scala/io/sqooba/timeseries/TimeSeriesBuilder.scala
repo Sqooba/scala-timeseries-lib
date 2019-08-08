@@ -9,7 +9,7 @@ import scala.collection.mutable
   * A builder intended to ease the assembling of entries into a time series.
   * Uses a vector builder and a small stack under the hood.
   */
-class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
+class TimeSeriesBuilder[T](compress: Boolean = true) extends TimeSeriesBuilderTrait[T] {
 
   // Contains finalized entries (ie, they won't be trimmed or extended anymore)
   private val resultBuilder = new VectorBuilder[TSEntry[T]]
@@ -71,10 +71,6 @@ class TimeSeriesBuilder[T](compress: Boolean = true) extends mutable.Builder[TSE
     resultBuilder.result()
   }
 
-  /**
-    * @return the end of the domain of validity of the last entry added to this builder
-    */
-  def definedUntil: Option[Long] =
-    lastAdded.map(_.definedUntil)
+  def definedUntil: Option[Long] = lastAdded.map(_.definedUntil)
 
 }
