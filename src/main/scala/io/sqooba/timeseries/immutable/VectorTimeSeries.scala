@@ -1,7 +1,6 @@
 package io.sqooba.timeseries.immutable
 
 import io.sqooba.timeseries.TimeSeries
-import io.sqooba.timeseries.TimeSeriesBuilder
 
 import scala.annotation.tailrec
 
@@ -10,7 +9,7 @@ import scala.annotation.tailrec
   *
   * @note data needs to be SORTED
   */
-case class VectorTimeSeries[+T] private[timeseries] (
+case class VectorTimeSeries[+T] private (
     data: Vector[TSEntry[T]],
     isCompressed: Boolean = false,
     isDomainContinuous: Boolean = false
@@ -47,7 +46,7 @@ case class VectorTimeSeries[+T] private[timeseries] (
     if (compress) {
       // Use a builder to handle compression
       data
-        .foldLeft(new TimeSeriesBuilder[O]())((b, n) => b += n.map(f))
+        .foldLeft(newBuilder[O]())((b, n) => b += n.map(f))
         .result()
     } else {
       new VectorTimeSeries[O](data.map(_.map(f)))
@@ -55,7 +54,7 @@ case class VectorTimeSeries[+T] private[timeseries] (
 
   def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
     data
-      .foldLeft(new TimeSeriesBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
+      .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
       .result()
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
@@ -173,10 +172,9 @@ object VectorTimeSeries {
     *          - sorted
     *          - fitted to each other (no overlaps)
     */
-  def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): VectorTimeSeries[T] =
+  def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): TimeSeries[T] =
     // TODO: Expect entries to be sorted and just check?
-    // TODO: the fitting function returns a vector in most cases: don't rebuild one in such case
-    new VectorTimeSeries(Vector(TimeSeries.fitAndCompressTSEntries(elems.sorted(TSEntryOrdering)): _*))
+    elems.sorted(TSEntryOrdering).foldLeft(TimeSeries.newBuilder[T]())(_ += _).result()
 
   /**
     * @param elems The entries of the series.

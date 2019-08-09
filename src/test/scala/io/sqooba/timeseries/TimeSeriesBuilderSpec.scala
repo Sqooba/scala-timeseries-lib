@@ -1,18 +1,16 @@
 package io.sqooba.timeseries
 
-import io.sqooba.timeseries.immutable.{TSEntry, VectorTimeSeries}
+import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
 import org.scalatest.{FlatSpec, Matchers}
 
 class TimeSeriesBuilderSpec extends FlatSpec with Matchers with TimeSeriesBuilderTestBench {
 
-  private def newTsb = new TimeSeriesBuilder[Int]
-
   "A TimeSeriesBuilder" should "return an empty collection when nothing was added" in {
-    newTsb.vectorResult() shouldBe Vector()
+    TimeSeries.newBuilder().result() shouldBe EmptyTimeSeries
   }
 
   it should "be a VectorTimeSeries if at least two non equal elements are added" in {
-    val b = newTsb
+    val b = TimeSeries.newBuilder[Int]()
     val data = Vector(
       TSEntry(1, 1, 1),
       TSEntry(3, 3, 3)
@@ -24,5 +22,5 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers with TimeSeriesBuilde
     result.isInstanceOf[VectorTimeSeries[_]] shouldBe true
   }
 
-  it should behave like aTimeSeriesBuilder(compress => new TimeSeriesBuilder[Int](compress))
+  it should behave like aTimeSeriesBuilder(TimeSeries.newBuilder)
 }

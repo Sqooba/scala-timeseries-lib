@@ -2,9 +2,10 @@ package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.{ColumnTimeSeriesBuilder, NumericTimeSeries, TimeSeries}
+import io.sqooba.timeseries.{NumericTimeSeries, TSEntryFitter, TimeSeries, TimeSeriesBuilderTrait}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.TimeUnit
 
 /**
@@ -14,7 +15,7 @@ import scala.concurrent.duration.TimeUnit
   * @note the entries of the three vectors must be ordered in the same way. The element at the same index in the three
   *       of them represents a TSEntry.
   */
-case class ColumnTimeSeries[+T] private[timeseries] (
+case class ColumnTimeSeries[+T] private (
     timestamps: Vector[Long],
     values: Vector[T],
     validities: Vector[Long],
@@ -83,7 +84,7 @@ case class ColumnTimeSeries[+T] private[timeseries] (
 
     if (compress) {
       (timestamps, mappedVs, validities).zipped
-        .foldLeft(new ColumnTimeSeriesBuilder[O]())((builder, triple) => builder += TSEntry(triple))
+        .foldLeft(newBuilder[O]())((builder, triple) => builder += TSEntry(triple))
         .result()
     } else {
       ColumnTimeSeries.ofColumnVectorsUnsafe((timestamps, mappedVs, validities))
@@ -104,7 +105,7 @@ case class ColumnTimeSeries[+T] private[timeseries] (
 
   def fill[U >: T](whenUndef: U): TimeSeries[U] =
     (timestamps, values, validities).zipped
-      .foldLeft(new ColumnTimeSeriesBuilder[U]()) {
+      .foldLeft(newBuilder[U]()) {
         case (builder, (ts, va, vd)) =>
           // if the last entry does not extend until the next entry, we add a filler
           if (builder.definedUntil.exists(_ < ts)) {
@@ -246,7 +247,7 @@ case class ColumnTimeSeries[+T] private[timeseries] (
 
   def resample(sampleLengthMs: Long): TimeSeries[T] =
     (timestamps, values, validities).zipped
-      .foldLeft(new ColumnTimeSeriesBuilder[T](compress = false))(
+      .foldLeft(newBuilder[T](compress = false))(
         (builder, triple) => builder ++= TSEntry(triple).resample(sampleLengthMs).entries
       )
       .result()
@@ -254,6 +255,9 @@ case class ColumnTimeSeries[+T] private[timeseries] (
   def looseDomain: TimeDomain = ContiguousTimeDomain(timestamps.head, timestamps.last + validities.last)
 
   lazy val supportRatio: Double = validities.sum.toDouble / looseDomain.size
+
+  override def newBuilder[U](compress: Boolean = true): TimeSeriesBuilderTrait[U] =
+    ColumnTimeSeries.newBuilder(compress)
 }
 
 object ColumnTimeSeries {
@@ -262,7 +266,7 @@ object ColumnTimeSeries {
       entries: Seq[TSEntry[T]],
       compress: Boolean = true
   ): TimeSeries[T] =
-    entries.foldLeft(new ColumnTimeSeriesBuilder[T](compress))(_ += _).result()
+    entries.foldLeft(newBuilder[T](compress))(_ += _).result()
 
   /**
     * @param columns the built, SORTED and valid column vectors representing the entries of the timeseries. The first
@@ -338,5 +342,53 @@ object ColumnTimeSeries {
           dichotomic(timestamps, targetTimestamp, newPivot + 1, upperBound, newPivot)
       }
     }
+  }
+
+  /**
+    * @return the builder for column-base timeseries
+    */
+  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilderTrait[T] = new TimeSeriesBuilderTrait[T] {
+
+    // Contains finalized entries
+    private val resultBuilder = (new VectorBuilder[Long], new VectorBuilder[T], new VectorBuilder[Long])
+    private val entryBuilder  = new TSEntryFitter[T](compress)
+
+    private var resultCalled = false
+
+    override def +=(elem: TSEntry[T]): this.type = {
+      entryBuilder.addAndFitLast(elem).foreach(addToBuilder)
+      this
+    }
+
+    override def clear(): Unit = {
+      resultBuilder._1.clear()
+      resultBuilder._2.clear()
+      resultBuilder._3.clear()
+      entryBuilder.clear()
+      resultCalled = false
+    }
+
+    override def result(): TimeSeries[T] = {
+      if (resultCalled) {
+        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
+      }
+
+      entryBuilder.lastEntry.foreach(addToBuilder)
+      resultCalled = true
+
+      ColumnTimeSeries.ofColumnVectorsUnsafe(
+        (resultBuilder._1.result, resultBuilder._2.result, resultBuilder._3.result),
+        compress,
+        entryBuilder.isDomainContinuous
+      )
+    }
+
+    private def addToBuilder(entry: TSEntry[T]): Unit = {
+      resultBuilder._1 += entry.timestamp
+      resultBuilder._2 += entry.value
+      resultBuilder._3 += entry.validity
+    }
+
+    def definedUntil: Option[Long] = entryBuilder.lastEntry.map(_.definedUntil)
   }
 }

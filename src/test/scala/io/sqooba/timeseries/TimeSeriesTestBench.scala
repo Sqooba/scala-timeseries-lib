@@ -784,26 +784,22 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         )
 
       assert(
-        triA.slidingIntegral(2, TimeUnit.SECONDS) ===
-          newTsNumeric(
-            Seq(
-              TSEntry(10, 10, 11),
-              TSEntry(21, 4, 3),
-              TSEntry(24, 30, 10)
-            )
+        triA.slidingIntegral(2, TimeUnit.SECONDS).entries ===
+          Seq(
+            TSEntry(10, 10, 11),
+            TSEntry(21, 4, 3),
+            TSEntry(24, 30, 10)
           )
       )
 
       assert(
-        triA.slidingIntegral(10, TimeUnit.SECONDS) ===
-          newTsNumeric(
-            Seq(
-              TSEntry(10, 10, 11),
-              TSEntry(21, 14, 3),
-              TSEntry(24, 44, 5),
-              TSEntry(29, 34, 3),
-              TSEntry(32, 30, 2)
-            )
+        triA.slidingIntegral(10, TimeUnit.SECONDS).entries ===
+          Seq(
+            TSEntry(10, 10, 11),
+            TSEntry(21, 14, 3),
+            TSEntry(24, 44, 5),
+            TSEntry(29, 34, 3),
+            TSEntry(32, 30, 2)
           )
       )
     }

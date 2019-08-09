@@ -23,7 +23,7 @@ object TimeSeriesBenchmark extends Bench.ForkedTime {
       entries(i) = randomEntryWithTimestamp(newTimestamp)
     }
 
-    new VectorTimeSeries(entries.toVector)
+    VectorTimeSeries.ofEntriesSafe(entries.toVector)
   }
 
   val sizes = Gen.range("size")(100000, 1000000, 100000)

@@ -21,7 +21,7 @@ class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach wit
     val smallestEntry = TSEntry(start, None, validity)
     val biggestEntry  = TSEntry(end, None, validity)
 
-    val builder = new TimeSeriesBuilder[None.type]()
+    val builder = TimeSeries.newBuilder[None.type]()
 
     builder += smallestEntry
     builder += TSEntry(2, None, 1)

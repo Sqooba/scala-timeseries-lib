@@ -773,7 +773,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   @Test def testBucket(): Unit = {
     val str = Stream.from(1, 10).map(_.toLong)
-    val tsb = new TimeSeriesBuilder[Int]()
+    val tsb = TimeSeries.newBuilder[Int]()
     // Test the TimeSeries's companion object's bucketEntries function
     // Check for termination condition
     assert(

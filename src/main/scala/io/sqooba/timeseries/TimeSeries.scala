@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import io.sqooba.timeseries.immutable._
 
 import scala.annotation.tailrec
+import scala.collection.immutable.VectorBuilder
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
@@ -374,6 +375,11 @@ trait TimeSeries[+T] {
     *         I. e. whether there are holes in its time domain or not.
     */
   def isDomainContinuous: Boolean
+
+  /**
+    * @return a builder that constructs a new timeseries of this implementation
+    */
+  def newBuilder[U](compress: Boolean = true): TimeSeriesBuilderTrait[U] = TimeSeries.newBuilder(compress)
 }
 
 object TimeSeries {
@@ -386,14 +392,8 @@ object TimeSeries {
     * @return a sequence of TSEntries that are guaranteed not to overlap with each other,
     *         and where contiguous values are guaranteed to be different.
     */
-  def fitAndCompressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] =
-    if (in.size < 2) {
-      in
-    } else {
-      val builder = new TimeSeriesBuilder[T]
-      builder ++= in
-      builder.vectorResult()
-    }
+  // TODO this method is not used anymore. Can we remove it in favor of 'ofOrderedEntriesSafe'?
+  def fitAndCompressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] = ofOrderedEntriesSafe(in).entries
 
   /** For any collection of TSEntries of size 2 and more, intersperses entries containing
     * fillValue between any two non-contiguous entries.
@@ -533,7 +533,7 @@ object TimeSeries {
   def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] = {
 
     // Holds the final merged list
-    val result = new TimeSeriesBuilder[C]()
+    val result = newBuilder[C]()
     // Holds the current state of the entries to process
     // TODO looks like Stack is deprecated: see if we can use a List instead
     val current = mutable.Stack[TSEntry[Either[A, B]]](in: _*)
@@ -588,7 +588,7 @@ object TimeSeries {
       }
     }
 
-    result.vectorResult()
+    result.result().entries
   }
 
   /**
@@ -606,7 +606,7 @@ object TimeSeries {
   ): Stream[(Long, TimeSeries[T])] = {
     // Reusing the builder instance so we don't recreate one for each bucket
     // TODO: actually check if this makes any sense from a perf point of view?
-    val builder = new TimeSeriesBuilder[T]()
+    val builder = newBuilder[T]()
     bucketEntries(buckets, entries).map { tup =>
       // Better keep that map single threaded ;)
       builder.clear()
@@ -698,7 +698,7 @@ object TimeSeries {
     * (i.e. EmptyTimeSeries, TSEntry, or a VectorTimeSeries)
     *
     * @note The sequence has to be chronologically ordered, otherwise the time-series might
-    *       not behave correctly. In general, you should use a `TimeSeriesBuilder`. Furthermore, no
+    *       not behave correctly. In general, you should use a `TimeSeries.newBuilder`. Furthermore, no
     *       two entries should have the same timestamp. Finally, entries will NOT be compressed.
     * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
@@ -739,7 +739,7 @@ object TimeSeries {
     * @return A compressed time-series with a correct implementation
     */
   def ofOrderedEntriesSafe[T](xs: Seq[TSEntry[T]], compress: Boolean = true): TimeSeries[T] =
-    xs.foldLeft(new TimeSeriesBuilder[T](compress))(_ += _).result()
+    xs.foldLeft(newBuilder[T](compress))(_ += _).result()
 
   /**
     * An safe constructor of `TimeSeries`
@@ -755,4 +755,43 @@ object TimeSeries {
     */
   def apply[T](entries: Seq[TSEntry[T]]): TimeSeries[T] = ofOrderedEntriesSafe(entries.sorted(TSEntryOrdering))
 
+  /**
+    * @return the default timeseries builder implementation
+    */
+  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilderTrait[T] = new TimeSeriesBuilderTrait[T] {
+
+    // Contains finalized entries
+    private val resultBuilder = new VectorBuilder[TSEntry[T]]
+    private val entryBuilder  = new TSEntryFitter[T](compress)
+
+    private var resultCalled = false
+
+    override def +=(elem: TSEntry[T]): this.type = {
+      entryBuilder.addAndFitLast(elem).foreach(resultBuilder += _)
+      this
+    }
+
+    override def clear(): Unit = {
+      resultBuilder.clear()
+      entryBuilder.clear()
+      resultCalled = false
+    }
+
+    override def result(): TimeSeries[T] = {
+      if (resultCalled) {
+        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
+      }
+
+      entryBuilder.lastEntry.foreach(resultBuilder += _)
+      resultCalled = true
+
+      TimeSeries.ofOrderedEntriesUnsafe(
+        resultBuilder.result(),
+        isCompressed = compress,
+        entryBuilder.isDomainContinuous
+      )
+    }
+
+    def definedUntil: Option[Long] = entryBuilder.lastEntry.map(_.definedUntil)
+  }
 }

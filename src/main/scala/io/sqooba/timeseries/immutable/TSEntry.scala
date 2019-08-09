@@ -2,7 +2,7 @@ package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.{TimeSeries, TimeSeriesBuilder}
+import io.sqooba.timeseries.{TimeSeries, TimeSeriesBuilderTrait}
 
 import scala.collection.immutable.VectorBuilder
 
@@ -246,7 +246,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     require(sampleLengthMs > 0, "The sample length must be > 0")
 
     // We specifically do not want to compress when we resample
-    val builder = new TimeSeriesBuilder[T](compress = false)
+    val builder = TimeSeries.newBuilder[T](compress = false)
     def streamTimeStamps(start: Long) =
       Stream
         .from(0)
