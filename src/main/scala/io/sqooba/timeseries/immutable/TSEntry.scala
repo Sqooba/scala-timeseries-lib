@@ -404,17 +404,15 @@ object TSEntry {
       op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     others.collect {
       // Retain only entries overlapping with 'single', and constrain them to the 'single' domain.
-      case e: TSEntry[_] if single.overlaps(e) =>
-        e.trimEntryLeftNRight(single.timestamp, single.definedUntil)
+      case entry if single.overlaps(entry) =>
+        entry.trimEntryLeftNRight(single.timestamp, single.definedUntil)
     } match {
       // Merge remaining constrained entries
       case Seq() => mergeEitherToNone(single)(op).toSeq
-      // Have to type explicitly otherwise scalac fails to infer the type
-      // TODO Investigate why that's happening (for the next `case` as well)
-      case Seq(alone: TSEntry[Either[A, B]]) =>
-        mergeEithers(single, alone)(op)
-      case toMerge: Seq[TSEntry[Either[A, B]]] =>
-        toMerge.head
+
+      case Seq(alone) => mergeEithers(single, alone)(op)
+
+      case toMerge =>
         // Take care of the potentially undefined domain before the 'others'
         mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++
           // Merge the others to the single entry, including potential
