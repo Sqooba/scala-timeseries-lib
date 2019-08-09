@@ -197,6 +197,8 @@ trait TimeSeries[+T] {
     * bounds defined by min(this.head.timestamp, other.head.timestamp) and
     * max(this.last.definedUntil, other.last.definedUntil)
     */
+  // TODO make merge logic streamable. As the this.entries are called here, this creates a Seq[TSEntry] which means
+  //      that the benefits of other implementations vanish.
   def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
     TimeSeries.ofOrderedEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
 
@@ -320,9 +322,11 @@ trait TimeSeries[+T] {
       this.map(n.toDouble)
     } else {
       // TODO: have slidingSum return compressed output so we can use the unsafe constructor
-      // and save an iteration
-      VectorTimeSeries
-        .ofEntriesSafe(NumericTimeSeries.slidingIntegral[U](this.entries, window, timeUnit))
+      //   and save an iteration
+      NumericTimeSeries
+        .slidingIntegral[U](this.entries, window, timeUnit)
+        .foldLeft(newBuilder[Double]())(_ += _)
+        .result()
     }
 
   /**
@@ -379,21 +383,10 @@ trait TimeSeries[+T] {
   /**
     * @return a builder that constructs a new timeseries of this implementation
     */
-  def newBuilder[U](compress: Boolean = true): TimeSeriesBuilderTrait[U] = TimeSeries.newBuilder(compress)
+  def newBuilder[U](compress: Boolean = true): TimeSeriesBuilder[U] = TimeSeries.newBuilder(compress)
 }
 
 object TimeSeries {
-
-  /**
-    * Assumes the input entries to be ordered. This function will do both:
-    *  - compressing of any contiguous or overlapping entries that have values that are strictly equal.
-    *  - correctly fitting overlapping entries together when they are not equal.
-    *
-    * @return a sequence of TSEntries that are guaranteed not to overlap with each other,
-    *         and where contiguous values are guaranteed to be different.
-    */
-  // TODO this method is not used anymore. Can we remove it in favor of 'ofOrderedEntriesSafe'?
-  def fitAndCompressTSEntries[T](in: Seq[TSEntry[T]]): Seq[TSEntry[T]] = ofOrderedEntriesSafe(in).entries
 
   /** For any collection of TSEntries of size 2 and more, intersperses entries containing
     * fillValue between any two non-contiguous entries.
@@ -530,6 +523,8 @@ object TimeSeries {
     * operator to be merged. Left and Right entries are passed as the first and second argument
     * of the merge operator, respectively.
     */
+
+  // TODO make merge logic streamable. Currently, it uses the default builder which will create a VectorTimeSeries.
   def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] = {
 
     // Holds the final merged list
@@ -758,40 +753,5 @@ object TimeSeries {
   /**
     * @return the default timeseries builder implementation
     */
-  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilderTrait[T] = new TimeSeriesBuilderTrait[T] {
-
-    // Contains finalized entries
-    private val resultBuilder = new VectorBuilder[TSEntry[T]]
-    private val entryBuilder  = new TSEntryFitter[T](compress)
-
-    private var resultCalled = false
-
-    override def +=(elem: TSEntry[T]): this.type = {
-      entryBuilder.addAndFitLast(elem).foreach(resultBuilder += _)
-      this
-    }
-
-    override def clear(): Unit = {
-      resultBuilder.clear()
-      entryBuilder.clear()
-      resultCalled = false
-    }
-
-    override def result(): TimeSeries[T] = {
-      if (resultCalled) {
-        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
-      }
-
-      entryBuilder.lastEntry.foreach(resultBuilder += _)
-      resultCalled = true
-
-      TimeSeries.ofOrderedEntriesUnsafe(
-        resultBuilder.result(),
-        isCompressed = compress,
-        entryBuilder.isDomainContinuous
-      )
-    }
-
-    def definedUntil: Option[Long] = entryBuilder.lastEntry.map(_.definedUntil)
-  }
+  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilder[T] = new VectorTimeSeries.Builder[T](compress)
 }

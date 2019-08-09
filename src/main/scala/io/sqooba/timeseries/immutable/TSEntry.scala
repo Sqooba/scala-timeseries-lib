@@ -2,7 +2,7 @@ package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.{TimeSeries, TimeSeriesBuilderTrait}
+import io.sqooba.timeseries.{TimeSeries}
 
 import scala.collection.immutable.VectorBuilder
 

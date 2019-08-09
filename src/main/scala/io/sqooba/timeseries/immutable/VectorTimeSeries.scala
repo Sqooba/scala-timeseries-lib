@@ -1,8 +1,9 @@
 package io.sqooba.timeseries.immutable
 
-import io.sqooba.timeseries.TimeSeries
+import io.sqooba.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.VectorBuilder
 
 /**
   * TimeSeries implementation based on a Vector.
@@ -240,4 +241,39 @@ object VectorTimeSeries {
     }
   }
 
+  private[timeseries] class Builder[T](compress: Boolean = true) extends TimeSeriesBuilder[T] {
+    // Contains finalized entries
+    private val resultBuilder = new VectorBuilder[TSEntry[T]]
+    private val entryBuilder  = new TSEntryFitter[T](compress)
+
+    private var resultCalled = false
+
+    override def +=(elem: TSEntry[T]): this.type = {
+      entryBuilder.addAndFitLast(elem).foreach(resultBuilder += _)
+      this
+    }
+
+    override def clear(): Unit = {
+      resultBuilder.clear()
+      entryBuilder.clear()
+      resultCalled = false
+    }
+
+    override def result(): TimeSeries[T] = {
+      if (resultCalled) {
+        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
+      }
+
+      entryBuilder.lastEntry.foreach(resultBuilder += _)
+      resultCalled = true
+
+      TimeSeries.ofOrderedEntriesUnsafe(
+        resultBuilder.result(),
+        isCompressed = compress,
+        entryBuilder.isDomainContinuous
+      )
+    }
+
+    def definedUntil: Option[Long] = entryBuilder.lastEntry.map(_.definedUntil)
+  }
 }

@@ -10,7 +10,7 @@ trait TimeSeriesBuilderTestBench extends Matchers { this: FlatSpec =>
   private val equalContiguousEntries    = Seq(TSEntry(10, 42, 10), TSEntry(15, 42, 10), TSEntry(20, 42, 10))
   private val notEqualContiguousEntries = Seq(TSEntry(10, -1, 10), TSEntry(15, 2, 10), TSEntry(20, 42, 10))
 
-  def aTimeSeriesBuilder(newBuilderFromCompression: Boolean => TimeSeriesBuilderTrait[Int]) {
+  def aTimeSeriesBuilder(newBuilderFromCompression: Boolean => TimeSeriesBuilder[Int]) {
 
     def newTimeSeriesBuilder           = newBuilderFromCompression(true)
     def newTimeSeriesBuilderNoCompress = newBuilderFromCompression(false)

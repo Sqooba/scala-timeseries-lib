@@ -2,7 +2,7 @@ package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.{NumericTimeSeries, TSEntryFitter, TimeSeries, TimeSeriesBuilderTrait}
+import io.sqooba.timeseries.{NumericTimeSeries, TSEntryFitter, TimeSeries, TimeSeriesBuilder}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
@@ -256,7 +256,7 @@ case class ColumnTimeSeries[+T] private (
 
   lazy val supportRatio: Double = validities.sum.toDouble / looseDomain.size
 
-  override def newBuilder[U](compress: Boolean = true): TimeSeriesBuilderTrait[U] =
+  override def newBuilder[U](compress: Boolean = true): TimeSeriesBuilder[U] =
     ColumnTimeSeries.newBuilder(compress)
 }
 
@@ -347,7 +347,9 @@ object ColumnTimeSeries {
   /**
     * @return the builder for column-base timeseries
     */
-  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilderTrait[T] = new TimeSeriesBuilderTrait[T] {
+  def newBuilder[T](compress: Boolean = true): TimeSeriesBuilder[T] = new ColumnTimeSeries.Builder[T](compress)
+
+  private class Builder[T](compress: Boolean = true) extends TimeSeriesBuilder[T] {
 
     // Contains finalized entries
     private val resultBuilder = (new VectorBuilder[Long], new VectorBuilder[T], new VectorBuilder[Long])

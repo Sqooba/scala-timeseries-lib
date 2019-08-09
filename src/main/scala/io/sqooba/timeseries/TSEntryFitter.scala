@@ -2,6 +2,12 @@ package io.sqooba.timeseries
 
 import io.sqooba.timeseries.immutable.TSEntry
 
+/**
+  * This encapsulates the logic of fitting TSEntries one after another. It is used in TimeSeriesBuilders to take
+  * care of trimming, compressing and checking the sanity of consecutive entries.
+  *
+  * @param compress Whether consecutive entries of equal value should be compressed into one or not.
+  */
 class TSEntryFitter[T] private[timeseries] (compress: Boolean) {
 
   // Contains the last added entry: we need to keep it around
@@ -10,6 +16,14 @@ class TSEntryFitter[T] private[timeseries] (compress: Boolean) {
 
   private var isDomainCont = true
 
+  /**
+    * Adds the next timeseries entry. The previously added entry will be trimmed if it overlaps with the next entry.
+    * If the next entry has the same value as the previous one, they are compressed into one entry and nothing
+    *  (None) is returend. Otherwise, the previous entry is trimmed and returned (Some(prev)).
+    *
+    * @param elem the next TSEntry of the series
+    * @return the trimmed and compressed previous entry or None
+    */
   def addAndFitLast(elem: TSEntry[T]): Option[TSEntry[T]] = {
     val (newLast, fitted) = lastAdded match {
       // First Entry: save it and return no fitted entry
@@ -42,10 +56,21 @@ class TSEntryFitter[T] private[timeseries] (compress: Boolean) {
     fitted
   }
 
+  /**
+    * @return the last entry that was added to the fitter. This entry can still change if more entries are added
+    *         (it might be compressed/trimmed).
+    */
   def lastEntry: Option[TSEntry[T]] = lastAdded
 
+  /**
+    * @return whether all added entries so far were either contiguous or overlapping. I.e. there were no holes
+    *         in the domain of definition of the entries seen so far.
+    */
   def isDomainContinuous: Boolean = isDomainCont
 
+  /**
+    * Clears/resets all state of the fitter.
+    */
   def clear(): Unit = {
     lastAdded = None
     isDomainCont = true
