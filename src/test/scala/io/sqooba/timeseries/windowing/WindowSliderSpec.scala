@@ -1,5 +1,6 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.windowing
 
+import io.sqooba.timeseries.TimeSeries
 import io.sqooba.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -264,18 +265,6 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       )
 
     WindowSlider
-      .window(argl.entries.toStream, 1)
-      .shouldBe(
-        Stream(
-          TSEntry(1, Queue(e(0)), 100),
-          TSEntry(101, Queue(e(0), e(1)), 1),
-          TSEntry(102, Queue(e(1)), 49),
-          TSEntry(151, Queue(), 49),
-          TSEntry(200, Queue(e(2)), 30)
-        )
-      )
-
-    WindowSlider
       .window(argl.entries.toStream, 49)
       .shouldBe(
         Stream(
@@ -333,10 +322,105 @@ class WindowSliderSpec extends FlatSpec with Matchers {
         )
       )
 
+    WindowSlider
+      .window(argl.entries.toStream, 98)
+      .shouldBe(
+        Stream(
+          TSEntry(1, Queue(e(0)), 100),
+          TSEntry(101, Queue(e(0), e(1)), 98),
+          TSEntry(199, Queue(e(1)), 1),
+          TSEntry(200, Queue(e(1), e(2)), 30)
+        )
+      )
+
+    WindowSlider
+      .window(argl.entries.toStream, 99)
+      .shouldBe(
+        Stream(
+          TSEntry(1, Queue(e(0)), 100),
+          TSEntry(101, Queue(e(0), e(1)), 99),
+          TSEntry(200, Queue(e(1), e(2)), 30)
+        )
+      )
+
+    WindowSlider
+      .window(argl.entries.toStream, 100)
+      .shouldBe(
+        Stream(
+          TSEntry(1, Queue(e(0)), 100),
+          TSEntry(101, Queue(e(0), e(1)), 99),
+          TSEntry(200, Queue(e(0), e(1), e(2)), 1),
+          TSEntry(201, Queue(e(1), e(2)), 29)
+        )
+      )
+
+    WindowSlider
+      .window(argl.entries.toStream, 129)
+      .shouldBe(
+        Stream(
+          TSEntry(1, Queue(e(0)), 100),
+          TSEntry(101, Queue(e(0), e(1)), 99),
+          TSEntry(200, Queue(e(0), e(1), e(2)), 30)
+        )
+      )
+
   }
   it should "not accept 0 or negative window sizes" in {
     intercept[IllegalArgumentException](WindowSlider.window(Stream(), -1))
     intercept[IllegalArgumentException](WindowSlider.window(Stream(), 0))
+  }
+  it should "properly dispatch update calls to the passed aggregator instance and return its result" in {
+    val agg = new TestAggregator
+
+    val ts = TimeSeries(
+      Seq(TSEntry(1, "A", 100), TSEntry(101, "B", 49), TSEntry(200, "C", 30))
+    )
+
+    def e(i: Int): TSEntry[String] = ts.entries(i)
+
+    WindowSlider
+      .window(ts.entries.toStream, 1, agg)
+      .shouldBe(
+        Stream(
+          (TSEntry(1, Queue(e(0)), 100), Some(1)),
+          (TSEntry(101, Queue(e(0), e(1)), 1), Some(2)),
+          (TSEntry(102, Queue(e(1)), 49), Some(3)),
+          (TSEntry(151, Queue(), 49), Some(4)),
+          (TSEntry(200, Queue(e(2)), 30), Some(5))
+        )
+      )
+
+    agg.currentValC shouldBe 5
+    agg.addAnDropC shouldBe 0
+    agg.added shouldBe ts.entries
+    agg.addedWindows shouldBe Seq(Queue(), Queue(e(0)), Queue())
+    agg.droppedWindows shouldBe Seq(Queue(e(0), e(1)), Queue(e(1)))
+
+  }
+  it should "rely on the correct function on the aggregator when entries need to be both added and removed" in {
+    val agg = new TestAggregator
+
+    val ts = TimeSeries(
+      Seq(TSEntry(1, "A", 100), TSEntry(101, "B", 49), TSEntry(200, "C", 30))
+    )
+
+    def e(i: Int): TSEntry[String] = ts.entries(i)
+
+    WindowSlider
+      .window(ts.entries.toStream, 99, agg)
+      .shouldBe(
+        Stream(
+          (TSEntry(1, Queue(e(0)), 100), Some(1)),
+          (TSEntry(101, Queue(e(0), e(1)), 99), Some(2)),
+          (TSEntry(200, Queue(e(1), e(2)), 30), Some(3))
+        )
+      )
+
+    agg.currentValC shouldBe 3
+    agg.addAnDropC shouldBe 1
+    agg.added shouldBe ts.entries
+    agg.addedWindows shouldBe Seq(Queue(), Queue(e(0)), Queue(e(1)))
+    agg.droppedWindows shouldBe Seq(Queue(e(0), e(1)))
   }
 
   "whatToUpdate" should "refuse empty remaining stream and empty previous window" in {

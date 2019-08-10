@@ -1,4 +1,4 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.windowing
 
 import io.sqooba.timeseries.immutable.TSEntry
 
@@ -9,19 +9,11 @@ object WindowSlider {
   type Window[T] = TSEntry[Queue[TSEntry[T]]]
 
   /**
-    * Slide a window of size 'windowWidth' on the entries present in 'in'.
+    * See #window[T]() below.
     *
-    * In the returned stream, for every entry 'E' with timestamp ts_e and validity d_e,
-    * the content of that entry can be interpreted as:
-    *   "All entries from the original series that are within t-window and t, for t in [ts_e, ts_e + d_e[".
-    *
-    * The returned stream can be seen as a time-series that, when queried for time 't', answers the question
-    * "All the entries that have a domain that is at least partly contained in 't-window' and 't'.
-    *
-    * @param in
-    * @param windowWidth
-    * @tparam T
-    * @return
+    * @param in the entries over which to slide a window
+    * @param windowWidth width of the window
+    * @return a stream of entries representing the content of the window between a time-interval.
     */
   def window[T](
       in: Stream[TSEntry[T]],
@@ -35,7 +27,44 @@ object WindowSlider {
         in,
         Queue.empty,
         in.head.timestamp,
-        windowWidth
+        windowWidth,
+        DoNothingAggregator.asInstanceOf[ReversibleAggregator[T, Nothing]]
+      ).map(_._1)
+    }
+  }
+
+  /**
+    * Slide a window of size 'windowWidth' on the entries present in 'in'.
+    *
+    * In the returned stream, for every entry 'E' with timestamp ts_e and validity d_e,
+    * the content of that entry can be interpreted as:
+    *   "All entries from the original series that are within t-window and t, for t in [ts_e, ts_e + d_e[".
+    *
+    * The returned stream can be seen as a time-series that, when queried for time 't', answers the question
+    * "All the entries that have a domain that is at least partly contained in 't-window' and 't', along with
+    * the aggregated value computed through the aggregator.
+    *
+    * @param in the entries over which to slide a window
+    * @param windowWidth width of the window
+    * @param aggregator a reversible aggregator to efficiently compute aggregations over the window
+    * @return a stream of entries representing the content of the window between a time-interval, along with
+    *         the aggregated value
+    */
+  def window[T, A](
+      in: Stream[TSEntry[T]],
+      windowWidth: Long,
+      aggregator: ReversibleAggregator[T, A]
+  ): Stream[(Window[T], Option[A])] = {
+    require(windowWidth > 0, "Needs a strictly positive window size")
+    if (in.isEmpty) {
+      Stream.empty
+    } else {
+      windowRec(
+        in,
+        Queue.empty,
+        in.head.timestamp,
+        windowWidth,
+        aggregator
       )
     }
   }
@@ -62,12 +91,13 @@ object WindowSlider {
     * @param windowWidth width of the window
     * @return a stream of entries that contain the content of the window for their domain of definition.
     */
-  private def windowRec[T](
+  private def windowRec[T, A](
       remaining: Stream[TSEntry[T]],
       previousEntryContent: Queue[TSEntry[T]],
       timeCursor: Long,
-      windowWidth: Long
-  ): Stream[Window[T]] = {
+      windowWidth: Long,
+      aggregator: ReversibleAggregator[T, A]
+  ): Stream[(Window[T], Option[A])] = {
 
     val (fromRemaining, dropFromWindow, advance) =
       whatToUpdate(
@@ -87,26 +117,32 @@ object WindowSlider {
 
     (fromRemaining, dropFromWindow) match {
       case (true, true) =>
+        aggregator.addAndDrop(remaining.head, previousEntryContent)
         val newWindow = TSEntry(
           timeCursor,
           previousEntryContent.tail :+ remaining.head,
           newValidity
         )
-        newWindow #:: windowRec(remaining.tail, newWindow.value, nextCursor, windowWidth)
+        (newWindow, aggregator.currentValue) #::
+          windowRec(remaining.tail, newWindow.value, nextCursor, windowWidth, aggregator)
       case (true, false) =>
+        aggregator.addEntry(remaining.head, previousEntryContent)
         val newWindow = TSEntry(
           timeCursor,
           previousEntryContent :+ remaining.head,
           newValidity
         )
-        newWindow #:: windowRec(remaining.tail, newWindow.value, nextCursor, windowWidth)
+        (newWindow, aggregator.currentValue) #::
+          windowRec(remaining.tail, newWindow.value, nextCursor, windowWidth, aggregator)
       case (false, true) =>
+        aggregator.dropHead(previousEntryContent)
         val newWindow = TSEntry(
           timeCursor,
           previousEntryContent.tail,
           newValidity
         )
-        newWindow #:: windowRec(remaining, newWindow.value, nextCursor, windowWidth)
+        (newWindow, aggregator.currentValue) #::
+          windowRec(remaining, newWindow.value, nextCursor, windowWidth, aggregator)
       case _ =>
         throw new IllegalStateException(
           "Something went very wrong. Please file a bug report. Would you fancy a cup of tea while we fix this?"
