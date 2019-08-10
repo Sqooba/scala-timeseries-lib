@@ -784,7 +784,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         )
 
       assert(
-        triA.slidingIntegral(2, TimeUnit.SECONDS).entries ===
+        triA.slidingIntegral(1, TimeUnit.SECONDS).entries ===
           Seq(
             TSEntry(10, 10, 11),
             TSEntry(21, 4, 3),
@@ -793,7 +793,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       )
 
       assert(
-        triA.slidingIntegral(10, TimeUnit.SECONDS).entries ===
+        triA.slidingIntegral(9, TimeUnit.SECONDS).entries ===
           Seq(
             TSEntry(10, 10, 11),
             TSEntry(21, 14, 3),

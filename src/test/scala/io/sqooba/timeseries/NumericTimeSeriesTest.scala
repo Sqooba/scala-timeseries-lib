@@ -182,80 +182,6 @@ class NumericTimeSeriesTest extends JUnitSuite {
     assert(sumCompressSeries.isCompressed)
   }
 
-  @Test def testUnitWindowSliding: Unit = {
-    // Mathematically this does not make much sense,
-    // but here we essentially test that the behavior is as expected
-    // This whole thing will be reworked at some point
-
-    // Starting at 0
-    val twoA = Seq(
-      TSEntry(0, 1, 1),
-      TSEntry(1, 2, 1)
-    )
-
-    assert(
-      slidingIntegral(twoA, 1, TimeUnit.SECONDS) == twoA
-    )
-
-    // Starting at > 0
-    val twoB = Seq(
-      TSEntry(10, 1, 1),
-      TSEntry(11, 2, 1)
-    )
-
-    assert(
-      slidingIntegral(twoB, 1, TimeUnit.SECONDS) == twoB
-    )
-
-    // With durations > 1
-    val twoC = Seq(
-      TSEntry(10, 1, 2),
-      TSEntry(12, 2, 2)
-    )
-
-    assert(
-      slidingIntegral(twoC, 1, TimeUnit.SECONDS) ==
-        Seq(
-          TSEntry(10, 2.0, 2),
-          TSEntry(12, 4.0, 2)
-        )
-    )
-
-    // With a gap
-    val twoD = Seq(
-      TSEntry(10, 1, 1),
-      TSEntry(12, 2, 1)
-    )
-
-    assert(
-      slidingIntegral(twoD, 1, TimeUnit.SECONDS) == twoD
-    )
-
-    // With a gap and duration > 1
-    val twoE = Seq(
-      TSEntry(10, 1, 2),
-      TSEntry(13, 2, 2)
-    )
-
-    assert(
-      slidingIntegral(twoE, 1, TimeUnit.SECONDS) == Seq(
-        TSEntry(10, 2, 2),
-        TSEntry(13, 4, 2)
-      )
-    )
-
-    // Three entries, of duration 1, two of then contiguous
-    val tri = Seq(
-      TSEntry(10, 1, 1),
-      TSEntry(11, 2, 1),
-      TSEntry(13, 2, 1)
-    )
-
-    assert(
-      slidingIntegral(tri, 1, TimeUnit.SECONDS) == tri
-    )
-  }
-
   @Test def testSimpleSlidingSumContinuous: Unit = {
     // Test pair-wise continuous entries
 
@@ -283,7 +209,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window shorter than the shortest entry
     assert(
-      slidingIntegral(twoA, 2, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 1, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 1),
@@ -291,7 +217,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
         )
     )
     assert(
-      slidingIntegral(twoA, 4, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 3, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 3),
@@ -301,7 +227,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window equal to the shortest entry
     assert(
-      slidingIntegral(twoA, 5, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 4, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 4),
@@ -311,7 +237,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window equal to the longest entry
     assert(
-      slidingIntegral(twoA, 10, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 9, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 9),
@@ -321,7 +247,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window longer than the longest entry
     assert(
-      slidingIntegral(twoA, 11, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 10, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 10)
@@ -329,7 +255,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(twoA, 12, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 11, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 5),
           TSEntry(15, 25, 10)
@@ -344,7 +270,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window shorter than the shortest entry
     assert(
-      slidingIntegral(twoB, 2, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 1, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 1),
@@ -352,7 +278,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
         )
     )
     assert(
-      slidingIntegral(twoB, 4, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 3, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 3),
@@ -362,7 +288,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window equal to the shortest entry
     assert(
-      slidingIntegral(twoB, 5, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 4, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 4),
@@ -372,7 +298,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window equal to the longest entry
     assert(
-      slidingIntegral(twoB, 10, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 9, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 5)
@@ -381,7 +307,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
 
     // Window longer than the longest entry
     assert(
-      slidingIntegral(twoB, 11, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 10, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 5)
@@ -389,7 +315,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(twoB, 12, TimeUnit.SECONDS) ==
+      slidingIntegral(twoB, 11, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 20, 5)
@@ -409,7 +335,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
       )
 
     assert(
-      slidingIntegral(triA, 2, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 1, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 1),
@@ -420,7 +346,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 3, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 2, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -430,7 +356,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 4, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 3, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -441,7 +367,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 10, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 9, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -452,7 +378,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 11, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 10, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -462,7 +388,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 12, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 11, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -472,7 +398,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 13, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 12, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -481,7 +407,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 14, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 13, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 10),
           TSEntry(20, 14, 2),
@@ -498,9 +424,18 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(twoA, 2, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 1, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 6),
+          TSEntry(16, 0, 1),
+          TSEntry(17, 20, 10)
+        )
+    )
+
+    assert(
+      slidingIntegral(twoA, 2, TimeUnit.SECONDS) ==
+        Seq(
+          TSEntry(10, 5, 7),
           TSEntry(17, 20, 10)
         )
     )
@@ -509,21 +444,13 @@ class NumericTimeSeriesTest extends JUnitSuite {
       slidingIntegral(twoA, 3, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 7),
-          TSEntry(17, 20, 10)
-        )
-    )
-
-    assert(
-      slidingIntegral(twoA, 4, TimeUnit.SECONDS) ==
-        Seq(
-          TSEntry(10, 5, 7),
           TSEntry(17, 25, 1),
           TSEntry(18, 20, 9)
         )
     )
 
     assert(
-      slidingIntegral(twoA, 12, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 11, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 7),
           TSEntry(17, 25, 9),
@@ -532,7 +459,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(twoA, 13, TimeUnit.SECONDS) ==
+      slidingIntegral(twoA, 12, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 5, 7),
           TSEntry(17, 25, 10)
@@ -552,7 +479,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
       )
 
     assert(
-      slidingIntegral(triA, 2, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 1, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 4, 3),
@@ -561,7 +488,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 3, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 2, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 1),
@@ -572,7 +499,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 4, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 3, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 2),
@@ -583,7 +510,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 5, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 4, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -593,7 +520,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 6, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 5, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -604,7 +531,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 7, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 6, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -615,7 +542,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 8, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 7, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -626,7 +553,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 10, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 9, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -637,7 +564,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 11, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 10, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -648,7 +575,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 12, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 11, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -658,7 +585,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 14, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 13, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
@@ -668,7 +595,7 @@ class NumericTimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      slidingIntegral(triA, 15, TimeUnit.SECONDS) ==
+      slidingIntegral(triA, 14, TimeUnit.SECONDS) ==
         Seq(
           TSEntry(10, 10, 11),
           TSEntry(21, 14, 3),
