@@ -1,5 +1,22 @@
 # Change log
 
+## 4.0.0 - 12.08.2019
+This is a major release, as some constructors/build functions have been removed.
+
+- Clean builders for both time-series implementations
+- Introduce some tooling for (more) efficient windowed aggregations, migrate the integration logic to use it. More details in the `ReversibleAggregator` trait.
+- Add column-based timeseries implementation.
+- Fix somecompiler warnings.
+- Cleanup some confusing or seldom used constructors.
+- Add generic test bench for timeseries implementations.
+- Add flag indicating (dis)-continuity to the `TimeSeries` trait, set it at build time
+- Add strict merge operator to the trait
+- Remove duplicate trim statement in merge.
+- Implement nonStrictMinus for numeric timeseries.
+- Removed some isEmpty checks in VectorTimeSeries.
+- Add compress flag to timeseries builder.
+- Add `isCompressed` flag to the interface.
+
 ## 3.3.3 
 - Fix a bug with TSEntry's appendEntry function when the value was the same and reduced the previous entry's domain.
 
