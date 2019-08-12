@@ -1,6 +1,5 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.immutable
 
-import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
 

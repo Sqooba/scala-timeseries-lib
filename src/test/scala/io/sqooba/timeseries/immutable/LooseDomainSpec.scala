@@ -1,6 +1,6 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.immutable
 
-import io.sqooba.timeseries.immutable._
+import io.sqooba.timeseries.TimeSeries
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
 
 class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {

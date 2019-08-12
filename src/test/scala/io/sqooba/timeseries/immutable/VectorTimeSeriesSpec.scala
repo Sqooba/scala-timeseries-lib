@@ -1,6 +1,6 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.immutable
 
-import io.sqooba.timeseries.immutable.VectorTimeSeries
+import io.sqooba.timeseries.TimeSeriesTestBench
 import org.scalatest.{FlatSpec, Matchers}
 
 class VectorTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBench {

@@ -1,6 +1,6 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.immutable
 
-import io.sqooba.timeseries.immutable.{ColumnTimeSeries, EmptyTimeSeries, TSEntry}
+import io.sqooba.timeseries.TimeSeriesBuilderTestBench
 import org.scalatest.{FlatSpec, Matchers}
 
 class ColumnTimeSeriesBuilderSpec extends FlatSpec with Matchers with TimeSeriesBuilderTestBench {

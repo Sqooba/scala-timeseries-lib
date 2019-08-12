@@ -1,8 +1,7 @@
-package io.sqooba.timeseries
+package io.sqooba.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
 import org.junit.Test
 import org.scalatest.junit.JUnitSuite
 
