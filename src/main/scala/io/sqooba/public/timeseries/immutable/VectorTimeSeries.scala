@@ -154,11 +154,6 @@ case class VectorTimeSeries[+T] private (
 
   def lastValueOption: Option[T] = data.lastOption.map(_.value)
 
-  def resample(sampleLengthMs: Long): TimeSeries[T] =
-    new VectorTimeSeries(
-      this.entries.flatMap(e => e.resample(sampleLengthMs).entries).toVector
-    )
-
   def looseDomain: TimeDomain =
     data.head.looseDomain.looseUnion(data.last.looseDomain)
 

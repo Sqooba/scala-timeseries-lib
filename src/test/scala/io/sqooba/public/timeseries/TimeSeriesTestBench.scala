@@ -725,32 +725,35 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       )
     }
 
-    it should "resample a timeseries" in {
-      val withSampling = TSEntry(0, 1, 30)
+    it should "split up the entries of a timeseries" in {
+      val withSlicing = TSEntry(0, 1, 30)
 
       assert(
-        withSampling.resample(10).entries === Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10))
+        withSlicing.splitEntriesLongerThan(10).entries === Seq(TSEntry(0, 1, 10), TSEntry(10, 1, 10), TSEntry(20, 1, 10))
       )
 
       assert(
-        withSampling.resample(20).entries === Seq(TSEntry(0, 1, 20), TSEntry(20, 1, 10))
+        withSlicing.splitEntriesLongerThan(20).entries === Seq(TSEntry(0, 1, 20), TSEntry(20, 1, 10))
       )
     }
 
     it should "split a timeseries into buckets" in {
       val buckets = Stream.from(-10, 10).map(_.toLong)
-      val tri =
-        newTsNumeric(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 5), TSEntry(15, 3, 5)))
+      val tri     = newTsNumeric(Seq(TSEntry(0, 1, 10), TSEntry(10, 2, 5), TSEntry(15, 3, 5)))
+      val result  = tri.bucket(buckets)
 
-      assert(
-        Seq(
-          (-10, EmptyTimeSeries),
-          (0, TSEntry(0, 1, 10)),
-          (10, TimeSeries(Seq(TSEntry(10, 2, 5), TSEntry(15, 3, 5)))),
-          (20, EmptyTimeSeries)
-        )
-          === tri.bucket(buckets)
+      val expected = Stream(
+        (-10, EmptyTimeSeries),
+        (0, TSEntry(0, 1, 10)),
+        (10, newTsNumeric(Seq(TSEntry(10, 2, 5), TSEntry(15, 3, 5)))),
+        (20, EmptyTimeSeries)
       )
+
+      (expected, result).zipped.foreach {
+        case ((eTs, eSeries), (rTs, rSeries)) =>
+          rTs shouldBe eTs
+          rSeries.entries shouldBe eSeries.entries
+      }
     }
 
     it should "integrate a window of a timeseries between two times" in {

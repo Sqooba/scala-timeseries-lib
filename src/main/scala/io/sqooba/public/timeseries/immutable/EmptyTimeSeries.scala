@@ -55,7 +55,7 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def lastValueOption: Option[Nothing] = None
 
-  def resample(sampleLengthMs: Long): TimeSeries[Nothing] = this
+  override def splitEntriesLongerThan(sampleLengthMs: Long): TimeSeries[Nothing] = this
 
   def looseDomain: TimeDomain = EmptyTimeDomain
 

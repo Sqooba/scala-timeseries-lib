@@ -2,10 +2,10 @@ package io.sqooba.public.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.public.timeseries.immutable.{EmptyTimeDomain, EmptyTimeSeries, TSEntry, TSEntryOrdering, TimeDomain, VectorTimeSeries}
+import io.sqooba.public.timeseries.immutable._
+import io.sqooba.timeseries.archive.TimeBucketer
 
 import scala.annotation.tailrec
-import scala.collection.immutable.VectorBuilder
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
@@ -280,7 +280,7 @@ trait TimeSeries[+T] {
   def stepIntegral[U >: T](stepLengthMs: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): TimeSeries[Double] = {
     TimeSeries.ofOrderedEntriesUnsafe(
       NumericTimeSeries.stepIntegral[U](
-        this.resample(stepLengthMs).entries,
+        this.splitEntriesLongerThan(stepLengthMs).entries,
         timeUnit
       )
     )
@@ -296,10 +296,21 @@ trait TimeSeries[+T] {
     this.slice(from, to).entries.map(_.value).sum(n)
 
   /**
-    * Resamples the time series by ensuring that each entry has a validity
-    * of maximum sampleLengthMs.
+    * Splits up all entries of this timeseries that are longer than the given maximal length.
+    * This is slightly similar but not strictly equivalent to resampling a series:
+    * if you need some form of resampling, make sure this is what you need.
+    *
+    * @param entryMaxLength to use for splitting
+    * @return timeseries with entries guaranteed to be shorter than the given
+    *         maximal length
     */
-  def resample(sampleLengthMs: Long): TimeSeries[T]
+  def splitEntriesLongerThan(entryMaxLength: Long): TimeSeries[T] =
+    TimeSeries
+      .splitEntriesLongerThan(entries, entryMaxLength)
+      // we don't want to compress the consecutive equal entries that result from
+      // splitting a long entry up
+      .foldLeft(newBuilder[T](compress = false))(_ += _)
+      .result()
 
   /**
     * Compute a new time series that will contain, for any query time t, the sum
@@ -340,7 +351,7 @@ trait TimeSeries[+T] {
     * @return a stream of (bucket-start, timeseries).
     */
   def bucket(buckets: Stream[Long]): Stream[(Long, TimeSeries[T])] =
-    TimeSeries.bucketEntriesToTimeSeries(buckets, this.entries)
+    TimeBucketer.bucketEntriesToTimeSeries(buckets, this.entries, newBuilder())
 
   /**
     * Returns the bounds of the domain
@@ -587,66 +598,30 @@ object TimeSeries {
   }
 
   /**
-    * Bucket the passed entries into time-series that have domains delimited by the given buckets.
+    * Groups the entries in the stream into substreams that each contain at most
+    * maxNumberOfEntries.
     *
-    * Individual entries will be split/trimmed wherever required.
-    *
-    * @param buckets generates the bucket boundaries
-    * @param entries entries to be bucketed.
-    * @return a stream of (bucket-start, corresponding-time-series)
-    */
-  def bucketEntriesToTimeSeries[T](
-      buckets: Stream[Long],
-      entries: Seq[TSEntry[T]]
-  ): Stream[(Long, TimeSeries[T])] = {
-    // Reusing the builder instance so we don't recreate one for each bucket
-    // TODO: actually check if this makes any sense from a perf point of view?
-    val builder = newBuilder[T]()
-    bucketEntries(buckets, entries).map { tup =>
-      // Better keep that map single threaded ;)
-      builder.clear()
-      builder ++= tup._2
-      (tup._1, builder.result())
-    }
-  }
-
-  /**
-    * Bucket the passed entries into sequences of entries that have domains delimited by the given buckets.
-    *
-    * Individual entries will be split/trimmed wherever required.
-    *
-    * @param buckets generates the bucket boundaries
-    * @param entries entries to be bucketed.
+    * @param entries as a stream
+    * @param maxNumberOfEntries contained by each substream of the result
     * @return a stream of (bucket-start, bucket-entries)
     */
-  def bucketEntries[T](
-      buckets: Stream[Long],
-      entries: Seq[TSEntry[T]]
-  ): Stream[(Long, Seq[TSEntry[T]])] =
-    if (entries.isEmpty) {
-      // When entries is empty, we do return one value with the current bucket's head and an empty time-series.
-      (buckets.head, Seq.empty) +: Stream.empty
-    } else {
-      // Sanity check...
-      require(
-        buckets.head <= entries.head.timestamp,
-        f"Bucket Stream MUST start at or before the first entry. First bucket was: ${buckets.head}, " +
-          f"first entry timestamp was: ${entries.head.timestamp}"
-      )
-      // Sort out what's in the bucket and what definitely isn't
-      entries.span(_.timestamp < buckets.tail.head) match {
-        case (Seq(), _) =>
-          // This bucket is empty
-          (buckets.head, Seq.empty) #:: bucketEntries(buckets.tail, entries)
-        case (within, next) =>
-          // we have at least a single element within the bucket:
-          // Gotta check for the case where it extends into the next bucket as well.
-          // Add everything in the bucket except the last
-          val (keep, nextBucket) = within.last.split(buckets.tail.head)
-          (buckets.head, within.dropRight(1) ++ keep.entries) #::
-            bucketEntries(buckets.tail, nextBucket.entries ++ next)
-      }
-    }
+  def groupEntries[T](
+      entries: Stream[TSEntry[T]],
+      maxNumberOfEntries: Int
+  ): Stream[(Long, Stream[TSEntry[T]])] =
+    entries
+      .grouped(maxNumberOfEntries)
+      .toStream
+      .map(substream => (substream.head.timestamp, substream))
+
+  /**
+    * Splits up all entries in the input that are longer than the given maximal length.
+    * @param entryMaxLength to use for splitting
+    * @return a sequence of entries guaranteed to be shorter than the given
+    *         maximal length
+    */
+  def splitEntriesLongerThan[T](entries: Seq[TSEntry[T]], entryMaxLength: Long): Seq[TSEntry[T]] =
+    entries.flatMap(entry => entry.splitEntriesLongerThan(entryMaxLength).entries)
 
   /**
     * This is needed to be able to pattern match on Vectors:

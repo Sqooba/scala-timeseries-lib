@@ -242,27 +242,27 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
       )
     }
 
-  def resample(sampleLengthMs: Long): TimeSeries[T] = {
-    require(sampleLengthMs > 0, "The sample length must be > 0")
+  override def splitEntriesLongerThan(entryMaxLength: Long): TimeSeries[T] = {
+    require(entryMaxLength > 0, "The max length of entries must be > 0")
 
-    // We specifically do not want to compress when we resample
-    val builder = TimeSeries.newBuilder[T](compress = false)
+    // We specifically do not want to compress when we split up entries
+    val builder = newBuilder[T](compress = false)
     def streamTimeStamps(start: Long) =
       Stream
         .from(0)
-        .map(i => start + i * sampleLengthMs)
+        .map(i => start + i * entryMaxLength)
 
     // streams new timestamp until we reached the end of the ts
     streamTimeStamps(this.timestamp)
       .takeWhile(timestamp => timestamp < definedUntil)
       .foreach { timestamp =>
         // for each timestamp, build a ts entry, with a validity that is
-        // at most sampleLengthMs
+        // at most entryMaxLength
         builder += TSEntry(
           timestamp,
           value,
           Math.min(
-            sampleLengthMs,
+            entryMaxLength,
             definedUntil - timestamp
           )
         )

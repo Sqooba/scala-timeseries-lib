@@ -33,7 +33,8 @@ case class ColumnTimeSeries[+T] private (
     "All three column vectors need to have the same number of elements."
   )
 
-  def entries: Seq[TSEntry[T]] = (timestamps, values, validities).zipped.map(TSEntry[T])
+  // return the entries as a Stream to avoid eagerly mapping them to TSEntries
+  def entries: Stream[TSEntry[T]] = (timestamps, values, validities).zipped.toStream.map(TSEntry[T])
 
   /**
     * Dichotomic search for the element in the time series for the entry
@@ -244,13 +245,6 @@ case class ColumnTimeSeries[+T] private (
       ColumnTimeSeries
         .ofOrderedEntriesSafe(NumericTimeSeries.slidingIntegral[U](this.entries, window, timeUnit))
     }
-
-  def resample(sampleLengthMs: Long): TimeSeries[T] =
-    (timestamps, values, validities).zipped
-      .foldLeft(newBuilder[T](compress = false))(
-        (builder, triple) => builder ++= TSEntry(triple).resample(sampleLengthMs).entries
-      )
-      .result()
 
   def looseDomain: TimeDomain = ContiguousTimeDomain(timestamps.head, timestamps.last + validities.last)
 
