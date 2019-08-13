@@ -7,6 +7,7 @@ import io.sqooba.public.timeseries.{NumericTimeSeries, TSEntryFitter, TimeSeries
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.TimeUnit
+import scala.reflect.runtime.universe._
 
 /**
   * TimeSeries implementation based on a column-store of three Vectors, one for each field of TSEntry.
@@ -56,31 +57,18 @@ case class ColumnTimeSeries[+T] private (
 
   private def entryAtIndex(index: Int): TSEntry[T] = TSEntry(timestamps(index), values(index), validities(index))
 
-  /**
-    * returns true if at(t) would return Some(value)
-    */
-  def defined(t: Long): Boolean = at(t).isDefined
-
   def head: TSEntry[T] = entryAtIndex(0)
 
   def headOption: Option[TSEntry[T]] = Some(head)
-
-  def headValue: T = head.value
-
-  def headValueOption: Option[T] = headOption.map(_.value)
 
   def last: TSEntry[T] = entryAtIndex(timestamps.length - 1)
 
   def lastOption: Option[TSEntry[T]] = Some(last)
 
-  def lastValue: T = last.value
+  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
+    mapWithTime[O]((_, value) => f(value), compress)
 
-  def lastValueOption: Option[T] = lastOption.map(_.value)
-
-  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] =
-    mapWithTime((_, value) => f(value), compress)
-
-  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = {
+  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = {
     val mappedVs = (timestamps, values).zipped.map(f)
 
     if (compress) {
@@ -238,7 +226,7 @@ case class ColumnTimeSeries[+T] private (
       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
   )(implicit n: Numeric[U]): TimeSeries[Double] =
     if (this.size < 2) {
-      this.map(n.toDouble)
+      this.map[Double](n.toDouble)
     } else {
       // TODO: have slidingSum return compressed output so we can use the unsafe constructor and save an iteration.
       // TODO: don't use entries but directly operate on the column vectors.
@@ -250,13 +238,23 @@ case class ColumnTimeSeries[+T] private (
 
   lazy val supportRatio: Double = validities.sum.toDouble / looseDomain.size
 
-  override def newBuilder[U](compress: Boolean = true): TimeSeriesBuilder[U] =
+  override def newBuilder[U: WeakTypeTag](compress: Boolean = true): TimeSeriesBuilder[U] =
     ColumnTimeSeries.newBuilder(compress)
 }
 
 object ColumnTimeSeries {
 
-  private[timeseries] def ofOrderedEntriesSafe[T](
+  /**
+    * Construct a timeseries using the ColumnTimeSeries.Builder given an ordered
+    * list of entries. The correct underlying implementation will be chosen
+    * (EmptyTimeSeries, TSEntry or ColumnTimeSeries).
+    *
+    * @param entries A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+    *           well-formed (no duplicated timestamps)
+    * @param compress A flag specifying whether the entries should be compressed or not.
+    * @tparam T The underlying type of the time-series
+    */
+  def ofOrderedEntriesSafe[T](
       entries: Seq[TSEntry[T]],
       compress: Boolean = true
   ): TimeSeries[T] =

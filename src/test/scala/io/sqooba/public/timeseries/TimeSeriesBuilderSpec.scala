@@ -19,7 +19,7 @@ class TimeSeriesBuilderSpec extends FlatSpec with Matchers with TimeSeriesBuilde
     b ++= data
     val result = b.result()
     result.entries should contain theSameElementsInOrderAs data
-    result.isInstanceOf[VectorTimeSeries[_]] shouldBe true
+    result shouldBe a[VectorTimeSeries[_]]
   }
 
   it should behave like aTimeSeriesBuilder(TimeSeries.newBuilder)

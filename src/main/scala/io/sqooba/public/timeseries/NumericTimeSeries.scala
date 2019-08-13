@@ -104,7 +104,7 @@ object NumericTimeSeries {
       )
       .map {
         // Drop the content of the window, just keep the integral's result.
-        case (entry, integral) => entry.map(_ => integral.get)
+        case (entry, integral) => entry.map[Double](_ => integral.get)
       }
 
 }

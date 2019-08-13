@@ -3,12 +3,13 @@ package io.sqooba.public.timeseries
 import java.util.concurrent.TimeUnit
 
 import io.sqooba.public.timeseries.immutable._
-import io.sqooba.timeseries.archive.TimeBucketer
+import io.sqooba.public.timeseries.archive.TimeBucketer
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
+import scala.reflect.runtime.universe._
 
 trait TimeSeries[+T] {
 
@@ -84,7 +85,7 @@ trait TimeSeries[+T] {
   def nonEmpty: Boolean = !isEmpty
 
   /** True if this time series is defined at 'at'. Ie, at('at') would return Some[T] */
-  def defined(at: Long): Boolean
+  def defined(t: Long): Boolean = at(t).isDefined
 
   /** Returns true if this timeseries was compressed at some point in its construction. */
   def isCompressed: Boolean
@@ -92,12 +93,12 @@ trait TimeSeries[+T] {
   /** Map the values within the time series.
     * the 'compress' parameters allows callers to control whether or not compression should occur.
     * If set to false, timestamps and validities remain unchanged. Defaults to true */
-  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O]
+  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O]
 
   /** Map the values within the time series.
     * Timestamps and validities of entries remain unchanged,
     * but the time is made available for cases where the new value would depend on it. */
-  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O]
+  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O]
 
   /** Return a time series that will only contain entries for which the passed predicate returned True. */
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T]
@@ -126,12 +127,12 @@ trait TimeSeries[+T] {
   /** Return the first (chronological) value in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */
-  def headValue: T
+  def headValue: T = head.value
 
   /** Return a filled option containing the first (chronological) value in this
     * time series.
     * None if this time series is empty. */
-  def headValueOption: Option[T]
+  def headValueOption: Option[T] = headOption.map(_.value)
 
   /** Return the last (chronological) entry in this time series.
     *
@@ -146,11 +147,11 @@ trait TimeSeries[+T] {
   /** Return the last (chronological) value in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */
-  def lastValue: T
+  def lastValue: T = last.value
 
   /** Return a filled option containing the last (chronological) value in this time series.
     * None if this time series is empty. */
-  def lastValueOption: Option[T]
+  def lastValueOption: Option[T] = lastOption.map(_.value)
 
   /** Append the 'other' time series to this one at exactly the first of other's entries timestamp.
     *
@@ -351,7 +352,7 @@ trait TimeSeries[+T] {
     * @return a stream of (bucket-start, timeseries).
     */
   def bucket(buckets: Stream[Long]): Stream[(Long, TimeSeries[T])] =
-    TimeBucketer.bucketEntriesToTimeSeries(buckets, this.entries, newBuilder())
+    TimeBucketer.bucketEntriesToTimeSeries(buckets, this.entries, newBuilder[T]())
 
   /**
     * Returns the bounds of the domain
@@ -394,7 +395,8 @@ trait TimeSeries[+T] {
   /**
     * @return a builder that constructs a new timeseries of this implementation
     */
-  def newBuilder[U](compress: Boolean = true): TimeSeriesBuilder[U] = TimeSeries.newBuilder(compress)
+  def newBuilder[U](compress: Boolean = true)(implicit tag: WeakTypeTag[U]): TimeSeriesBuilder[U] =
+    TimeSeries.newBuilder(compress)
 }
 
 object TimeSeries {

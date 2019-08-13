@@ -7,6 +7,7 @@ import scala.collection.mutable
 /**
   * Unifies the interface for builders of timeseries implementations. This enables generic test cases.
   */
+// TODO: can we make this trait more useful and hence reduce the boilerplate needed in each individual builder?
 trait TimeSeriesBuilder[T] extends mutable.Builder[TSEntry[T], TimeSeries[T]] {
 
   /**

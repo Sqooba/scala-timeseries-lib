@@ -1,8 +1,6 @@
 package io.sqooba.public.timeseries.archive
 
-import java.nio.ByteBuffer
-
-import fi.iki.yak.ts.compression.gorilla.{GorillaCompressor, GorillaDecompressor, LongArrayInput, LongArrayOutput, Pair}
+import fi.iki.yak.ts.compression.gorilla.{GorillaDecompressor, LongArrayInput, Pair}
 import io.sqooba.public.timeseries.immutable.TSEntry
 
 import scala.util.{Success, Try}
@@ -17,6 +15,9 @@ import scala.util.{Success, Try}
   *       problems if you have very high long  values that you convert to double and pass
   *       to the compression.
   */
+// TODO make compression generic for all numeric types. This should be possible because
+//   all numeric types can be represented by the 64-bits of a Long.
+//   Tracked by T547.
 object TSCompressor {
 
   /**
@@ -44,23 +45,7 @@ object TSCompressor {
     if (entries.isEmpty) {
       throw new IllegalArgumentException("The stream to compress needs to contain at least one TSEntry.")
     } else {
-      val valueOutput        = new LongArrayOutput()
-      val valueCompressor    = new GorillaCompressor(entries.head.timestamp, valueOutput)
-      val validityOutput     = new LongArrayOutput()
-      val validityCompressor = new GorillaCompressor(entries.head.timestamp, validityOutput)
-
-      entries.foreach(entry => {
-        valueCompressor.addValue(entry.timestamp, entry.value)
-        validityCompressor.addValue(entry.timestamp, entry.validity)
-      })
-
-      valueCompressor.close()
-      validityCompressor.close()
-
-      GorillaBlock(
-        longArray2byteArray(valueOutput.getLongArray),
-        longArray2byteArray(validityOutput.getLongArray)
-      )
+      entries.foldLeft(new GorillaBlockBuilder())(_ += _).result()
     }
 
   /**
@@ -99,18 +84,5 @@ object TSCompressor {
 
   private def wrapTryDecompressor(bytes: Array[Byte]): Try[GorillaDecompressor] =
     Try(new GorillaDecompressor(new LongArrayInput(byteArray2longArray(bytes))))
-
-  private def longArray2byteArray(longs: Array[Long]): Array[Byte] =
-    longs
-      .foldLeft(ByteBuffer.allocate(java.lang.Long.BYTES * longs.length))(
-        (buffer, long) => buffer.putLong(long)
-      )
-      .array()
-
-  private def byteArray2longArray(bytes: Array[Byte]): Array[Long] = {
-    val buffer = ByteBuffer.wrap(bytes)
-
-    Array.fill(bytes.length / java.lang.Long.BYTES) { buffer.getLong }
-  }
 
 }

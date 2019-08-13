@@ -4,6 +4,7 @@ import io.sqooba.public.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder
 
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
+import scala.reflect.runtime.universe._
 
 /**
   * TimeSeries implementation based on a Vector.
@@ -38,12 +39,7 @@ case class VectorTimeSeries[+T] private (
   def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] =
     VectorTimeSeries.dichotomicSearch(data, t)
 
-  /**
-    * returns true if at(t) would return Some(value)
-    */
-  def defined(t: Long): Boolean = at(t).isDefined
-
-  def map[O](f: T => O, compress: Boolean = true): TimeSeries[O] =
+  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
     if (compress) {
       // Use a builder to handle compression
       data
@@ -53,7 +49,7 @@ case class VectorTimeSeries[+T] private (
       new VectorTimeSeries[O](data.map(_.map(f)))
     }
 
-  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
+  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
     data
       .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
       .result()
@@ -142,17 +138,9 @@ case class VectorTimeSeries[+T] private (
 
   def headOption: Option[TSEntry[T]] = data.headOption
 
-  def headValue: T = data.head.value
-
-  def headValueOption: Option[T] = data.headOption.map(_.value)
-
   def last: TSEntry[T] = data.last
 
   def lastOption: Option[TSEntry[T]] = data.lastOption
-
-  def lastValue: T = data.last.value
-
-  def lastValueOption: Option[T] = data.lastOption.map(_.value)
 
   def looseDomain: TimeDomain =
     data.head.looseDomain.looseUnion(data.last.looseDomain)

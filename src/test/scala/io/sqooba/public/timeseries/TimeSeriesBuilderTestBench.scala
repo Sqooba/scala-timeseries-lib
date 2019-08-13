@@ -5,12 +5,12 @@ import org.scalatest.{FlatSpec, Matchers}
 
 trait TimeSeriesBuilderTestBench extends Matchers { this: FlatSpec =>
 
-  private val overlappingEntries        = Seq(TSEntry(10, 42, 10), TSEntry(15, 22, 10), TSEntry(20, 21, 10))
-  private val nonOverlappingEntries     = Seq(TSEntry(10, 42, 10), TSEntry(25, 42, 10), TSEntry(40, 42, 10))
-  private val equalContiguousEntries    = Seq(TSEntry(10, 42, 10), TSEntry(15, 42, 10), TSEntry(20, 42, 10))
-  private val notEqualContiguousEntries = Seq(TSEntry(10, -1, 10), TSEntry(15, 2, 10), TSEntry(20, 42, 10))
+  private val overlappingEntries: Seq[TSEntry[Double]]        = Seq(TSEntry(10, 42, 10), TSEntry(15, 22, 10), TSEntry(20, 21, 10))
+  private val nonOverlappingEntries: Seq[TSEntry[Double]]     = Seq(TSEntry(10, 42, 10), TSEntry(25, 42, 10), TSEntry(40, 42, 10))
+  private val equalContiguousEntries: Seq[TSEntry[Double]]    = Seq(TSEntry(10, 42, 10), TSEntry(15, 42, 10), TSEntry(20, 42, 10))
+  private val notEqualContiguousEntries: Seq[TSEntry[Double]] = Seq(TSEntry(10, -1, 10), TSEntry(15, 2, 10), TSEntry(20, 42, 10))
 
-  def aTimeSeriesBuilder(newBuilderFromCompression: Boolean => TimeSeriesBuilder[Int]) {
+  def aTimeSeriesBuilder(newBuilderFromCompression: Boolean => TimeSeriesBuilder[Double]) {
 
     def newTimeSeriesBuilder           = newBuilderFromCompression(true)
     def newTimeSeriesBuilderNoCompress = newBuilderFromCompression(false)
@@ -106,7 +106,7 @@ trait TimeSeriesBuilderTestBench extends Matchers { this: FlatSpec =>
     }
 
     it should "be the given TSEntry if there is only one appended" in {
-      val entry = TSEntry(1, 1, 1)
+      val entry = TSEntry(1, 1d, 1)
       val b     = newTimeSeriesBuilder
 
       b += entry

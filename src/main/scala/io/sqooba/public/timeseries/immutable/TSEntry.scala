@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import io.sqooba.public.timeseries.TimeSeries
 
-import scala.collection.immutable.VectorBuilder
+import scala.reflect.runtime.universe._
 
 /**
   * Represents a time-series entry on the time-line, including its validity.
@@ -124,7 +124,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
       TSEntry(start, value, Math.min(definedUntil, r) - start)
     }
 
-  def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
+  override def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
 
   /** the last moment where this entry is valid, non-inclusive */
   def definedUntil: Long = timestamp + validity
@@ -141,10 +141,10 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     TSEntry(timestamp, Right[O, T](value), validity)
 
   /** Map value contained in this timeseries using the passed function */
-  def map[O](f: T => O, compress: Boolean = true): TSEntry[O] =
+  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(value), validity)
 
-  def mapWithTime[O](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
+  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(timestamp, value), validity)
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
@@ -212,17 +212,9 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   def headOption: Option[TSEntry[T]] = Some(this)
 
-  def headValue: T = this.value
-
-  def headValueOption: Option[T] = Some(this.value)
-
   def last: TSEntry[T] = this
 
   def lastOption: Option[TSEntry[T]] = Some(this)
-
-  def lastValue: T = this.value
-
-  def lastValueOption: Option[T] = Some(this.value)
 
   /**
     * Creates a new entry with an extended validity.

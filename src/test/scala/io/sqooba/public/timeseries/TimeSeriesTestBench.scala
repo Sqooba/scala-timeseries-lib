@@ -144,8 +144,8 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "correctly trim on the left for contiguous entries" in {
       // Two contiguous entries
       // Left of the domain
-      assert(contig2 === contig2.trimLeft(0))
-      assert(contig2 === contig2.trimLeft(1))
+      assert(contig2.entries === contig2.trimLeft(0).entries)
+      assert(contig2.entries === contig2.trimLeft(1).entries)
 
       // Trimming on the first entry
       assert(Seq(TSEntry(2, 111d, 9), TSEntry(11, 222d, 10)) === contig2.trimLeft(2).entries)
@@ -165,8 +165,8 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "correctly trim on the left for not contiguous entries" in {
       // Two non-contiguous entries
       // Trimming left of the first entry
-      assert(discon2 === discon2.trimLeft(0))
-      assert(discon2 === discon2.trimLeft(1))
+      assert(discon2.entries === discon2.trimLeft(0).entries)
+      assert(discon2.entries === discon2.trimLeft(1).entries)
 
       // Trimming on the first entry
       assert(Seq(TSEntry(2, 111d, 9), TSEntry(12, 222d, 10)) === discon2.trimLeft(2).entries)
@@ -185,8 +185,8 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
       // Trim on a three element time series with a discontinuity
       // Left of the first entry
-      assert(three === three.trimLeft(0))
-      assert(three === three.trimLeft(1))
+      assert(three.entries === three.trimLeft(0).entries)
+      assert(three.entries === three.trimLeft(1).entries)
 
       // Trimming on the first entry
       assert(
@@ -219,10 +219,10 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "correctly trim on the left for discrete entries" in {
       // Two contiguous entries
       // Left of the domain
-      assert(contig2 === contig2.trimLeftDiscrete(0, true))
-      assert(contig2 === contig2.trimLeftDiscrete(0, false))
-      assert(contig2 === contig2.trimLeftDiscrete(1, true))
-      assert(contig2 === contig2.trimLeftDiscrete(1, false))
+      assert(contig2.entries === contig2.trimLeftDiscrete(0, true).entries)
+      assert(contig2.entries === contig2.trimLeftDiscrete(0, false).entries)
+      assert(contig2.entries === contig2.trimLeftDiscrete(1, true).entries)
+      assert(contig2.entries === contig2.trimLeftDiscrete(1, false).entries)
 
       // Trimming on the first entry
       assert(contig2.entries === contig2.trimLeftDiscrete(2, true).entries)
@@ -253,11 +253,15 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(contig2.entries === contig2.trimRight(21).entries)
 
       // On the second entry
-      assert(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9)) === contig2.trimRight(20).entries)
-      assert(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1)) === contig2.trimRight(12).entries)
+      contig2.trimRight(20).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9))
+
+      contig2.trimRight(12).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1))
 
       // On the boundary
-      assert(Seq(TSEntry(1, 111d, 10)) === contig2.trimRight(11).entries)
+      contig2.trimRight(11).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10))
 
       // On the first entry
       assert(TSEntry(1, 111d, 9) === contig2.trimRight(10))
@@ -276,16 +280,22 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(discon2.entries === discon2.trimRight(22).entries)
 
       // Trimming on the last entry
-      assert(Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 9)) === discon2.trimRight(21).entries)
-      assert(Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 1)) === discon2.trimRight(13).entries)
+      discon2.trimRight(21).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 9))
+      discon2.trimRight(13).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 1))
 
       // Trimming between entries:
-      assert(Seq(TSEntry(1, 111d, 10)) === discon2.trimRight(12).entries)
-      assert(Seq(TSEntry(1, 111d, 10)) === discon2.trimRight(11).entries)
+      discon2.trimRight(12).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10))
+      discon2.trimRight(11).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 10))
 
       // ... and on the first
-      assert(Seq(TSEntry(1, 111d, 9)) === discon2.trimRight(10).entries)
-      assert(Seq(TSEntry(1, 111d, 1)) === discon2.trimRight(2).entries)
+      discon2.trimRight(10).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 9))
+      discon2.trimRight(2).entries should contain theSameElementsInOrderAs
+        Seq(TSEntry(1, 111d, 1))
 
       // ... and before the first entry:
       assert(discon2.trimRight(1).isEmpty)
@@ -356,20 +366,53 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     }
 
     it should "correctly split a timeseries of three entries" in {
-      val tri = anotherThree
+      val (l1, r1) = anotherThree.split(-1)
+      l1 shouldBe EmptyTimeSeries
+      r1.entries shouldBe anotherThree.entries
 
-      assert(tri.split(-1) === (EmptyTimeSeries, tri))
-      assert(tri.split(0) === (EmptyTimeSeries, tri))
-      assert(tri.split(1) === (tri.trimRight(1), tri.trimLeft(1)))
-      assert(tri.split(9) === (tri.trimRight(9), tri.trimLeft(9)))
-      assert(tri.split(10) === (tri.trimRight(10), tri.trimLeft(10)))
-      assert(tri.split(11) === (tri.trimRight(11), tri.trimLeft(11)))
-      assert(tri.split(19) === (tri.trimRight(19), tri.trimLeft(19)))
-      assert(tri.split(20) === (tri.trimRight(20), tri.trimLeft(20)))
-      assert(tri.split(21) === (tri.trimRight(21), tri.trimLeft(21)))
-      assert(tri.split(29) === (tri.trimRight(29), tri.trimLeft(29)))
-      assert(tri.split(30) === (tri, EmptyTimeSeries))
-      assert(tri.split(31) === (tri, EmptyTimeSeries))
+      val (l2, r2) = anotherThree.split(0)
+      l2 shouldBe EmptyTimeSeries
+      r2.entries shouldBe anotherThree.entries
+
+      val (l3, r3) = anotherThree.split(1)
+      l3.entries shouldBe anotherThree.trimRight(1).entries
+      r3.entries shouldBe anotherThree.trimLeft(1).entries
+
+      val (l4, r4) = anotherThree.split(9)
+      l4.entries shouldBe anotherThree.trimRight(9).entries
+      r4.entries shouldBe anotherThree.trimLeft(9).entries
+
+      val (l5, r5) = anotherThree.split(10)
+      l5.entries shouldBe anotherThree.trimRight(10).entries
+      r5.entries shouldBe anotherThree.trimLeft(10).entries
+
+      val (l6, r6) = anotherThree.split(11)
+      l6.entries shouldBe anotherThree.trimRight(11).entries
+      r6.entries shouldBe anotherThree.trimLeft(11).entries
+
+      val (l7, r7) = anotherThree.split(19)
+      l7.entries shouldBe anotherThree.trimRight(19).entries
+      r7.entries shouldBe anotherThree.trimLeft(19).entries
+
+      val (l8, r8) = anotherThree.split(20)
+      l8.entries shouldBe anotherThree.trimRight(20).entries
+      r8.entries shouldBe anotherThree.trimLeft(20).entries
+
+      val (l9, r9) = anotherThree.split(21)
+      l9.entries shouldBe anotherThree.trimRight(21).entries
+      r9.entries shouldBe anotherThree.trimLeft(21).entries
+
+      val (l10, r10) = anotherThree.split(29)
+      l10.entries shouldBe anotherThree.trimRight(29).entries
+      r10.entries shouldBe anotherThree.trimLeft(29).entries
+
+      val (l11, r11) = anotherThree.split(30)
+      l11.entries shouldBe anotherThree.entries
+      r11 shouldBe EmptyTimeSeries
+
+      val (l12, r12) = anotherThree.split(31)
+      l12.entries shouldBe anotherThree.entries
+      r12 shouldBe EmptyTimeSeries
     }
 
     it should "correctly map a timeseries of three entries" in {
@@ -448,7 +491,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "not fill a contiguous timeseries of three entries" in {
       val tri = anotherThree
 
-      assert(tri.fill(333d) === tri)
+      assert(tri.fill(333d).entries === tri.entries)
     }
 
     it should "fill a timeseries of three entries" in {

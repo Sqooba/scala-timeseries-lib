@@ -1,7 +1,6 @@
 package io.sqooba.public.timeseries.archive
 
 import io.sqooba.public.timeseries.immutable.TSEntry
-import io.sqooba.timeseries.archive.TimeBucketer
 import org.scalatest.{FlatSpec, Matchers}
 
 class TimeBucketerSpec extends FlatSpec with Matchers {

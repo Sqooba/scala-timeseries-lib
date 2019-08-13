@@ -1,4 +1,4 @@
-package io.sqooba.timeseries.archive
+package io.sqooba.public.timeseries.archive
 
 import io.sqooba.public.timeseries.{TimeSeries, TimeSeriesBuilder}
 import io.sqooba.public.timeseries.immutable.TSEntry

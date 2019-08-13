@@ -2,6 +2,8 @@ package io.sqooba.public.timeseries.immutable
 
 import io.sqooba.public.timeseries.TimeSeries
 
+import scala.reflect.runtime.universe._
+
 /**
   * A time series that is never defined.
   */
@@ -17,8 +19,6 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def isCompressed: Boolean = false
 
-  def defined(at: Long): Boolean = false
-
   def trimLeft(at: Long): TimeSeries[Nothing] = this
 
   def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
@@ -27,13 +27,13 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
 
-  def map[O](f: Nothing => O, compress: Boolean = true): TimeSeries[O] = this
+  def map[O: WeakTypeTag](f: Nothing => O, compress: Boolean = true): TimeSeries[O] = this
+
+  def mapWithTime[O: WeakTypeTag](f: (Long, Nothing) => O, compress: Boolean = true): TimeSeries[O] = this
 
   def filter(predicate: TSEntry[Nothing] => Boolean): TimeSeries[Nothing] = this
 
   def filterValues(predicate: Nothing => Boolean): TimeSeries[Nothing] = this
-
-  def mapWithTime[O](f: (Long, Nothing) => O, compress: Boolean = true): TimeSeries[O] = this
 
   def fill[U >: Nothing](whenUndef: U): TimeSeries[U] = this
 
@@ -43,17 +43,9 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def headOption: Option[TSEntry[Nothing]] = None
 
-  def headValue: Nothing = throw new NoSuchElementException()
-
-  def headValueOption: Option[Nothing] = None
-
   def last: TSEntry[Nothing] = throw new NoSuchElementException()
 
   def lastOption: Option[TSEntry[Nothing]] = None
-
-  def lastValue: Nothing = throw new NoSuchElementException()
-
-  def lastValueOption: Option[Nothing] = None
 
   override def splitEntriesLongerThan(sampleLengthMs: Long): TimeSeries[Nothing] = this
 
