@@ -9,6 +9,7 @@ crossScalaVersions := Seq("2.13.0-M5", "2.12.8", "2.11.12")
 
 libraryDependencies ++= Seq(
   "com.storm-enroute" %% "scalameter" % "0.17",
+  "fi.iki.yak" % "compression-gorilla" % "2.1.1",
   "junit"             % "junit"       % "4.12" % Test,
   "org.scalactic"     %% "scalactic"  % "3.0.7",
   "org.scalatest"     %% "scalatest"  % "3.0.7" % Test
