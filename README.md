@@ -78,7 +78,7 @@ tsa * tsb // (TSEntry(0, 3.0, 10L), TSEntry(10, 8.0, 10L))
 
 Note that there are a few quirks to be aware of when a TimeSeries has discontinuities: 
 please refer to function comments in 
-[`NumericTimeSeries.scala`](src/main/scala/io/sqooba/timeseries/NumericTimeSeries.scala) for more details.
+[`NumericTimeSeries.scala`](src/main/scala/io/sqooba/public/timeseries/NumericTimeSeries.scala) for more details.
 
 ### Custom Operators: Time Series Merging
 For non-numeric time series, or for any particular needs, a `TimeSeries` can be merged using an 
@@ -99,7 +99,7 @@ def plus(aO: Option[Double], bO: Option[Double]) =
 ```
 
 For a complete view of what you can do with a `TimeSeries`, 
-the best is to have a look at the [`TimeSeries.scala`](src/main/scala/io/sqooba/timeseries/TimeSeries.scala) interface.
+the best is to have a look at the [`TimeSeries.scala`](src/main/scala/io/sqooba/public/timeseries/TimeSeries.scala) interface.
 
 ### Under the hood
 While a `TimeSeries[T]` looks a lot like an ordered `Map[Long,T]`, it should more be considered like an ordered 
