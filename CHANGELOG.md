@@ -1,5 +1,9 @@
 # Change log
 
+## 4.0.1 - 14.08.2019
+
+- Rename package to `io.sqooba.public.timeseries`. (Should have been part of 4.0.0...)
+
 ## 4.0.0 - 12.08.2019
 This is a major release, as some constructors/build functions have been removed.
 
