@@ -5,8 +5,11 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ColumnTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBench {
 
-  it should behave like nonEmptyNonSingletonTimeSeries(
-    ColumnTimeSeries.ofOrderedEntriesSafe[String](_),
+  "A ColumnTimeSeries" should behave like nonEmptyNonSingletonDoubleTimeSeries(
     ColumnTimeSeries.ofOrderedEntriesSafe[Double](_)
+  )
+
+  it should behave like nonEmptyNonSingletonGenericTimeSeries(
+    ColumnTimeSeries.ofOrderedEntriesSafe[String](_)
   )
 }

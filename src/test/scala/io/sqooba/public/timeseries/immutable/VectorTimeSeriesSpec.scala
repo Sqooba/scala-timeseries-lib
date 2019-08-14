@@ -5,8 +5,11 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class VectorTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBench {
 
-  "A VectorTimeSeries" should behave like nonEmptyNonSingletonTimeSeries(
-    VectorTimeSeries.ofOrderedEntriesUnsafe(_),
+  "A VectorTimeSeries" should behave like nonEmptyNonSingletonDoubleTimeSeries(
+    VectorTimeSeries.ofOrderedEntriesUnsafe(_)
+  )
+
+  it should behave like nonEmptyNonSingletonGenericTimeSeries(
     VectorTimeSeries.ofOrderedEntriesUnsafe(_)
   )
 
