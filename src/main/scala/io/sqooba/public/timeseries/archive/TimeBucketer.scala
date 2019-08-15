@@ -1,7 +1,7 @@
 package io.sqooba.timeseries.archive
 
-import io.sqooba.timeseries.{TimeSeries, TimeSeriesBuilder}
-import io.sqooba.timeseries.immutable.TSEntry
+import io.sqooba.public.timeseries.{TimeSeries, TimeSeriesBuilder}
+import io.sqooba.public.timeseries.immutable.TSEntry
 
 /**
   * Helper for bucketing/slicing a stream of TSEntries in order to be stored as

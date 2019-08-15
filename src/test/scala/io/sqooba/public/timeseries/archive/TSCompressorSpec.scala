@@ -1,13 +1,8 @@
 package io.sqooba.public.timeseries.archive
 
-<<<<<<< HEAD:common/timeseries/src/test/scala/io/sqooba/public/timeseries/archive/TSCompressionSpec.scala
 import io.sqooba.public.timeseries.TimeSeries
+import io.sqooba.public.timeseries.archive.TSCompressor.GorillaBlock
 import io.sqooba.public.timeseries.immutable.TSEntry
-=======
-import io.sqooba.timeseries.TimeSeries
-import io.sqooba.timeseries.archive.TSCompressor.GorillaBlock
-import io.sqooba.timeseries.immutable.TSEntry
->>>>>>> [timeseries] Add tooling for splitting series by intervals etc.:common/timeseries/src/test/scala/io/sqooba/timeseries/archive/TSCompressorSpec.scala
 import org.scalatest.{FlatSpec, Matchers}
 
 class TSCompressorSpec extends FlatSpec with Matchers {
