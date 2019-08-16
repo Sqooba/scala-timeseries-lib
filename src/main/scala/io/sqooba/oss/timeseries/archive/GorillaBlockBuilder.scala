@@ -1,7 +1,6 @@
 package io.sqooba.oss.timeseries.archive
 
 import fi.iki.yak.ts.compression.gorilla.{GorillaCompressor, LongArrayOutput}
-import io.sqooba.oss.timeseries.archive.TSCompressor.GorillaBlock
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
 import scala.collection.mutable

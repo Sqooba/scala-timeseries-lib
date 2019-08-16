@@ -1,10 +1,8 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder}
-import io.sqooba.oss.timeseries.archive.{GorillaBlockBuilder, TSCompressor}
-import io.sqooba.oss.timeseries.archive.TSCompressor.GorillaBlock
+import io.sqooba.oss.timeseries.archive.{GorillaBlock, GorillaBlockBuilder, TSCompressor}
 
-import scala.collection.immutable.Stream.StreamBuilder
 import scala.reflect.runtime.universe._
 
 /**

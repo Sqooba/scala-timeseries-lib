@@ -1,9 +1,11 @@
 package io.sqooba.oss.timeseries.archive
 
 import io.sqooba.oss.timeseries.TimeSeries
-import io.sqooba.oss.timeseries.archive.TSCompressor.GorillaBlock
 import io.sqooba.oss.timeseries.immutable.TSEntry
+
 import org.scalatest.{FlatSpec, Matchers}
+
+import scala.collection.immutable.SortedMap
 
 class TSCompressorSpec extends FlatSpec with Matchers {
 
@@ -26,7 +28,7 @@ class TSCompressorSpec extends FlatSpec with Matchers {
     )
   )
 
-  "TSCompression" should "compress and again decompress a timeseries" in {
+  "TSCompressor" should "compress and again decompress a timeseries" in {
     val block = TSCompressor.compress(tsDouble.entries.toStream)
     TSCompressor.decompress(block) shouldBe tsDouble.entries
   }
@@ -50,9 +52,31 @@ class TSCompressorSpec extends FlatSpec with Matchers {
     an[IllegalArgumentException] should be thrownBy TSCompressor.compress(Stream.empty)
   }
 
-  it should "return an empty stream for empty byte arrays" in {
+  it should "throw if empty byte arrays are provided to decompress" in {
     an[IllegalArgumentException] should be thrownBy TSCompressor.decompress(
       GorillaBlock(Array.empty, Array.empty)
+    )
+  }
+
+  it should "compress and decompress a timestamp map" in {
+    val map = SortedMap(
+      10L      -> 234L,
+      20L      -> 456L,
+      1000000L -> -11L
+    )
+
+    TSCompressor.decompressTimestampTuples(
+      TSCompressor.compressTimestampTuples(map)
+    ) shouldBe map
+  }
+
+  it should "throw if an empty map is provided to compress" in {
+    an[IllegalArgumentException] should be thrownBy TSCompressor.compressTimestampTuples(SortedMap.empty)
+  }
+
+  it should "throw if an empty gorilla array is provided to decompress" in {
+    an[IllegalArgumentException] should be thrownBy TSCompressor.decompressTimestampTuples(
+      Array.empty
     )
   }
 }
