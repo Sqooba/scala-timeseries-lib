@@ -152,13 +152,22 @@ case class VectorTimeSeries[+T] private (
 object VectorTimeSeries {
 
   /**
-    * @return  a VectorTimeSeries built from the passed entries, ensuring that they are:
-    *          - sorted
-    *          - fitted to each other (no overlaps)
+    * Construct a VectorTimeSeries using its own builder given an ordered list of
+    * at least 2 entries.
+    *
+    * @param elems A well-formed sequence of TSEntries which has at least 2 elements
+    * @param compress specifies whether the entries should be compressed or not
+    * @return a vector backed timeseries
     */
-  def ofEntriesSafe[T](elems: Seq[TSEntry[T]]): TimeSeries[T] =
-    // TODO: Expect entries to be sorted and just check?
-    elems.sorted.foldLeft(TimeSeries.newBuilder[T]())(_ += _).result()
+  private[timeseries] def ofOrderedEntriesSafe[T](
+      elems: Seq[TSEntry[T]],
+      compress: Boolean = true
+  ): VectorTimeSeries[T] = {
+    require(elems.size >= 2, "To build a VectorTimeSeries, at least two elements must be given.")
+
+    // we can cast because we know the builder will output a vector series for more than 2 elements
+    elems.foldLeft(new Builder[T]())(_ += _).result().asInstanceOf[VectorTimeSeries[T]]
+  }
 
   /**
     * @param elems The entries of the series.

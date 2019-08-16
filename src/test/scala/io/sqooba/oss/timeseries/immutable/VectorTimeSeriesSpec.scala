@@ -9,6 +9,10 @@ class VectorTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBen
     VectorTimeSeries.ofOrderedEntriesUnsafe(_)
   )
 
+  it should behave like nonEmptyNonSingletonDoubleTimeSeriesWithCompression(
+    VectorTimeSeries.ofOrderedEntriesUnsafe(_)
+  )
+
   it should behave like nonEmptyNonSingletonGenericTimeSeries(
     VectorTimeSeries.ofOrderedEntriesUnsafe(_)
   )

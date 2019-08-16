@@ -29,8 +29,8 @@ class StrictZipTest extends JUnitSuite {
 
   @Test def testProdValues(): Unit = {
     // Mix in some Vector with the Seq to check the correct unapply operator is used.
-    val vta = VectorTimeSeries.ofEntriesSafe(Vector(TSEntry(1528943988000L, 468000.0, 660000), TSEntry(1528944588000L, 475000.0, 660000)))
-    val vtb = VectorTimeSeries.ofEntriesSafe(Seq(TSEntry(1528943988000L, -468000.0, 660000), TSEntry(1528944588000L, -475000.0, 660000)))
+    val vta = TimeSeries.ofOrderedEntriesSafe(Vector(TSEntry(1528943988000L, 468000.0, 660000), TSEntry(1528944588000L, 475000.0, 660000)))
+    val vtb = TimeSeries.ofOrderedEntriesSafe(Seq(TSEntry(1528943988000L, -468000.0, 660000), TSEntry(1528944588000L, -475000.0, 660000)))
 
     assert(
       vta.strictZip(vtb).entries ==

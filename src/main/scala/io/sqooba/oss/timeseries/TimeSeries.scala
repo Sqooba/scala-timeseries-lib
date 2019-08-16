@@ -166,7 +166,7 @@ trait TimeSeries[+T] {
   def append[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
     other.headOption
       .map(head => this.trimRight(head.timestamp).entries ++ other.entries)
-      .map(TimeSeries.ofOrderedEntriesSafe(_, compress))
+      .map(_.foldLeft(newBuilder[U](compress))(_ += _).result())
       .getOrElse(this)
 
   /** Prepend the 'other' time series to this one at exactly the last of other's entries definedUntil().
@@ -182,7 +182,7 @@ trait TimeSeries[+T] {
   def prepend[U >: T](other: TimeSeries[U], compress: Boolean = true): TimeSeries[U] =
     other.lastOption
       .map(last => other.entries ++ this.trimLeft(last.definedUntil).entries)
-      .map(TimeSeries.ofOrderedEntriesSafe(_, compress))
+      .map(_.foldLeft(newBuilder[U](compress))(_ += _).result())
       .getOrElse(this)
 
   /**

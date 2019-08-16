@@ -7,83 +7,16 @@ import org.scalatest.{FlatSpec, Matchers}
 
 trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
-  def nonEmptyNonSingletonGenericTimeSeries(
-      newTsString: Seq[TSEntry[String]] => TimeSeries[String]
-  ): Unit = {
-    val threeStrings = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10), TSEntry(20, "Hu", 10)))
-
-    it should "correctly map a timeseries of three strings" in {
-      val up = threeStrings.map(s => s.toUpperCase())
-      assert(up.size === 3)
-      assert(up.at(0).contains("HI"))
-      assert(up.at(10).contains("HO"))
-      assert(up.at(20).contains("HU"))
-    }
-
-    it should "correctly map with time a timeseries of three strings" in {
-      val up = threeStrings.mapWithTime((t, s) => s.toUpperCase() + t)
-      assert(3 === up.size)
-      assert(up.at(0).contains("HI0"))
-      assert(up.at(10).contains("HO10"))
-      assert(up.at(20).contains("HU20"))
-    }
-
-    it should "correctly filter a timeseries of three strings" in {
-      val ts = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(15, "Ho", 15), TSEntry(30, "Hu", 20)))
-
-      assert(
-        ts.filter(_.value.startsWith("H")).entries === ts.entries
-      )
-      assert(
-        ts.filter(_.value.endsWith("H")) === EmptyTimeSeries
-      )
-    }
-
-    it should "fill a timeseries of three strings" in {
-      val tri = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(20, "Ho", 10), TSEntry(40, "Hu", 10)))
-
-      assert(
-        tri.fill("Ha").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Ha", 10),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Ha", 10),
-            TSEntry(40, "Hu", 10)
-          )
-      )
-
-      assert(
-        tri.fill("Hi").entries ===
-          Seq(
-            TSEntry(0, "Hi", 20),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Hi", 10),
-            TSEntry(40, "Hu", 10)
-          )
-      )
-
-      assert(
-        tri.fill("Ho").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Ho", 30),
-            TSEntry(40, "Hu", 10)
-          )
-      )
-
-      assert(
-        tri.fill("Hu").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Hu", 10),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Hu", 20)
-          )
-      )
-    }
-  }
-
+  /**
+    * *Main test bench* for a timeseries implementation. This tests all the functions
+    * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
+    * timeseries implementation. All the tests use double valued series.
+    *
+    * @note The mapping functions are only tested without compression. Use
+    *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
+    *
+    * @param newTs constructor method for the timeseries implementation to test
+    */
   def nonEmptyNonSingletonDoubleTimeSeries(newTs: Seq[TSEntry[Double]] => TimeSeries[Double]): Unit = {
 
     // Two contiguous entries
@@ -423,13 +356,6 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(up.at(20).contains("444.0asdf"))
     }
 
-    it should "correctly map a timeseries of three entries with compression" in {
-      val ts = anotherThree
-
-      val up = ts.map(s => 42, compress = true)
-      assert(up.entries === Seq(TSEntry(0, 42, 30)))
-    }
-
     it should "correctly map a timeseries of three entries without compression" in {
       val ts = anotherThree
 
@@ -445,13 +371,6 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(up.at(0).contains("111.0_0"))
       assert(up.at(10).contains("222.0_10"))
       assert(up.at(20).contains("444.0_20"))
-    }
-
-    it should "correctly map with time a timeseries of three entries with compression" in {
-      val ts = anotherThree
-
-      val up = ts.mapWithTime((_, _) => 42, compress = true)
-      assert(up.entries === Seq(TSEntry(0, 42, 30)))
     }
 
     it should "correctly map with time a timeseries of three entries without compression" in {
@@ -575,65 +494,42 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
 
       // Appending after...
-      assert(
+      tri.append(TSEntry(32, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10), TSEntry(32, "Hy", 10))
-          === tri.append(TSEntry(32, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(31, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10), TSEntry(31, "Hy", 10))
-          === tri.append(TSEntry(31, "Hy", 10)).entries
-      )
 
       // Appending on last entry
-      assert(
+      tri.append(TSEntry(30, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 9), TSEntry(30, "Hy", 10))
-          === tri.append(TSEntry(30, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(22, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 1), TSEntry(22, "Hy", 10))
-          === tri.append(TSEntry(22, "Hy", 10)).entries
-      )
 
       // ... just after and on second entry
-      assert(
+      tri.append(TSEntry(21, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, "Hy", 10))
-          === tri.append(TSEntry(21, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(20, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9), TSEntry(20, "Hy", 10))
-          === tri.append(TSEntry(20, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(12, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1), TSEntry(12, "Hy", 10))
-          === tri.append(TSEntry(12, "Hy", 10)).entries
-      )
 
       // ... just after and on first
-      assert(
+      tri.append(TSEntry(11, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, "Hy", 10))
-          === tri.append(TSEntry(11, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(10, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 9), TSEntry(10, "Hy", 10))
-          === tri.append(TSEntry(10, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.append(TSEntry(2, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 1), TSEntry(2, "Hy", 10))
-          === tri.append(TSEntry(2, "Hy", 10)).entries
-      )
 
       // And complete override
-      assert(
+      tri.append(TSEntry(1, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, "Hy", 10))
-          === tri.append(TSEntry(1, "Hy", 10)).entries
-      )
-
     }
 
     it should "prepend entries correctly" in {
@@ -641,69 +537,45 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
 
       // Prepending before...
-      assert(
+      tri.prepend(TSEntry(-10, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(-10, "Hy", 10), TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(-10, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(-9, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(-9, "Hy", 10), TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(-9, "Hy", 10)).entries
-      )
 
       // Overlaps with first entry
-      assert(
+      tri.prepend(TSEntry(-8, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(-8, "Hy", 10), TSEntry(2, 111d, 9), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(-8, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(0, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(0, "Hy", 10), TSEntry(10, 111d, 1), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(0, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(1, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(1, "Hy", 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(1, "Hy", 10)).entries
-      )
 
       // ... second entry
-      assert(
+      tri.prepend(TSEntry(2, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(2, "Hy", 10), TSEntry(12, 222d, 9), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(2, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(10, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(10, "Hy", 10), TSEntry(20, 222d, 1), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(10, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(11, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(11, "Hy", 10), TSEntry(21, 444d, 10))
-          === tri.prepend(TSEntry(11, "Hy", 10)).entries
-      )
 
       // ... third entry
-      assert(
+      tri.prepend(TSEntry(12, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(12, "Hy", 10), TSEntry(22, 444d, 9))
-          === tri.prepend(TSEntry(12, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(20, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(20, "Hy", 10), TSEntry(30, 444d, 1))
-          === tri.prepend(TSEntry(20, "Hy", 10)).entries
-      )
 
       // Complete override
-      assert(
+      tri.prepend(TSEntry(21, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(21, "Hy", 10))
-          === tri.prepend(TSEntry(21, "Hy", 10)).entries
-      )
 
-      assert(
+      tri.prepend(TSEntry(22, "Hy", 10), compress = false).entries shouldBe
         Seq(TSEntry(22, "Hy", 10))
-          === tri.prepend(TSEntry(22, "Hy", 10)).entries
-      )
     }
 
     def testTs(startsAt: Long): TimeSeries[Double] = newTs(
@@ -719,54 +591,45 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
 
       // Append after all entries
-      assert(tri.entries ++ testTs(31).entries === tri.append(testTs(31)).entries)
-      assert(tri.entries ++ testTs(32).entries === tri.append(testTs(32)).entries)
+
+      tri.append(testTs(31), compress = false).entries shouldBe
+        tri.entries ++ testTs(31).entries
+
+      tri.append(testTs(32), compress = false).entries shouldBe
+        tri.entries ++ testTs(32).entries
 
       // On last
-      assert(
+      tri.append(testTs(30), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 9)) ++ testTs(30).entries
-          === tri.append(testTs(30)).entries
-      )
 
-      assert(
+      tri.append(testTs(22), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 1)) ++ testTs(22).entries
-          === tri.append(testTs(22)).entries
-      )
 
-      assert(
+      tri.append(testTs(21), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10)) ++ testTs(21).entries
-          === tri.append(testTs(21)).entries
-      )
 
       // On second
-      assert(
+      tri.append(testTs(20), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9)) ++ testTs(20).entries
-          === tri.append(testTs(20)).entries
-      )
 
-      assert(
+      tri.append(testTs(12), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1)) ++ testTs(12).entries
-          === tri.append(testTs(12)).entries
-      )
 
-      assert(
+      tri.append(testTs(11), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 10)) ++ testTs(11).entries
-          === tri.append(testTs(11)).entries
-      )
 
       // On first
-      assert(
+      tri.append(testTs(10), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 9)) ++ testTs(10).entries
-          === tri.append(testTs(10)).entries
-      )
 
-      assert(
+      tri.append(testTs(2), compress = false).entries shouldBe
         Seq(TSEntry(1, 111d, 1)) ++ testTs(2).entries
-          === tri.append(testTs(2)).entries
-      )
 
-      assert(testTs(1).entries === tri.append(testTs(1)).entries)
-      assert(testTs(0).entries === tri.append(testTs(0)).entries)
+      tri.append(testTs(1), compress = false).entries shouldBe
+        testTs(1).entries
+
+      tri.append(testTs(0), compress = false).entries shouldBe
+        testTs(0).entries
     }
 
     it should "prepend a multi-entry TS at various times on the entry" in {
@@ -774,55 +637,44 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
 
       // Before all entries
-      assert(testTs(-30).entries ++ tri.entries === tri.prepend(testTs(-30)).entries)
-      assert(testTs(-29).entries ++ tri.entries === tri.prepend(testTs(-29)).entries)
+      tri.prepend(testTs(-30), compress = false).entries shouldBe
+        testTs(-30).entries ++ tri.entries
+
+      tri.prepend(testTs(-29), compress = false).entries shouldBe
+        testTs(-29).entries ++ tri.entries
 
       // On first
-      assert(
+      tri.prepend(testTs(-28), compress = false).entries shouldBe
         testTs(-28).entries ++ Seq(TSEntry(2, 111d, 9), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-28)).entries
-      )
 
-      assert(
+      tri.prepend(testTs(-20), compress = false).entries shouldBe
         testTs(-20).entries ++ Seq(TSEntry(10, 111d, 1), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-20)).entries
-      )
 
-      assert(
+      tri.prepend(testTs(-19), compress = false).entries shouldBe
         testTs(-19).entries ++ Seq(TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-19)).entries
-      )
 
       // On second
-      assert(
+      tri.prepend(testTs(-18), compress = false).entries shouldBe
         testTs(-18).entries ++ Seq(TSEntry(12, 222d, 9), TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-18)).entries
-      )
 
-      assert(
+      tri.prepend(testTs(-10), compress = false).entries shouldBe
         testTs(-10).entries ++ Seq(TSEntry(20, 222d, 1), TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-10)).entries
-      )
 
-      assert(
+      tri.prepend(testTs(-9), compress = false).entries shouldBe
         testTs(-9).entries ++ Seq(TSEntry(21, 444d, 10))
-          === tri.prepend(testTs(-9)).entries
-      )
 
       // On third
-      assert(
+      tri.prepend(testTs(-8), compress = false).entries shouldBe
         testTs(-8).entries ++ Seq(TSEntry(22, 444d, 9))
-          === tri.prepend(testTs(-8)).entries
-      )
 
-      assert(
+      tri.prepend(testTs(0), compress = false).entries shouldBe
         testTs(0).entries ++ Seq(TSEntry(30, 444d, 1))
-          === tri.prepend(testTs(0)).entries
-      )
 
-      assert(testTs(1).entries === tri.prepend(testTs(1)).entries)
-      assert(testTs(2).entries === tri.prepend(testTs(2)).entries)
+      tri.prepend(testTs(1), compress = false).entries shouldBe
+        testTs(1).entries
 
+      tri.prepend(testTs(2), compress = false).entries shouldBe
+        testTs(2).entries
     }
 
     it should "do a step integral" in {
@@ -943,5 +795,374 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       val threeFourths = newTs(Seq(TSEntry(1, 1234d, 2), TSEntry(4, 5678d, 1)))
       threeFourths.supportRatio shouldBe 0.75
     }
+  }
+
+  /**
+    * Tests the functions defined by the trait TimeSeries for a given implementation
+    * that is capable of taking generic values. (It is tested by Strings here.)
+    *
+    * @note The mapping functions are only tested without compression. Use
+    *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
+    *
+    * @param newTsString constructor method for the timeseries implementation that
+    *                     shall be tested
+    */
+  def nonEmptyNonSingletonGenericTimeSeries(
+      newTsString: Seq[TSEntry[String]] => TimeSeries[String]
+  ): Unit = {
+    val threeStrings = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10), TSEntry(20, "Hu", 10)))
+
+    it should "correctly map a timeseries of three strings" in {
+      val up = threeStrings.map(s => s.toUpperCase())
+      assert(up.size === 3)
+      assert(up.at(0).contains("HI"))
+      assert(up.at(10).contains("HO"))
+      assert(up.at(20).contains("HU"))
+    }
+
+    it should "correctly map with time a timeseries of three strings" in {
+      val up = threeStrings.mapWithTime((t, s) => s.toUpperCase() + t)
+      assert(3 === up.size)
+      assert(up.at(0).contains("HI0"))
+      assert(up.at(10).contains("HO10"))
+      assert(up.at(20).contains("HU20"))
+    }
+
+    it should "correctly filter a timeseries of three strings" in {
+      val ts = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(15, "Ho", 15), TSEntry(30, "Hu", 20)))
+
+      assert(
+        ts.filter(_.value.startsWith("H")).entries === ts.entries
+      )
+      assert(
+        ts.filter(_.value.endsWith("H")) === EmptyTimeSeries
+      )
+    }
+
+    it should "fill a timeseries of three strings" in {
+      val tri = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(20, "Ho", 10), TSEntry(40, "Hu", 10)))
+
+      assert(
+        tri.fill("Ha").entries ===
+          Seq(
+            TSEntry(0, "Hi", 10),
+            TSEntry(10, "Ha", 10),
+            TSEntry(20, "Ho", 10),
+            TSEntry(30, "Ha", 10),
+            TSEntry(40, "Hu", 10)
+          )
+      )
+
+      assert(
+        tri.fill("Hi").entries ===
+          Seq(
+            TSEntry(0, "Hi", 20),
+            TSEntry(20, "Ho", 10),
+            TSEntry(30, "Hi", 10),
+            TSEntry(40, "Hu", 10)
+          )
+      )
+
+      assert(
+        tri.fill("Ho").entries ===
+          Seq(
+            TSEntry(0, "Hi", 10),
+            TSEntry(10, "Ho", 30),
+            TSEntry(40, "Hu", 10)
+          )
+      )
+
+      assert(
+        tri.fill("Hu").entries ===
+          Seq(
+            TSEntry(0, "Hi", 10),
+            TSEntry(10, "Hu", 10),
+            TSEntry(20, "Ho", 10),
+            TSEntry(30, "Hu", 20)
+          )
+      )
+    }
+  }
+
+  /**
+    * *Main test bench* for a timeseries implementation. This tests all the functions
+    * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
+    * timeseries implementation. All the tests use double valued series.
+    *
+    * @param newTs constructor method for the timeseries implementation to test
+    */
+  def nonEmptyNonSingletonDoubleTimeSeriesWithCompression(
+      newTs: Seq[TSEntry[Double]] => TimeSeries[Double]
+  ): Unit = {
+
+    val anotherThree = newTs(Seq(TSEntry(0, 111d, 10), TSEntry(10, 222d, 10), TSEntry(20, 444d, 10)))
+
+    it should "correctly map a timeseries of three entries with compression" in {
+      val up = anotherThree.map(s => 42, compress = true)
+      up.entries shouldBe Seq(TSEntry(0, 42, 30))
+    }
+
+    it should "correctly map with time a timeseries of three entries with compression" in {
+      val ts = anotherThree
+
+      val up = ts.mapWithTime((_, _) => 42, compress = true)
+      assert(up.entries === Seq(TSEntry(0, 42, 30)))
+    }
+
+    it should "append entries correctly with compression" in {
+      val tri =
+        newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
+
+      // Appending after...
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10), TSEntry(32, "Hy", 10))
+          === tri.append(TSEntry(32, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10), TSEntry(31, "Hy", 10))
+          === tri.append(TSEntry(31, "Hy", 10)).entries
+      )
+
+      // Appending on last entry
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 9), TSEntry(30, "Hy", 10))
+          === tri.append(TSEntry(30, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 1), TSEntry(22, "Hy", 10))
+          === tri.append(TSEntry(22, "Hy", 10)).entries
+      )
+
+      // ... just after and on second entry
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, "Hy", 10))
+          === tri.append(TSEntry(21, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9), TSEntry(20, "Hy", 10))
+          === tri.append(TSEntry(20, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1), TSEntry(12, "Hy", 10))
+          === tri.append(TSEntry(12, "Hy", 10)).entries
+      )
+
+      // ... just after and on first
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, "Hy", 10))
+          === tri.append(TSEntry(11, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 9), TSEntry(10, "Hy", 10))
+          === tri.append(TSEntry(10, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 1), TSEntry(2, "Hy", 10))
+          === tri.append(TSEntry(2, "Hy", 10)).entries
+      )
+
+      // And complete override
+      assert(
+        Seq(TSEntry(1, "Hy", 10))
+          === tri.append(TSEntry(1, "Hy", 10)).entries
+      )
+
+    }
+
+    it should "prepend entries correctly with compression" in {
+      val tri =
+        newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
+
+      // Prepending before...
+      assert(
+        Seq(TSEntry(-10, "Hy", 10), TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(-10, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(-9, "Hy", 10), TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(-9, "Hy", 10)).entries
+      )
+
+      // Overlaps with first entry
+      assert(
+        Seq(TSEntry(-8, "Hy", 10), TSEntry(2, 111d, 9), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(-8, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(0, "Hy", 10), TSEntry(10, 111d, 1), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(0, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, "Hy", 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(1, "Hy", 10)).entries
+      )
+
+      // ... second entry
+      assert(
+        Seq(TSEntry(2, "Hy", 10), TSEntry(12, 222d, 9), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(2, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(10, "Hy", 10), TSEntry(20, 222d, 1), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(10, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(11, "Hy", 10), TSEntry(21, 444d, 10))
+          === tri.prepend(TSEntry(11, "Hy", 10)).entries
+      )
+
+      // ... third entry
+      assert(
+        Seq(TSEntry(12, "Hy", 10), TSEntry(22, 444d, 9))
+          === tri.prepend(TSEntry(12, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(20, "Hy", 10), TSEntry(30, 444d, 1))
+          === tri.prepend(TSEntry(20, "Hy", 10)).entries
+      )
+
+      // Complete override
+      assert(
+        Seq(TSEntry(21, "Hy", 10))
+          === tri.prepend(TSEntry(21, "Hy", 10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(22, "Hy", 10))
+          === tri.prepend(TSEntry(22, "Hy", 10)).entries
+      )
+    }
+
+    def testTs(startsAt: Long): TimeSeries[Double] = newTs(
+      Seq(
+        TSEntry(startsAt, 123d, 10),
+        TSEntry(startsAt + 10, 234d, 10),
+        TSEntry(startsAt + 20, 345d, 10)
+      )
+    )
+
+    it should "append a multi-entry TS at various times on the entry with compression" in {
+      val tri =
+        newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
+
+      // Append after all entries
+      assert(tri.entries ++ testTs(31).entries === tri.append(testTs(31)).entries)
+      assert(tri.entries ++ testTs(32).entries === tri.append(testTs(32)).entries)
+
+      // On last
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 9)) ++ testTs(30).entries
+          === tri.append(testTs(30)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 1)) ++ testTs(22).entries
+          === tri.append(testTs(22)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10)) ++ testTs(21).entries
+          === tri.append(testTs(21)).entries
+      )
+
+      // On second
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 9)) ++ testTs(20).entries
+          === tri.append(testTs(20)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 1)) ++ testTs(12).entries
+          === tri.append(testTs(12)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 10)) ++ testTs(11).entries
+          === tri.append(testTs(11)).entries
+      )
+
+      // On first
+      assert(
+        Seq(TSEntry(1, 111d, 9)) ++ testTs(10).entries
+          === tri.append(testTs(10)).entries
+      )
+
+      assert(
+        Seq(TSEntry(1, 111d, 1)) ++ testTs(2).entries
+          === tri.append(testTs(2)).entries
+      )
+
+      assert(testTs(1).entries === tri.append(testTs(1)).entries)
+      assert(testTs(0).entries === tri.append(testTs(0)).entries)
+    }
+
+    it should "prepend a multi-entry TS at various times on the entry with compression" in {
+      val tri =
+        newTs(Seq(TSEntry(1, 111d, 10), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10)))
+
+      // Before all entries
+      assert(testTs(-30).entries ++ tri.entries === tri.prepend(testTs(-30)).entries)
+      assert(testTs(-29).entries ++ tri.entries === tri.prepend(testTs(-29)).entries)
+
+      // On first
+      assert(
+        testTs(-28).entries ++ Seq(TSEntry(2, 111d, 9), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-28)).entries
+      )
+
+      assert(
+        testTs(-20).entries ++ Seq(TSEntry(10, 111d, 1), TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-20)).entries
+      )
+
+      assert(
+        testTs(-19).entries ++ Seq(TSEntry(11, 222d, 10), TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-19)).entries
+      )
+
+      // On second
+      assert(
+        testTs(-18).entries ++ Seq(TSEntry(12, 222d, 9), TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-18)).entries
+      )
+
+      assert(
+        testTs(-10).entries ++ Seq(TSEntry(20, 222d, 1), TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-10)).entries
+      )
+
+      assert(
+        testTs(-9).entries ++ Seq(TSEntry(21, 444d, 10))
+          === tri.prepend(testTs(-9)).entries
+      )
+
+      // On third
+      assert(
+        testTs(-8).entries ++ Seq(TSEntry(22, 444d, 9))
+          === tri.prepend(testTs(-8)).entries
+      )
+
+      assert(
+        testTs(0).entries ++ Seq(TSEntry(30, 444d, 1))
+          === tri.prepend(testTs(0)).entries
+      )
+
+      assert(testTs(1).entries === tri.prepend(testTs(1)).entries)
+      assert(testTs(2).entries === tri.prepend(testTs(2)).entries)
+
+    }
+
   }
 }
