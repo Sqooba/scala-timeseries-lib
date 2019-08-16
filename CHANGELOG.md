@@ -1,5 +1,9 @@
 # Change log
 
+## 4.0.3 - 16.08.2019
+
+- Rename package to `io.sqooba.oss.timeseries` because `public` is an invalid a package name.
+
 ## 4.0.2 - 15.08.2019
 
 - Update the groupid as well. 
