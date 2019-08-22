@@ -253,7 +253,7 @@ object VectorTimeSeries {
 
     override def result(): TimeSeries[T] = {
       if (resultCalled) {
-        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
+        throw new IllegalStateException("Cannot call result more than once, unless the builder was cleared.")
       }
 
       entryBuilder.lastEntry.foreach(resultBuilder += _)

@@ -1,7 +1,7 @@
 package io.sqooba.oss.timeseries.immutable
 
+import io.sqooba.oss.timeseries.archive.GorillaBlock
 import io.sqooba.oss.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder}
-import io.sqooba.oss.timeseries.archive.{GorillaBlock, GorillaBlockBuilder, TSCompressor}
 
 import scala.reflect.runtime.universe._
 
@@ -17,7 +17,7 @@ case class GorillaBlockTimeSeries private (
     isDomainContinuous: Boolean = false
 ) extends TimeSeries[Double] {
 
-  def entries: Seq[TSEntry[Double]] = TSCompressor.decompress(block)
+  def entries: Seq[TSEntry[Double]] = GorillaBlock.decompress(block)
 
   def head: TSEntry[Double] = entries.head
 
@@ -156,46 +156,43 @@ object GorillaBlockTimeSeries {
   private class Builder(compress: Boolean = true) extends TimeSeriesBuilder[Double] {
 
     // Contains finalized entries
-    private val blockBuilder = new GorillaBlockBuilder()
-    private val entryBuilder = new TSEntryFitter[Double](compress)
+    private val blockBuilder = new GorillaBlock.Builder(compress)
 
     private var currentSize  = 0
     private var resultCalled = false
 
     override def +=(elem: TSEntry[Double]): this.type = {
       currentSize += 1
-      entryBuilder.addAndFitLast(elem).foreach(blockBuilder += _)
+      blockBuilder += elem
       this
     }
 
     override def clear(): Unit = {
       blockBuilder.clear()
-      entryBuilder.clear()
       currentSize = 0
       resultCalled = false
     }
 
     override def result(): TimeSeries[Double] = {
       if (resultCalled) {
-        throw new IllegalStateException("result can only be called once, unless the builder was cleared.")
+        throw new IllegalStateException("Cannot call result more than once, unless the builder was cleared.")
       }
 
-      entryBuilder.lastEntry.foreach(blockBuilder += _)
       resultCalled = true
 
       currentSize match {
         case 0 => EmptyTimeSeries
-        case 1 => entryBuilder.lastEntry.get
+        case 1 => blockBuilder.lastEntry.get
         case _ =>
           new GorillaBlockTimeSeries(
             blockBuilder.result(),
             currentSize,
             compress,
-            entryBuilder.isDomainContinuous
+            blockBuilder.isDomainContinuous
           )
       }
     }
 
-    def definedUntil: Option[Long] = entryBuilder.lastEntry.map(_.definedUntil)
+    def definedUntil: Option[Long] = blockBuilder.lastEntry.map(_.definedUntil)
   }
 }
