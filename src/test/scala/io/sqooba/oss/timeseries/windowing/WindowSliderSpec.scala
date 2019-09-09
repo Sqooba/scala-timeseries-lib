@@ -12,7 +12,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
     WindowSlider.window(Stream(), 1) shouldBe Stream()
   }
   it should "build a single window for a single entry" in {
-    val e = TSEntry(10, Unit, 5)
+    val e = TSEntry(10, (), 5)
     WindowSlider
       .window(Stream(e), 1)
       .shouldBe(Stream(TSEntry(10, Queue(e), 5)))
@@ -430,21 +430,21 @@ class WindowSliderSpec extends FlatSpec with Matchers {
   }
   it should "correctly indicate to fetch from remaining on an empty window content, independently of window length, and advance to the end of the entry" in {
     WindowSlider
-      .whatToUpdate(Stream(TSEntry(10, Unit, 5)), Queue(), 10, 1)
+      .whatToUpdate(Stream(TSEntry(10, (), 5)), Queue(), 10, 1)
       // The bucket containing the entry should start at 10 and end at 16 -> cursor must advance by 6
       // (buckets are [begin, end[)
       .shouldBe((true, false, 5))
 
     WindowSlider
-      .whatToUpdate(Stream(TSEntry(10, Unit, 5)), Queue(), 10, 10)
+      .whatToUpdate(Stream(TSEntry(10, (), 5)), Queue(), 10, 10)
       // Window width does not influence where we stop here.
       .shouldBe((true, false, 5))
   }
   it should "correctly indicate to fetch from remaining if the next element in the current window has to remain in the window" in {
     WindowSlider
       .whatToUpdate(
-        Stream(TSEntry(10, Unit, 5)),
-        Queue(TSEntry(5, Unit, 2)),
+        Stream(TSEntry(10, (), 5)),
+        Queue(TSEntry(5, (), 2)),
         10,
         5
       )
@@ -452,8 +452,8 @@ class WindowSliderSpec extends FlatSpec with Matchers {
 
     WindowSlider
       .whatToUpdate(
-        Stream(TSEntry(10, Unit, 5)),
-        Queue(TSEntry(5, Unit, 2)),
+        Stream(TSEntry(10, (), 5)),
+        Queue(TSEntry(5, (), 2)),
         10,
         10
       )
@@ -464,14 +464,14 @@ class WindowSliderSpec extends FlatSpec with Matchers {
   it should "return the termination condition when the cursor points to the end of the last added queue entry," +
     "and the remaining entries are empty" in {
     WindowSlider
-      .whatToUpdate(Stream(), Queue(TSEntry(10, Unit, 5)), 15, 1)
+      .whatToUpdate(Stream(), Queue(TSEntry(10, (), 5)), 15, 1)
       .shouldBe((false, false, 0))
   }
   it should "correctly indicate to remove from the current window if the tail of the window is on an end of validity" in {
     WindowSlider
       .whatToUpdate(
-        Stream(TSEntry(15, Unit, 5)),
-        Queue(TSEntry(5, Unit, 2)),
+        Stream(TSEntry(15, (), 5)),
+        Queue(TSEntry(5, (), 2)),
         8,
         1
       )
@@ -479,8 +479,8 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .shouldBe((false, true, 7))
     WindowSlider
       .whatToUpdate(
-        Stream(TSEntry(15, Unit, 5)),
-        Queue(TSEntry(5, Unit, 2)),
+        Stream(TSEntry(15, (), 5)),
+        Queue(TSEntry(5, (), 2)),
         11,
         4
       )
@@ -488,8 +488,8 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .shouldBe((false, true, 4))
     WindowSlider
       .whatToUpdate(
-        Stream(TSEntry(15, Unit, 5)),
-        Queue(TSEntry(5, Unit, 2), TSEntry(7, Unit, 3)),
+        Stream(TSEntry(15, (), 5)),
+        Queue(TSEntry(5, (), 2), TSEntry(7, (), 3)),
         11,
         4
       )

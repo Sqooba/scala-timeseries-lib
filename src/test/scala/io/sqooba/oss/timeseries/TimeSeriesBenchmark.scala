@@ -2,14 +2,14 @@ package io.sqooba.oss.timeseries
 
 import java.lang.Math.floorMod
 
-import io.sqooba.oss.timeseries.immutable.{TSEntry, VectorTimeSeries}
+import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalameter.api._
 
 import scala.util.Random
 
 object TimeSeriesBenchmark extends Bench.ForkedTime {
 
-  val random = Random
+  val random: Random.type = Random
 
   def randomEntryWithTimestamp(timestamp: Long): TSEntry[Int] =
     TSEntry(timestamp, random.nextInt(30), floorMod(random.nextLong(), 10L) + 1)
@@ -26,9 +26,9 @@ object TimeSeriesBenchmark extends Bench.ForkedTime {
     TimeSeries.ofOrderedEntriesSafe(entries.toVector)
   }
 
-  val sizes = Gen.range("size")(100000, 1000000, 100000)
+  val sizes: Gen[Int] = Gen.range("size")(100000, 1000000, 100000)
 
-  val ts = for {
+  val ts: Gen[(TimeSeries[Int], TimeSeries[Int])] = for {
     size <- sizes
   } yield (createTimeSeriesWithSize(size), createTimeSeriesWithSize(size))
 

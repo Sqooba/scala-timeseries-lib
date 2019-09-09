@@ -66,7 +66,7 @@ object NumericTimeSeries {
     if (seq.isEmpty) {
       Seq()
     } else {
-      integrateMe[T](.0, seq, new ArrayBuffer[TSEntry[Double]](seq.size))(timeUnit)(n)
+      integrateMe[T](.0, seq, Seq.newBuilder)(timeUnit)(n)
     }
 
   @tailrec

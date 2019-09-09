@@ -71,10 +71,10 @@ object DoNothingAggregator extends ReversibleAggregator[Nothing, Nothing] {
 
   def currentValue: Option[Nothing] = None
 
-  def addEntry(e: TSEntry[Nothing], currentWindow: Queue[TSEntry[Nothing]]): Unit = Unit
+  def addEntry(e: TSEntry[Nothing], currentWindow: Queue[TSEntry[Nothing]]): Unit = ()
 
-  def dropHead(currentWindow: Queue[TSEntry[Nothing]]): Unit = Unit
+  def dropHead(currentWindow: Queue[TSEntry[Nothing]]): Unit = ()
 
-  override def addAndDrop(add: TSEntry[Nothing], currentWindow: Queue[TSEntry[Nothing]]): Unit = Unit
+  override def addAndDrop(add: TSEntry[Nothing], currentWindow: Queue[TSEntry[Nothing]]): Unit = ()
 
 }

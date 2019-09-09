@@ -280,8 +280,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     // - Obtain the duration in milliseconds
     // - Compute the number of seconds (double division by 1000)
     // - Multiply by the value
-    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value
-      .toDouble()
+    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value.toDouble
   }
 
   /**

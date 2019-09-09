@@ -413,11 +413,11 @@ object TimeSeries {
     if (in.size < 2) {
       in
     } else {
-      fillMe(in, fillValue, new ArrayBuffer[TSEntry[T]](in.size))
+      fillMe(in, fillValue, Seq.newBuilder[TSEntry[T]])
     }
 
   @tailrec
-  private def fillMe[T](in: Seq[TSEntry[T]], fillValue: T, acc: Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] =
+  private def fillMe[T](in: Seq[TSEntry[T]], fillValue: T, acc: mutable.Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] =
     in match {
       case Seq(first, last) =>
         // Only two elements remaining: the recursion can end
@@ -527,7 +527,7 @@ object TimeSeries {
       }
     }
     // Use an ArrayBuffer set to the correct capacity as a Builder
-    rec(a, b, new ArrayBuffer(a.length + b.length)).result
+    rec(a, b, Seq.newBuilder).result
   }
 
   /** Merge a sequence composed of entries containing Eithers.
@@ -592,7 +592,7 @@ object TimeSeries {
 
         lastSeenDefinedUntil = head.definedUntil
 
-        val p = TSEntry.mergeSingleToMultiple(head, toMerge)(op)
+        val p = TSEntry.mergeSingleToMultiple(head, toMerge.toSeq)(op)
         result ++= filling
         result ++= p
       }

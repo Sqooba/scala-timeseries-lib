@@ -81,10 +81,10 @@ case class GorillaBlockTimeSeries private (
   ): TimeSeries[Double] = {
     // find entry on cut
     val trimmed = entries.span(_.definedUntil < t) match {
-      case (leftEntries, Stream()) => leftEntries
+      case (leftEntries, Seq()) => leftEntries
 
       // an entry lies on the cut
-      case (leftEntries, entry #:: _) =>
+      case (leftEntries, entry +: _) =>
         leftEntries ++ trim(entry).entries
     }
 
@@ -104,10 +104,10 @@ case class GorillaBlockTimeSeries private (
     // find entry on cut
     val trimmed = entries.span(_.definedUntil < t) match {
       // all entries are before the cut
-      case (_, Stream()) => Stream()
+      case (_, Seq()) => Seq()
 
       // an entry lies on the cut
-      case (_, entry #:: rightEntries) =>
+      case (_, entry +: rightEntries) =>
         trim(entry).entries.toStream ++ rightEntries
     }
 
@@ -161,7 +161,7 @@ object GorillaBlockTimeSeries {
     private var currentSize  = 0
     private var resultCalled = false
 
-    override def +=(elem: TSEntry[Double]): this.type = {
+    override def addOne(elem: TSEntry[Double]): this.type = {
       currentSize += 1
       blockBuilder += elem
       this

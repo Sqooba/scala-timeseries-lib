@@ -121,7 +121,7 @@ object GorillaSuperBlock {
 
     private var resultCalled = false
 
-    override def +=(entry: TSEntry[GorillaBlock]): Writer.this.type = {
+    override def addOne(entry: TSEntry[GorillaBlock]): Writer.this.type = {
       val TSEntry(ts, GorillaBlock(valueBytes, validityBytes), _) = entry
 
       // Write the length of the value array

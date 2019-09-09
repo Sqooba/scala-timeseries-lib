@@ -100,7 +100,7 @@ object GorillaBlock {
       resultCalled = false
     }
 
-    override def +=(entry: TSEntry[Double]): this.type = {
+    override def addOne(entry: TSEntry[Double]): this.type = {
       // If this is the first element added, initialise the compressors with its timestamp.
       if (Option(valueCompressor).isEmpty || Option(validityCompressor).isEmpty) {
         valueCompressor = new GorillaCompressor(entry.timestamp, valueOutput)
