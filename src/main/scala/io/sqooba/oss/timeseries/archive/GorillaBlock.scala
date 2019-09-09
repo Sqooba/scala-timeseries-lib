@@ -102,7 +102,7 @@ object GorillaBlock {
 
     override def +=(entry: TSEntry[Double]): this.type = {
       // If this is the first element added, initialise the compressors with its timestamp.
-      if (valueCompressor == null || validityCompressor == null) {
+      if (Option(valueCompressor).isEmpty || Option(validityCompressor).isEmpty) {
         valueCompressor = new GorillaCompressor(entry.timestamp, valueOutput)
         validityCompressor = new GorillaCompressor(entry.timestamp, validityOutput)
       }
@@ -124,8 +124,9 @@ object GorillaBlock {
     override def result(): GorillaBlock = {
       if (resultCalled) {
         throw new IllegalStateException("Cannot call result more than once, unless the builder was cleared.")
+      } else if (Option(valueCompressor).isEmpty || Option(validityCompressor).isEmpty) {
+        throw new IllegalStateException("Cannot call result if no element was added.")
       }
-
       resultCalled = true
 
       entryBuilder.lastEntry.foreach(compressEntry)

@@ -2,7 +2,6 @@ package io.sqooba.oss.timeseries.archive
 
 import io.sqooba.oss.timeseries.TimeSeries
 import io.sqooba.oss.timeseries.immutable.TSEntry
-
 import org.scalatest.{FlatSpec, Matchers}
 
 class GorillaBlockSpec extends FlatSpec with Matchers {
@@ -47,12 +46,18 @@ class GorillaBlockSpec extends FlatSpec with Matchers {
   }
 
   it should "throw if an empty stream is provided to compress" in {
-    a[RuntimeException] should be thrownBy GorillaBlock.compress(Stream.empty)
+    an[IllegalStateException] should be thrownBy GorillaBlock.compress(Stream.empty)
   }
 
   it should "throw if empty byte arrays are provided to decompress" in {
     an[IllegalArgumentException] should be thrownBy GorillaBlock.decompress(
       GorillaBlock(Array.empty, Array.empty)
     )
+  }
+
+  it should "throw if the builder is called without any added entries" in {
+    an[IllegalStateException] should be thrownBy {
+      (new GorillaBlock.Builder()).result()
+    }
   }
 }
