@@ -8,7 +8,7 @@ import io.sqooba.oss.timeseries.immutable.TSEntry
   *
   * @param compress Whether consecutive entries of equal value should be compressed into one or not.
   */
-class TSEntryFitter[T] private[timeseries] (compress: Boolean) {
+class TSEntryFitter[T](compress: Boolean) {
 
   // Contains the last added entry: we need to keep it around
   // as it may be subject to trimming or extension
