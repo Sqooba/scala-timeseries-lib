@@ -26,7 +26,7 @@ object TimeBucketer {
       bucketTimestamps: Stream[Long],
       maxNumberOfEntries: Int
   ): Stream[TSEntry[Stream[TSEntry[T]]]] = {
-    require(entries.size > 1, "Can't bucket an empty stream into blocks.")
+    require(entries.nonEmpty, "Can't bucket an empty stream into blocks.")
 
     bucketEntries(bucketTimestamps, entries).flatMap {
       // The last tuple returned contains the end of validity of the last entry,
