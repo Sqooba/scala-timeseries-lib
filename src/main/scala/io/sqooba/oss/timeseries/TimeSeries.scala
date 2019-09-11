@@ -87,7 +87,9 @@ trait TimeSeries[+T] {
   /** True if this time series is defined at 'at'. Ie, at('at') would return Some[T] */
   def defined(t: Long): Boolean = at(t).isDefined
 
-  /** Returns true if this timeseries was compressed at some point in its construction. */
+  /** Returns true if it is guaranteed that this timeseries was compressed at construction.
+    * If this returns false it is not known whether the series has been compressed.
+    */
   def isCompressed: Boolean
 
   /** Map the values within the time series.
@@ -385,10 +387,9 @@ trait TimeSeries[+T] {
     */
   def supportRatio: Double
 
-  /**
-    *
-    * @return whether the TimeSeries is defined for all t in its looseDomain.
-    *         I. e. whether there are holes in its time domain or not.
+  /** Returns true if it is guaranteed that this timeseries is defined for all t in its looseDomain.
+    * I. e. whether there are holes in its time domain or not.  If this returns false it is not
+    * known whether the series has been compressed.
     */
   def isDomainContinuous: Boolean
 

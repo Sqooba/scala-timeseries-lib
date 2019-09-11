@@ -6,8 +6,8 @@ import java.nio.channels.SeekableByteChannel
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
-import scala.collection.generic.Growable
 import scala.collection.immutable.SortedMap
+import scala.collection.mutable
 
 /** A GorillaSuperBlock is a binary format for storing a long
   * [[io.sqooba.oss.timeseries.TimeSeries]] composed of many GorillaBlocks. It uses
@@ -53,7 +53,7 @@ object GorillaSuperBlock {
     * @param buckets well-formed stream of entries containing Gorilla blocks
     * @param output the stream to write to
     */
-  def write(buckets: Stream[TSEntry[GorillaBlock]], output: OutputStream): Unit =
+  def write(buckets: Seq[TSEntry[GorillaBlock]], output: OutputStream): Unit =
     buckets.foldLeft(new GorillaSuperBlock.Writer(output))(_ += _).close()
 
   /**
@@ -111,7 +111,26 @@ object GorillaSuperBlock {
     GorillaBlock(valueBytes, validityBytes)
   }
 
-  class Writer(output: OutputStream) extends Growable[TSEntry[GorillaBlock]] with AutoCloseable {
+  /** Helper function to read an entire GorillaSuperBlock. This uses 'readIndex'
+    * and 'readBlock' internally.
+    *
+    * @param channel a seekable byte channel of the file
+    * @return a sequence of gorilla blocks
+    */
+  def readAll(channel: SeekableByteChannel): Seq[TSEntry[GorillaBlock]] =
+    readIndex(channel).toSeq
+      .sliding(2)
+      .map {
+        case (ts, offset) :: (nextTs, nextOffset) :: _ =>
+          TSEntry(
+            ts,
+            GorillaSuperBlock.readBlock(channel, offset, (nextOffset - offset).toInt),
+            nextTs - ts
+          )
+      }
+      .to(LazyList)
+
+  class Writer(output: OutputStream) extends mutable.Growable[TSEntry[GorillaBlock]] with AutoCloseable {
 
     // A map of (timestamps -> offset of encoded block in output)
     private var index: SortedMap[Long, Long] = SortedMap.empty[Long, Long]

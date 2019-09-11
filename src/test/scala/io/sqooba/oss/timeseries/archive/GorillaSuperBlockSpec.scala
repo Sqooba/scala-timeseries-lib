@@ -3,7 +3,7 @@ package io.sqooba.oss.timeseries.archive
 import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
 import java.nio.ByteBuffer
 
-import io.sqooba.oss.timeseries.immutable.TSEntry
+import io.sqooba.oss.timeseries.immutable.{NestedTimeSeries, TSEntry}
 import org.scalatest.{FlatSpec, Matchers}
 
 class GorillaSuperBlockSpec extends FlatSpec with Matchers {
@@ -15,13 +15,15 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
     TSEntry(200, 0.123456789d, 100)
   )
 
-  private val blocks = TimeBucketer
+  private val buckets = TimeBucketer
     .bucketEntries(entries, Stream.from(0, 1000).map(_.toLong), 2)
+
+  private val blocks = buckets
     .map(
       entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity)
     )
 
-  private def getChannel = {
+  private def getChannel(blocks: Seq[TSEntry[GorillaBlock]]) = {
     val tempFile = File.createTempFile("ts_binary_format_spec_temp", "")
     GorillaSuperBlock.write(blocks, new FileOutputStream(tempFile))
     (new FileInputStream(tempFile)).getChannel
@@ -61,12 +63,18 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
     entries2 shouldBe entries.slice(2, 4)
   }
 
+  it should "compress a single GorillaBlock" in {
+    val output = new ByteArrayOutputStream()
+
+    noException should be thrownBy GorillaSuperBlock.write(blocks.take(1), output)
+  }
+
   it should "throw if no buckets are provided" in {
     a[RuntimeException] should be thrownBy GorillaSuperBlock.write(Stream.empty, new ByteArrayOutputStream())
   }
 
   it should "correctly compress and decompress the index" in {
-    val channel = getChannel
+    val channel = getChannel(blocks)
 
     GorillaSuperBlock.readIndex(channel) shouldBe Map(
       1    -> 0,
@@ -76,7 +84,7 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   }
 
   it should "correctly compress and decompress the entries" in {
-    val channel     = getChannel
+    val channel     = getChannel(blocks)
     val indexVector = GorillaSuperBlock.readIndex(channel).toVector
 
     val block1 = GorillaSuperBlock.readBlock(
@@ -95,6 +103,22 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
         (indexVector(2)._2 - indexVector(1)._2).toInt
       )
     ) shouldBe entries.slice(2, 4)
+  }
+
+  it should "return the same timeseries" in {
+    NestedTimeSeries
+      .ofGorillaBlocks(
+        GorillaSuperBlock.readAll(getChannel(blocks))
+      )
+      .entries shouldBe entries
+  }
+
+  it should "return the same timeseries composed of a single block" in {
+    NestedTimeSeries
+      .ofGorillaBlocks(
+        GorillaSuperBlock.readAll(getChannel(blocks.take(1)))
+      )
+      .entries shouldBe buckets.head.value
   }
 
   private def readIntFromEnd(array: Array[Byte], offsetFromEnd: Int): Int =

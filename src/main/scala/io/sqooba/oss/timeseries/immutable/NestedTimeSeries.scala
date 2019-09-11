@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.TimeSeries
+import io.sqooba.oss.timeseries.archive.GorillaBlock
 
 import scala.reflect.runtime.universe
 
@@ -108,6 +109,19 @@ object NestedTimeSeries {
       buckets: Seq[TSEntry[TimeSeries[T]]]
   ): TimeSeries[T] =
     chooseUnderlying(TimeSeries.ofOrderedEntriesSafe(buckets))
+
+  /** Constructs a TimeSeries from a sequence of GorillaBlocks in TSEntries. These will
+    * typically come from a GorillaSuperBlock (file).
+    *
+    * @param blocks The TSEntries containing the blocks need to be a well-formed
+    *                sequence of entries and their timestamp and validity have to
+    *                correspond to the looseDomain of the contained TimeSeries.
+    * @return a possibly nested TimeSeries
+    */
+  def ofGorillaBlocks(blocks: Seq[TSEntry[GorillaBlock]]): TimeSeries[Double] =
+    ofOrderedEntriesSafe(
+      blocks.map(_.map(GorillaBlockTimeSeries(_)))
+    )
 
   // Chooses the implementation for a given nested timeseries. If there is only one
   // inner timeseries in the nested series, we directly return this. Otherwise the

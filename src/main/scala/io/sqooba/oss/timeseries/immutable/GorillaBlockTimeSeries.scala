@@ -10,9 +10,12 @@ import scala.reflect.runtime.universe._
   * The block should not be too long, as lookups are done by scan and thus take
   * linear time.
   */
-case class GorillaBlockTimeSeries private (
+// TODO: the size is computed externally if the .ofOrderedEntriesSafe constructor is used.
+//   It should also be stored somewhere in the metadata such that it is again available
+//   when the GorillaBlock is read from file.
+case class GorillaBlockTimeSeries private[immutable] (
     block: GorillaBlock,
-    size: Int,
+    sizeOpt: Option[Int] = None,
     isCompressed: Boolean = false,
     isDomainContinuous: Boolean = false
 ) extends TimeSeries[Double] {
@@ -33,6 +36,8 @@ case class GorillaBlockTimeSeries private (
     entries.takeWhile(_.timestamp <= t).find(_.defined(t))
 
   def isEmpty: Boolean = false
+
+  lazy val size: Int = sizeOpt.getOrElse(entries.size)
 
   def looseDomain: TimeDomain = head.looseDomain.looseUnion(last.looseDomain)
 
@@ -186,7 +191,7 @@ object GorillaBlockTimeSeries {
         case _ =>
           new GorillaBlockTimeSeries(
             blockBuilder.result(),
-            currentSize,
+            Some(currentSize),
             compress,
             blockBuilder.isDomainContinuous
           )
