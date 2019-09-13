@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries.immutable
 
-import io.sqooba.oss.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder}
+import io.sqooba.oss.timeseries.validation.TSEntryFitter
+import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesBuilder}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder

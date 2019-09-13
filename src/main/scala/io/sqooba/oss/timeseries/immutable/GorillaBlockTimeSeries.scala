@@ -1,7 +1,7 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.archive.GorillaBlock
-import io.sqooba.oss.timeseries.{TSEntryFitter, TimeSeries, TimeSeriesBuilder}
+import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesBuilder}
 
 import scala.reflect.runtime.universe._
 

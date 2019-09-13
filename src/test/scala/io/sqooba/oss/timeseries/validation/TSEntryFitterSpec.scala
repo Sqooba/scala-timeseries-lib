@@ -1,4 +1,4 @@
-package io.sqooba.oss.timeseries
+package io.sqooba.oss.timeseries.validation
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}

@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries.archive
 
 import fi.iki.yak.ts.compression.gorilla.{GorillaCompressor, LongArrayOutput, Pair}
+import io.sqooba.oss.timeseries.validation.TimestampValidator
 
 import scala.collection.immutable.SortedMap
 import scala.util.Success
@@ -16,18 +17,28 @@ object GorillaArray {
     *       measured in milliseconds).
     *
     * @param map sorted tuples
+    * @param blockTimestamp timestamp that is written in the header of the block
     * @return a gorilla encoded byte array
     */
-  def compressTimestampTuples(map: SortedMap[Long, Long]): GorillaArray = {
+  def compressTimestampTuples(map: SortedMap[Long, Long], blockTimestamp: Long): GorillaArray = {
     require(map.nonEmpty, "The map to compress needs to contain at least one element.")
 
+    TimestampValidator.validateGorillaFirst(blockTimestamp, map.head._1)
+    TimestampValidator.validateGorilla(map.toSeq.map(_._1))
+
     val output     = new LongArrayOutput()
-    val compressor = new GorillaCompressor(map.head._1, output)
+    val compressor = new GorillaCompressor(blockTimestamp, output)
 
     map.foreach(elem => compressor.addValue(elem._1, elem._2))
     compressor.close()
 
     longArray2byteArray(output.getLongArray)
+  }
+
+  /** Like #compressTimestampTuples with the first entry's timestamp as block timestamp. */
+  def compressTimestampTuples(map: SortedMap[Long, Long]): GorillaArray = {
+    require(map.nonEmpty, "The map to compress needs to contain at least one element.")
+    compressTimestampTuples(map, map.head._1)
   }
 
   /**

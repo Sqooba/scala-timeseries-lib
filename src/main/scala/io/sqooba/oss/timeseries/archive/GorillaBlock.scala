@@ -2,7 +2,7 @@ package io.sqooba.oss.timeseries.archive
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import fi.iki.yak.ts.compression.gorilla._
-import io.sqooba.oss.timeseries.TSEntryFitter
+import io.sqooba.oss.timeseries.validation.{TSEntryFitter, TimestampValidator}
 
 import scala.collection.mutable
 import scala.util.Success
@@ -70,8 +70,6 @@ object GorillaBlock {
     * builder takes TSEntries and continually compresses them to gorilla arrays that
     * result in a GorillaBlock.
     *
-    * @note This builder does no sanity checks on the TSEntries: you may use the
-    *       TSEntryFitter for this or construct an actual TimeSeries.
     */
   class Builder(compress: Boolean = true) extends mutable.Builder[TSEntry[Double], GorillaBlock] {
 
@@ -82,7 +80,6 @@ object GorillaBlock {
     private var validityCompressor: GorillaCompressor = _
 
     private val entryBuilder = new TSEntryFitter[Double](compress)
-
     private var resultCalled = false
 
     clear()
@@ -102,9 +99,13 @@ object GorillaBlock {
 
     override def addOne(entry: TSEntry[Double]): this.type = {
       // If this is the first element added, initialise the compressors with its timestamp.
-      if (Option(valueCompressor).isEmpty || Option(validityCompressor).isEmpty) {
+      if (lastEntry.isEmpty) {
+        // NOTE: Don't forget to validate the first timestamp, if a block timestamp
+        // other than the first entry's timestamp is used.
         valueCompressor = new GorillaCompressor(entry.timestamp, valueOutput)
         validityCompressor = new GorillaCompressor(entry.timestamp, validityOutput)
+      } else {
+        TimestampValidator.validateGorilla(lastEntry.get.timestamp, entry.timestamp)
       }
 
       entryBuilder.addAndFitLast(entry).foreach(compressEntry)
@@ -114,7 +115,6 @@ object GorillaBlock {
     private def compressEntry(entry: TSEntry[Double]): Unit = {
       valueCompressor.addValue(entry.timestamp, entry.value)
       validityCompressor.addValue(entry.timestamp, entry.validity)
-
     }
 
     def lastEntry: Option[TSEntry[Double]] = entryBuilder.lastEntry
@@ -124,7 +124,7 @@ object GorillaBlock {
     override def result(): GorillaBlock = {
       if (resultCalled) {
         throw new IllegalStateException("Cannot call result more than once, unless the builder was cleared.")
-      } else if (Option(valueCompressor).isEmpty || Option(validityCompressor).isEmpty) {
+      } else if (lastEntry.isEmpty) {
         throw new IllegalStateException("Cannot call result if no element was added.")
       }
       resultCalled = true

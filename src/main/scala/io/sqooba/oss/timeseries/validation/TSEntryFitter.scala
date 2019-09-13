@@ -1,4 +1,4 @@
-package io.sqooba.oss.timeseries
+package io.sqooba.oss.timeseries.validation
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
@@ -31,12 +31,7 @@ class TSEntryFitter[T](compress: Boolean) {
 
       // A previous entry exists: attempt to append the new one
       case Some(last) =>
-        // Ensure that we don't throw away older entries
-        if (elem.timestamp <= last.timestamp) {
-          throw new IllegalArgumentException(
-            s"Elements should be added chronologically (here last timestamp was ${last.timestamp} and the one added was ${elem.timestamp}"
-          )
-        }
+        TimestampValidator.validate(last.timestamp, elem.timestamp)
 
         // set continuous flag to false if there is a hole between the two entries
         isDomainCont = last.definedUntil >= elem.timestamp

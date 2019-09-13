@@ -2,7 +2,8 @@ package io.sqooba.oss.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.oss.timeseries.{NumericTimeSeries, TSEntryFitter, TimeSeries, TimeSeriesBuilder}
+import io.sqooba.oss.timeseries.validation.TSEntryFitter
+import io.sqooba.oss.timeseries.{NumericTimeSeries, TimeSeries, TimeSeriesBuilder}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
