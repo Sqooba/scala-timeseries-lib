@@ -46,7 +46,7 @@ class GorillaBlockSpec extends FlatSpec with Matchers {
       .decompress shouldBe tsLong.entries
   }
 
-  "GorillaBlock" should "compress and again decompress a sampled timeseries" in {
+  it should "compress and again decompress a sampled timeseries" in {
     GorillaBlock
       .compressSampled(tsSampled.entries.toStream, 100L)
       .decompress shouldBe tsSampled.entries
@@ -58,6 +58,12 @@ class GorillaBlockSpec extends FlatSpec with Matchers {
 
     an[IllegalArgumentException] should be thrownBy (
       GorillaBlock.fromTupleArrays(valueBytes.drop(8), validityBytes).decompress
+    )
+  }
+
+  it should "throw if a corrupt byte array is given for decompression of sampled" in {
+    an[IllegalArgumentException] should be thrownBy (
+      GorillaBlock.fromSampled(Array(1, 2, 3, 4, 5), 10).decompress
     )
   }
 
@@ -90,12 +96,29 @@ class GorillaBlockSpec extends FlatSpec with Matchers {
   }
 
   it should "throw if a non-positive sampling rate is given to the constructor" in {
-    an[IllegalArgumentException] should be thrownBy GorillaBlock.fromSampled(Array(1, 2, 3), -100)
+    an[IllegalArgumentException] should be thrownBy
+      GorillaBlock.fromSampled(Array(1, 2, 3), -100)
   }
 
   it should "throw if the builder is called without any added entries" in {
     an[IllegalStateException] should be thrownBy {
       GorillaBlock.newBuilder.result()
     }
+  }
+
+  it should "serialize a tuple gorilla block" in {
+    val tuple @ TupleGorillaBlock(valueBytes, validityBytes) =
+      GorillaBlock.compress(tsDouble.entries.toStream).asInstanceOf[TupleGorillaBlock]
+
+    tuple.serialize.length shouldBe
+      Integer.BYTES + valueBytes.length + validityBytes.length
+  }
+
+  it should "serialize a sampled gorilla block" in {
+    val sampled @ SampledGorillaBlock(valueBytes, _) = GorillaBlock
+      .compressSampled(tsDouble.entries.toStream, 10)
+      .asInstanceOf[SampledGorillaBlock]
+
+    sampled.serialize shouldBe valueBytes
   }
 }

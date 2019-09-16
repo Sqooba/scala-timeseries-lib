@@ -82,9 +82,9 @@ case class TupleGorillaBlock private (
 /**
   * GorillaBlock for series that have mostly similar validities. This can be
   * stored more efficiently with a single GorillaArray. After decompression all
-  * entries will have a validity of at most the provided sample rate. This rate
-  * may include a bit of margin for jitter because individual validities will be
-  * trimmed at decompression if they overlap.
+  * entries will have the validity of the sample rate. This rate may include a
+  * bit of margin for jitter because individual validities will be trimmed at if
+  * they overlap once they are put into a 'TimeSeries'.
   *
   * @param valueBytes encodes the timeseries formed by the values along with their timestamps
   * @param sampleRate the maximal validity of each entry in the series after decompression

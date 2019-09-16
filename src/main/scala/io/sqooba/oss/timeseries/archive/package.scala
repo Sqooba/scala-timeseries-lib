@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries
 
 import java.nio.ByteBuffer
+import java.nio.channels.SeekableByteChannel
 
 import fi.iki.yak.ts.compression.gorilla.{GorillaDecompressor, LongArrayInput}
 
@@ -39,6 +40,36 @@ package object archive {
     * It is just an array of bytes.
     */
   type GorillaArray = Array[Byte]
+
+  /** Read an integer from the channel (big-endian byte order).
+    * @param channel a seekable byte channel
+    * @param offsetToEnd the number of bytes between the end of the integer bytes
+    *                    and the end of the channel
+    */
+  private[archive] def readIntFromEnd(channel: SeekableByteChannel, offsetToEnd: Long): Int =
+    ByteBuffer
+      .wrap(
+        readBytesFromEnd(channel, offsetToEnd, Integer.BYTES)
+      )
+      .getInt
+
+  /** Read a block of bytes from the end of the stream.
+    * @param offsetToEnd the number of bytes between the end of the block bytes
+    *                    and the end of the channel
+    */
+  private[archive] def readBytesFromEnd(channel: SeekableByteChannel, offsetToEnd: Long, length: Int): Array[Byte] =
+    readBytes(channel, channel.size() - offsetToEnd - length, length)
+
+  /** Read a block of bytes from the channel. */
+  private[archive] def readBytes(channel: SeekableByteChannel, offset: Long, length: Int): Array[Byte] = {
+    channel.position(offset)
+    val buffer = ByteBuffer.allocate(length)
+
+    require(channel.read(buffer) == length, "There is not enough data on the channel.")
+
+    buffer.flip()
+    buffer.array()
+  }
 
   /** Helper function
     * @param longs in an array
