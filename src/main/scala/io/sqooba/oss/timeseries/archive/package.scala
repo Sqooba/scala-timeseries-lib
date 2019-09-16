@@ -64,6 +64,9 @@ package object archive {
   private[archive] def int2byteArray(int: Int): Array[Byte] =
     ByteBuffer.allocate(java.lang.Integer.BYTES).putInt(int).array()
 
+  private[archive] def byteArray2Int(array: Array[Byte]): Int =
+    ByteBuffer.wrap(array).getInt
+
   private[archive] def wrapTryDecompressor(bytes: GorillaArray): Try[GorillaDecompressor] =
     Try(new GorillaDecompressor(new LongArrayInput(byteArray2longArray(bytes))))
 

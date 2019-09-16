@@ -10,34 +10,30 @@ import scala.collection.immutable.SortedMap
 import scala.collection.mutable
 
 /** A GorillaSuperBlock is a binary format for storing a long
-  * [[io.sqooba.oss.timeseries.TimeSeries]] composed of many GorillaBlocks. It uses
-  * a sequential layout with an index to permit quick look-up of individual blocks by
-  * timestamp.
+  * [[io.sqooba.oss.timeseries.TimeSeries]] composed of many GorillaBlocks. It
+  * uses a sequential layout with an index to permit quick look-up of individual
+  * blocks by timestamp.
   *
   * GorillaSuperBlock Format
-  * +---+---------+------------+---+----------+ ... +---------+--------+---+---+
-  * | L | block 1 | block 1    | L | block 2  |     | block N | index  | L | V |
-  * | 1 | values  | validities | 2 | values   |     | validi. | block  | I | N |
-  * +---+---------+------------+---+----------+ ... +---------+--------+---+---+
-  * |                          |                ... offsets
+  * +-------+-------+ ... +----- -+----------+---+---+
+  * | block | block |     | block | Index    | L | V |
+  * | 1     | 2     |     | N     |          | F | N |
+  * +-------+-------+ ... +-------+----------+---+---+
   *
-  * L<N>: length of block N, LI: length of index, VN: version number
+  * LF: length of footer, VN: version number
   *
-  * The Gorilla blocks are lined up one after another, ordered by time. They all have
-  * different lengths. The Gorilla array with the values is always preceding the
-  * Gorilla array of the validities. Before each Gorilla block there are 4 bytes that
-  * contain the length of the value array as an Int. This serves to split the block
-  * into the two arrays to decode.
+  * The Gorilla blocks are lined up one after another, ordered by timestamp.
+  * They all have different lengths. These can be recovered from the offsets
+  * stored in the footer.
   *
   * At the end of the stream there is an additional Gorilla array containing the
-  * index that maps the start timestamp of each Gorilla block to its offset from the
-  * beginning of the stream (in bytes). The offset points to the value-array length
-  * bytes. The length of the index Gorilla array is written as an Int to the last 5-8
-  * bytes.
+  * index that maps the start timestamp of each GorillaBlock to its offset from
+  * the beginning of the stream (in bytes). The length of the index GorillaArray
+  * is written as an Int to the last 5-8 bytes.
   *
-  * The last 1-4 bytes contain the version number of the binary format as an Int. In
-  * that manner a user can first read the footer, decode the index and then do fast
-  * look-ups for blocks by timestamp.
+  * The last 1-4 bytes contain the version number of the binary format as an
+  * Int. In that manner a user can first read the footer, decode the index and
+  * then do fast look-ups for blocks by timestamp.
   */
 object GorillaSuperBlock {
 
@@ -98,17 +94,13 @@ object GorillaSuperBlock {
   def readBlock(channel: SeekableByteChannel, offset: Long, length: Int): GorillaBlock = {
     channel.position(offset)
     val buffer = ByteBuffer.allocate(length)
-
     require(channel.read(buffer) == length, "There is not enough data in the provided channel.")
 
     buffer.flip()
-    val valuesLength  = buffer.getInt
-    val valueBytes    = Array.ofDim[Byte](valuesLength)
-    val validityBytes = Array.ofDim[Byte](length - valuesLength - java.lang.Integer.BYTES)
+    val bytes = Array.ofDim[Byte](length)
+    buffer.get(bytes)
 
-    buffer.get(valueBytes)
-    buffer.get(validityBytes)
-    GorillaBlock(valueBytes, validityBytes)
+    GorillaBlock.fromTupleSerialized(bytes)
   }
 
   /** Helper function to read an entire GorillaSuperBlock. This uses 'readIndex'
@@ -141,17 +133,13 @@ object GorillaSuperBlock {
     private var resultCalled = false
 
     override def addOne(entry: TSEntry[GorillaBlock]): Writer.this.type = {
-      val TSEntry(ts, GorillaBlock(valueBytes, validityBytes), _) = entry
+      val TSEntry(ts, gorillaBlock, _) = entry
 
-      // Write the length of the value array
-      output.write(int2byteArray(valueBytes.length))
-
-      // Write gorilla arrays consecutively on the stream.
-      output.write(valueBytes)
-      output.write(validityBytes)
+      val blockBytes = gorillaBlock.serialize
+      output.write(blockBytes)
 
       index += (ts -> (currentOffset + lastLength))
-      lastLength = valueBytes.length + validityBytes.length + java.lang.Integer.BYTES
+      lastLength = blockBytes.length
       lastDefinedUntil = entry.definedUntil
 
       this

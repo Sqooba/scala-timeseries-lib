@@ -20,7 +20,7 @@ case class GorillaBlockTimeSeries private[immutable] (
     isDomainContinuous: Boolean = false
 ) extends TimeSeries[Double] {
 
-  def entries: Seq[TSEntry[Double]] = GorillaBlock.decompress(block)
+  def entries: Seq[TSEntry[Double]] = block.decompress
 
   def head: TSEntry[Double] = entries.head
 
@@ -161,7 +161,7 @@ object GorillaBlockTimeSeries {
   private class Builder(compress: Boolean = true) extends TimeSeriesBuilder[Double] {
 
     // Contains finalized entries
-    private val blockBuilder = new GorillaBlock.Builder(compress)
+    private val blockBuilder = GorillaBlock.newBuilder(compress)
 
     private var currentSize  = 0
     private var resultCalled = false

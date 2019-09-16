@@ -51,15 +51,13 @@ class TSEntryFitter[T](compress: Boolean) {
     fitted
   }
 
-  /**
-    * @return the last entry that was added to the fitter. This entry can still change if more entries are added
-    *         (it might be compressed/trimmed).
+  /** @return the last entry that was added to the fitter. This entry can still change
+    *         if more entries are added (it might be compressed/trimmed).
     */
   def lastEntry: Option[TSEntry[T]] = lastAdded
 
-  /**
-    * @return whether all added entries so far were either contiguous or overlapping. I.e. there were no holes
-    *         in the domain of definition of the entries seen so far.
+  /** @return whether all added entries so far were either contiguous or overlapping.
+    *         I.e. there were no holes in the domain of definition of the entries seen so far.
     */
   def isDomainContinuous: Boolean = isDomainCont
 

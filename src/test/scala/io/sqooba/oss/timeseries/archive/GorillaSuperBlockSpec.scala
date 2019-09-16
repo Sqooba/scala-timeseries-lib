@@ -45,21 +45,23 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
 
     val length1 = readIntFromStart(result, 0)
     val offset2 = indexVector(1)._2.toInt
-    val entries1 = GorillaBlock.decompress(
-      GorillaBlock(
+    val entries1 = GorillaBlock
+      .fromTupleArrays(
         result.slice(4, 4 + length1),
         result.slice(4 + length1, result.length)
       )
-    )
+      .decompress
+
     entries1 shouldBe entries.slice(0, 2)
 
     val length2 = readIntFromStart(result, offset2)
-    val entries2 = GorillaBlock.decompress(
-      GorillaBlock(
+    val entries2 = GorillaBlock
+      .fromTupleArrays(
         result.slice(offset2 + 4, offset2 + 4 + length2),
         result.slice(offset2 + 4 + length2, result.length)
       )
-    )
+      .decompress
+
     entries2 shouldBe entries.slice(2, 4)
   }
 
@@ -92,17 +94,16 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
       indexVector(0)._2,
       (indexVector(1)._2 - indexVector(0)._2).toInt
     )
-    GorillaBlock.decompress(
-      block1
-    ) shouldBe entries.slice(0, 2)
 
-    GorillaBlock.decompress(
-      GorillaSuperBlock.readBlock(
+    block1.decompress shouldBe entries.slice(0, 2)
+
+    GorillaSuperBlock
+      .readBlock(
         channel,
         indexVector(1)._2,
         (indexVector(2)._2 - indexVector(1)._2).toInt
       )
-    ) shouldBe entries.slice(2, 4)
+      .decompress shouldBe entries.slice(2, 4)
   }
 
   it should "return the same timeseries" in {
