@@ -47,7 +47,7 @@ case class TupleGorillaBlock private (
   require(validityBytes.nonEmpty, "Validities GorillaArray cannot be empty.")
 
   def serialize: Array[Byte] =
-    int2byteArray(valueBytes.length) ++ valueBytes ++ validityBytes
+    int2ByteArray(valueBytes.length) ++ valueBytes ++ validityBytes
 
   def decompress: Stream[TSEntry[Double]] = {
 
@@ -287,13 +287,13 @@ object GorillaBlock {
       validity match {
         case Some(fixedValidity) =>
           SampledGorillaBlock(
-            longArray2byteArray(valueOutput.getLongArray),
+            longArray2ByteArray(valueOutput.getLongArray),
             fixedValidity
           )
         case None =>
           TupleGorillaBlock(
-            longArray2byteArray(valueOutput.getLongArray),
-            longArray2byteArray(validityOutput.getLongArray)
+            longArray2ByteArray(valueOutput.getLongArray),
+            longArray2ByteArray(validityOutput.getLongArray)
           )
       }
     }

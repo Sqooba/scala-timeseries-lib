@@ -1,31 +1,33 @@
 package io.sqooba.oss.timeseries
 
 import java.nio.ByteBuffer
-import java.nio.channels.SeekableByteChannel
 
 import fi.iki.yak.ts.compression.gorilla.{GorillaDecompressor, LongArrayInput}
 
 import scala.util.Try
 
 /** Provides abstraction and tools for compressing/archiving timeseries data. The
-  * compression used is Gorilla TSC encoding implemented by a Java library
+  * compression used is Gorilla TSC encoding implemented by the Java library
   * [[fi.iki.yak.ts.compression.gorilla]].
   *
-  * There are three main types:
+  * These are the main types:
   *   - [[io.sqooba.oss.timeseries.archive.GorillaArray]]:
   *     a simple byte array that represents a compressed/encoded map of
   *     (timestamp, value) tuples.
   *
   *   - [[io.sqooba.oss.timeseries.archive.GorillaBlock]]:
-  *     the representation of a compressed/encoded TimeSeries as defined in this library.
-  *     A GorillaBlock consists of two GorillaArrays one for the values, one for the
-  *     validities.
+  *     the representation of a compressed/encoded TimeSeries as defined in this
+  *     library.
   *
   *   - [[io.sqooba.oss.timeseries.archive.GorillaSuperBlock]]:
-  *     Groups many GorillaBlocks of the same TimeSeries into a larger binary format/file.
-  *     This allows compression of a timeseries that spans a very long range of time.
+  *     groups many GorillaBlocks of the same TimeSeries into a larger binary
+  *     format. This allows compression of a timeseries that spans a very long
+  *     range of time.
   *
-  * There are additional helpers for constructing those representations.
+  *   - [[io.sqooba.oss.timeseries.archive.MultiSeriesBlock]]:
+  *     a large block of many indexed GorillaSuperBlocks. This format can be
+  *     used to store all the data of a certain time period into one single
+  *     binary blob.
   *
   * @note The only supported type for the values of the TSEntries at the moment is
   * Double. This can lead to precision problems if you have very high long  values
@@ -41,41 +43,11 @@ package object archive {
     */
   type GorillaArray = Array[Byte]
 
-  /** Read an integer from the channel (big-endian byte order).
-    * @param channel a seekable byte channel
-    * @param offsetToEnd the number of bytes between the end of the integer bytes
-    *                    and the end of the channel
-    */
-  private[archive] def readIntFromEnd(channel: SeekableByteChannel, offsetToEnd: Long): Int =
-    ByteBuffer
-      .wrap(
-        readBytesFromEnd(channel, offsetToEnd, Integer.BYTES)
-      )
-      .getInt
-
-  /** Read a block of bytes from the end of the stream.
-    * @param offsetToEnd the number of bytes between the end of the block bytes
-    *                    and the end of the channel
-    */
-  private[archive] def readBytesFromEnd(channel: SeekableByteChannel, offsetToEnd: Long, length: Int): Array[Byte] =
-    readBytes(channel, channel.size() - offsetToEnd - length, length)
-
-  /** Read a block of bytes from the channel. */
-  private[archive] def readBytes(channel: SeekableByteChannel, offset: Long, length: Int): Array[Byte] = {
-    channel.position(offset)
-    val buffer = ByteBuffer.allocate(length)
-
-    require(channel.read(buffer) == length, "There is not enough data on the channel.")
-
-    buffer.flip()
-    buffer.array()
-  }
-
   /** Helper function
     * @param longs in an array
     * @return the same array but as an array of bytes
     */
-  private[archive] def longArray2byteArray(longs: Array[Long]): Array[Byte] =
+  private[archive] def longArray2ByteArray(longs: Array[Long]): Array[Byte] =
     longs
       .foldLeft(ByteBuffer.allocate(java.lang.Long.BYTES * longs.length))(
         (buffer, long) => buffer.putLong(long)
@@ -86,19 +58,24 @@ package object archive {
     * @param bytes in an array
     * @return the same array but as an array of longs
     */
-  private[archive] def byteArray2longArray(bytes: Array[Byte]): Array[Long] = {
+  private[archive] def byteArray2LongArray(bytes: Array[Byte]): Array[Long] = {
     val buffer = ByteBuffer.wrap(bytes)
-
     Array.fill(bytes.length / java.lang.Long.BYTES) { buffer.getLong }
   }
 
-  private[archive] def int2byteArray(int: Int): Array[Byte] =
-    ByteBuffer.allocate(java.lang.Integer.BYTES).putInt(int).array()
+  private[archive] def int2ByteArray(int: Int): Array[Byte] =
+    int2ByteBuffer(int).array()
+
+  private[archive] def int2ByteBuffer(int: Int): ByteBuffer = {
+    val buffer = ByteBuffer.allocate(Integer.BYTES).putInt(int)
+    buffer.flip()
+    buffer
+  }
 
   private[archive] def byteArray2Int(array: Array[Byte]): Int =
     ByteBuffer.wrap(array).getInt
 
   private[archive] def wrapTryDecompressor(bytes: GorillaArray): Try[GorillaDecompressor] =
-    Try(new GorillaDecompressor(new LongArrayInput(byteArray2longArray(bytes))))
+    Try(new GorillaDecompressor(new LongArrayInput(byteArray2LongArray(bytes))))
 
 }

@@ -1,16 +1,123 @@
 package io.sqooba.oss.timeseries.archive
 
 import java.io.OutputStream
-import java.nio.channels.SeekableByteChannel
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
+import io.sqooba.oss.timeseries.utils.SliceableByteChannel
 import io.sqooba.oss.timeseries.thrift.{TBlockType, TSampledBlockType, TSuperBlockMetadata}
 import io.sqooba.oss.timeseries.utils.ThriftMarshaller
+import org.apache.thrift.TException
 import org.apache.thrift.protocol.TCompactProtocol
 
 import scala.collection.immutable.SortedMap
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+
+// See the doc of the GorillaSuperBlock object for the format specification.
+
+/** The GorillaSuperBlock class lazily wraps a channel that it reads from. This
+  * facilitates the reading of the binary format. The block does not perform any
+  * reading on the channel unless a method explicitly requires it.
+  *
+  * @param channel to read from upon method invocation
+  */
+case class GorillaSuperBlock(channel: SliceableByteChannel) {
+
+  /** Read the metadata of the GorillaSuperBlock. This also checks whether the
+    * underlying binary data has the correct version and format.
+    *
+    * @return the metadata as specified by the thrift definition and its length
+    *
+    * @throws TException if the metadata cannot be decoded
+    */
+  def readMetadata: (TSuperBlockMetadata, Int) = {
+    val thriftLength = channel.readIntFromEnd(0)
+
+    GorillaSuperBlock.marshaller
+      .decode(channel.readBytesFromEnd(Integer.BYTES, thriftLength))
+      .map(metadata => {
+        require(
+          metadata.version == GorillaSuperBlock.VERSION_NUMBER,
+          "The binary input's version is not compatible."
+        )
+
+        (metadata, thriftLength)
+      })
+      .get
+  }
+
+  /**
+    * Read and decompress the index of the GorillaSuperBlock (see format above).
+    * @note This assumes that the binary data has the correct version/format.
+    *
+    * @param metaLength the length of the thrift metadata block in the footer
+    * @return the index as a sorted map of (timestamp -> byte-offset) tuples
+    */
+  def readIndex(metaLength: Int): SortedMap[Long, Long] = {
+    val indexBlockEnd = Integer.BYTES + metaLength
+
+    GorillaArray.decompressTimestampTuples(
+      channel.readBytesFromEnd(
+        indexBlockEnd + Integer.BYTES,
+        channel.readIntFromEnd(indexBlockEnd)
+      )
+    )
+  }
+
+  /**
+    * Read (but don't decompress) a GorillaBlock from the GorillaSuperBlock.
+    * @note This assumes that the binary data has the correct version/format.
+    *
+    * @param metadata of the SuperBlock that has information needed for deserialization
+    * @param offset the start of the block as given by the index in the footer
+    * @param length the length of the block in bytes
+    * @return a gorilla encoded block of a timeseries
+    */
+  def readBlock(
+      metadata: TSuperBlockMetadata,
+      offset: Long,
+      length: Int
+  ): GorillaBlock = {
+    val bytes = channel.readBytes(offset, length)
+
+    metadata.blockType match {
+      case TBlockType.Sample(s) => GorillaBlock.fromSampled(bytes, s.sampleRate)
+      case _                    => GorillaBlock.fromTupleSerialized(bytes)
+    }
+  }
+
+  /**
+    * Lazily read (but don't decompress) all GorillaBlocks from this
+    * GorillaSuperBlock to memory.
+    *
+    * @note This assumes that the binary data has the correct version/format.
+    *
+    * @param metadata of the SuperBlock that has information needed for deserialization
+    * @param metaLength the length of the thrift metadata block in the footer
+    * @return a sequence of gorilla encoded blocks of a timeseries
+    */
+  def readAllBlocks(metadata: TSuperBlockMetadata, metaLength: Int): Seq[TSEntry[GorillaBlock]] =
+    readIndex(metaLength).toSeq
+      .sliding(2)
+      .map {
+        case (ts, offset) :: (nextTs, nextOffset) :: _ =>
+          TSEntry(
+            ts,
+            readBlock(metadata, offset, (nextOffset - offset).toInt),
+            nextTs - ts
+          )
+      }
+      .to(LazyList)
+
+  /** Read all of the information of this GorillaSuperBlock and lazily return
+    * all contained GorillaBlocks. This uses the more granular methods of this
+    * object internally.
+    *
+    * @return a sequence of gorilla blocks
+    *
+    * @throws TException if the metadata cannot be decoded
+    */
+  def readAll: Seq[TSEntry[GorillaBlock]] = (readAllBlocks _).tupled(readMetadata)
+}
 
 /** A GorillaSuperBlock is a binary format for storing a long
   * [[io.sqooba.oss.timeseries.TimeSeries]] composed of many GorillaBlocks. It
@@ -42,17 +149,14 @@ import scala.util.{Failure, Success, Try}
   */
 object GorillaSuperBlock {
 
-  /**
-    * Specifies the version number of this binary format
-    */
+  /** Specifies the version number of this binary format */
   val VERSION_NUMBER: Int = 1
 
   private[archive] val marshaller = ThriftMarshaller
     .forType[TSuperBlockMetadata](new TCompactProtocol.Factory)
     .get
 
-  /**
-    * Writes the provided TSEntries of Gorilla blocks to the provided output stream
+  /** Writes the provided TSEntries of Gorilla blocks to the provided output stream
     * according to the GorillaSuperBlock format.
     *
     * @param buckets well-formed stream of entries containing Gorilla blocks
@@ -61,107 +165,7 @@ object GorillaSuperBlock {
   def write[B <: GorillaBlock](buckets: Seq[TSEntry[B]], output: OutputStream): Unit =
     buckets.foldLeft(new GorillaSuperBlock.Writer[B](output))(_ += _).close()
 
-  /** Read the metadata of a GorillaSuperBlock from a seekable byte channel.
-    * This also checks whether the data from the channel has the correct version.
-    *
-    * @param channel a seekable byte channel
-    * @return the metadata as specified by the thrift definition and its length or Failure
-    */
-  def readMetadata(channel: SeekableByteChannel): Try[(TSuperBlockMetadata, Int)] = {
-    val thriftLength = readIntFromEnd(channel, 0)
-
-    marshaller
-      .decode(readBytesFromEnd(channel, Integer.BYTES, thriftLength))
-      .map(metadata => {
-        require(metadata.version == VERSION_NUMBER, "The binary input's version is not compatible.")
-        (metadata, thriftLength)
-      })
-  }
-
-  /**
-    * Read and decompress the index of a given seekable channel. The index must be
-    * stored as a footer like it is described by GorillaSuperBlock.
-    * @note This assumes that the data from the channel has the correct version.
-    *
-    * @param channel a seekable byte channel
-    * @param thriftBlockLength the length of the thrift block in the footer
-    * @return the index as a sorted map of (timestamp -> byte-offset) tuples
-    */
-  def readIndex(channel: SeekableByteChannel, thriftBlockLength: Int): SortedMap[Long, Long] = {
-    val indexBlockEnd = Integer.BYTES + thriftBlockLength
-
-    GorillaArray.decompressTimestampTuples(
-      readBytesFromEnd(
-        channel,
-        indexBlockEnd + Integer.BYTES,
-        readIntFromEnd(channel, indexBlockEnd)
-      )
-    )
-  }
-
-  /**
-    * Read (but don't decompress) a GorillaBlock from the given seekable channel
-    * that contains data in the GorillaSuperBlock format.
-    * @note This assumes that the data from the channel has the correct version.
-    *
-    * @param channel a seekable byte channel
-    * @param offset the start of the block as given by the index in the footer
-    * @param length the length of the block in bytes
-    * @param metadata of the SuperBlock that has information needed for deserialization
-    * @return a gorilla encoded block of a timeseries
-    */
-  def readBlock(
-      channel: SeekableByteChannel,
-      offset: Long,
-      length: Int,
-      metadata: TSuperBlockMetadata
-  ): GorillaBlock = {
-    val bytes = readBytes(channel, offset, length)
-
-    metadata.blockType match {
-      case TBlockType.Sample(s) => GorillaBlock.fromSampled(bytes, s.sampleRate)
-      case _                    => GorillaBlock.fromTupleSerialized(bytes)
-    }
-  }
-
-  /**
-    * Read (but don't decompress) all GorillaBlocks from the given seekable channel
-    * that contains data in the GorillaSuperBlock format.
-    * @note This assumes that the data from the channel has the correct version.
-    *
-    * @param channel a seekable byte channel
-    * @param metadata of the SuperBlock that has information needed for deserialization
-    * @param metaLength length of the serialized metadata block
-    * @return a sequence of gorilla encoded blocks of a timeseries
-    */
-  def readAllBlocks(
-      channel: SeekableByteChannel,
-      metadata: TSuperBlockMetadata,
-      metaLength: Int
-  ): Seq[TSEntry[GorillaBlock]] =
-    readIndex(channel, metaLength).toSeq
-      .sliding(2)
-      .map {
-        case (ts, offset) :: (nextTs, nextOffset) :: _ =>
-          TSEntry(
-            ts,
-            readBlock(channel, offset, (nextOffset - offset).toInt, metadata),
-            nextTs - ts
-          )
-      }
-      .to(LazyList)
-
-  /** Read all of the information of an entire GorillaSuperBlock. This uses the
-    * more granular methods of this object internally.
-    *
-    * @param channel a seekable byte channel of the file
-    * @return a sequence of gorilla blocks
-    */
-  def readAll(channel: SeekableByteChannel): Seq[TSEntry[GorillaBlock]] =
-    readMetadata(channel).map {
-      case (metadata, metaLength) => readAllBlocks(channel, metadata, metaLength)
-    }.get
-
+  /** A 'mutable.Growable' for the iterative writing of a GorillaSuperBlock. */
   class Writer[B <: GorillaBlock](output: OutputStream) extends mutable.Growable[TSEntry[B]] with AutoCloseable {
 
     // A map of (timestamps -> offset of encoded block in output)
@@ -214,12 +218,12 @@ object GorillaSuperBlock {
       // write the compressed index and its length
       val compressedIndex = GorillaArray.compressTimestampTuples(index)
       output.write(compressedIndex)
-      output.write(int2byteArray(compressedIndex.length))
+      output.write(int2ByteArray(compressedIndex.length))
 
       // write the metadata and its length
       val metaBlock = marshaller.encode(metadata.get).get
       output.write(metaBlock)
-      output.write(int2byteArray(metaBlock.length))
+      output.write(int2ByteArray(metaBlock.length))
 
       output.close()
     }

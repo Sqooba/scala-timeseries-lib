@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries.utils
 
 import java.io.RandomAccessFile
+import java.lang.IllegalArgumentException
 import java.nio.ByteBuffer
 import java.nio.file.Files
 
@@ -58,6 +59,8 @@ class SliceableByteChannelSpec extends FlatSpec with Matchers {
 
     buffer.flip()
     buffer.remaining() shouldBe 2
+
+    sliced.read(buffer) shouldBe -1
   }
 
   it should "not write too far in the slice" in {
@@ -71,6 +74,10 @@ class SliceableByteChannelSpec extends FlatSpec with Matchers {
 
     sliced.readBytesFromEnd(0, 2) shouldBe
       buffer.array().slice(0, 2)
+
+    sliced.position(sliced.size)
+    buffer.flip()
+    sliced.write(buffer) shouldBe -1
   }
 
   it should "read with a much smaller buffer" in {
@@ -111,5 +118,18 @@ class SliceableByteChannelSpec extends FlatSpec with Matchers {
 
     slice.readBytes(slice.size - Integer.BYTES, Integer.BYTES) shouldBe
       buffer.array()
+  }
+
+  it should "not allow a position larger than its size" in {
+    val slice = getSlice.slice(0, 5 * Integer.BYTES)
+
+    an[IndexOutOfBoundsException] should be thrownBy
+      slice.position(5 * Integer.BYTES + 1)
+
+    noException should be thrownBy slice.position(5 * Integer.BYTES)
+  }
+
+  it should "not allow truncation" in {
+    an[UnsupportedOperationException] should be thrownBy getSlice.truncate(10)
   }
 }

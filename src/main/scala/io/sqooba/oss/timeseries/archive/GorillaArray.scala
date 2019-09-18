@@ -32,7 +32,7 @@ object GorillaArray {
     map.foreach(elem => compressor.addValue(elem._1, elem._2))
     compressor.close()
 
-    longArray2byteArray(output.getLongArray)
+    longArray2ByteArray(output.getLongArray)
   }
 
   /** Like #compressTimestampTuples with the first entry's timestamp as block timestamp. */

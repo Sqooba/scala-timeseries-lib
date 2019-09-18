@@ -79,26 +79,27 @@ private class DefaultSliceableByteChannel(
   override def slice(fromOffset: Long, toOffset: Long): SliceableByteChannel =
     new DefaultSliceableByteChannel(channel, from + fromOffset, from + toOffset)
 
-  override def read(dst: ByteBuffer): Int = {
-    // if the buffer can read more than is in this slice
-    if (dst.remaining() > size - position()) {
-      // limit the buffer to the number of bytes at the end of this slice
-      dst.limit((size - position()).toInt)
+  private def remaining: Long = size - position
+
+  override def read(dst: ByteBuffer): Int =
+    if (this.remaining == 0) -1
+    else {
+      if (dst.remaining() > this.remaining) {
+        dst.limit(remaining.toInt)
+      }
+      channel.read(dst)
     }
 
-    channel.read(dst)
-  }
-
-  override def write(src: ByteBuffer): Int = {
-    // if the buffer can write more than is in this slice
-    if (src.remaining() > size - position()) {
-      // limit the buffer to the number of bytes at the end of this slice
-      src.limit((size - position()).toInt)
+  override def write(src: ByteBuffer): Int =
+    if (this.remaining == 0) -1
+    else {
+      if (src.remaining() > this.remaining) {
+        src.limit(remaining.toInt)
+      }
+      channel.write(src)
     }
-    channel.write(src)
-  }
 
-  override def position(): Long = channel.position() - from
+  override def position: Long = channel.position() - from
 
   override def position(newPosition: Long): SliceableByteChannel = {
     if (newPosition + from > to) {

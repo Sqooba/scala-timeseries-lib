@@ -5,9 +5,9 @@ import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
 import io.sqooba.oss.timeseries.TimeSeries
 import io.sqooba.oss.timeseries.immutable.{NestedTimeSeries, TSEntry}
 import io.sqooba.oss.timeseries.thrift.{TBlockType, TSampledBlockType, TTupleBlockType}
+import io.sqooba.oss.timeseries.utils.SliceableByteChannel
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.collection.immutable.SortedMap
 import scala.util.Success
 
 class GorillaSuperBlockSpec extends FlatSpec with Matchers {
@@ -40,24 +40,24 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   private def getChannel(blocks: Seq[TSEntry[GorillaBlock]]) = {
     val tempFile = File.createTempFile("ts_binary_format_spec_temp", "")
     GorillaSuperBlock.write(blocks, new FileOutputStream(tempFile))
-    (new FileInputStream(tempFile)).getChannel
+
+    SliceableByteChannel(new FileInputStream(tempFile).getChannel)
   }
 
   "GorillaSuperBlock" should "write metadata correctly to a stream" in {
     val channel = getChannel(blocks)
 
-    val thriftLength = readIntFromEnd(channel, 0)
-    val tryMetadata  = GorillaSuperBlock.readMetadata(channel)
-    tryMetadata.isSuccess shouldBe true
+    val thriftLength = channel.readIntFromEnd(0)
+    noException should be thrownBy GorillaSuperBlock(channel).readMetadata
 
-    val Success((metadata, length)) = tryMetadata
+    val (metadata, length) = GorillaSuperBlock(channel).readMetadata
 
     metadata.version shouldBe GorillaSuperBlock.VERSION_NUMBER
     metadata.blockType shouldBe TBlockType.Tuple(TTupleBlockType())
 
     GorillaSuperBlock.marshaller
       .decode(
-        readBytesFromEnd(channel, Integer.BYTES, thriftLength)
+        channel.readBytesFromEnd(Integer.BYTES, thriftLength)
       )
       .get shouldBe metadata
 
@@ -65,7 +65,7 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
 
     GorillaSuperBlock.marshaller
       .decode(
-        readBytesFromEnd(channel, Integer.BYTES, thriftLength - 13)
+        channel.readBytesFromEnd(Integer.BYTES, thriftLength - 13)
       )
       .isFailure shouldBe true
   }
@@ -81,10 +81,10 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   }
 
   it should "correctly compress and decompress the index" in {
-    val channel     = getChannel(blocks)
-    val (_, length) = GorillaSuperBlock.readMetadata(channel).get
+    val block       = GorillaSuperBlock(getChannel(blocks))
+    val (_, length) = block.readMetadata
 
-    GorillaSuperBlock.readIndex(channel, length) shouldBe Map(
+    block.readIndex(length) shouldBe Map(
       1    -> 0,
       77   -> 92,
       1000 -> 184
@@ -92,25 +92,23 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   }
 
   it should "correctly compress and decompress the entries" in {
-    val channel            = getChannel(blocks)
-    val (metadata, length) = GorillaSuperBlock.readMetadata(channel).get
-    val indexVector        = GorillaSuperBlock.readIndex(channel, length).toVector
+    val superBlock         = GorillaSuperBlock(getChannel(blocks))
+    val (metadata, length) = superBlock.readMetadata
+    val indexVector        = superBlock.readIndex(length).toVector
 
-    GorillaSuperBlock
+    superBlock
       .readBlock(
-        channel,
+        metadata,
         indexVector(0)._2,
-        (indexVector(1)._2 - indexVector(0)._2).toInt,
-        metadata
+        (indexVector(1)._2 - indexVector(0)._2).toInt
       )
       .decompress shouldBe buckets.head.value
 
-    GorillaSuperBlock
+    superBlock
       .readBlock(
-        channel,
+        metadata,
         indexVector(1)._2,
-        (indexVector(2)._2 - indexVector(1)._2).toInt,
-        metadata
+        (indexVector(2)._2 - indexVector(1)._2).toInt
       )
       .decompress shouldBe buckets.tail.head.value
   }
@@ -118,7 +116,7 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   it should "return the same timeseries" in {
     NestedTimeSeries
       .ofGorillaBlocks(
-        GorillaSuperBlock.readAll(getChannel(blocks))
+        GorillaSuperBlock(getChannel(blocks)).readAll
       )
       .entries shouldBe entries
   }
@@ -126,38 +124,36 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
   it should "return the same timeseries composed of a single block" in {
     NestedTimeSeries
       .ofGorillaBlocks(
-        GorillaSuperBlock.readAll(getChannel(blocks.take(1)))
+        GorillaSuperBlock(getChannel(blocks.take(1))).readAll
       )
       .entries shouldBe buckets.head.value
   }
 
   it should "correctly compress and decompress a sampled block type series" in {
-    val channel            = getChannel(sampledBlocks)
-    val (metadata, length) = GorillaSuperBlock.readMetadata(channel).get
+    val superBlock         = GorillaSuperBlock(getChannel(sampledBlocks))
+    val (metadata, length) = superBlock.readMetadata
 
     metadata.blockType shouldBe TBlockType.Sample(TSampledBlockType(100))
 
-    val indexVector = GorillaSuperBlock.readIndex(channel, length).toVector
+    val indexVector = superBlock.readIndex(length).toVector
 
     // thread the decompressed through a timeseries such that they get trimmed
     TimeSeries(
-      GorillaSuperBlock
+      superBlock
         .readBlock(
-          channel,
+          metadata,
           indexVector(0)._2,
-          (indexVector(1)._2 - indexVector(0)._2).toInt,
-          metadata
+          (indexVector(1)._2 - indexVector(0)._2).toInt
         )
         .decompress
     ).entries shouldBe buckets.head.value
 
     TimeSeries(
-      GorillaSuperBlock
+      superBlock
         .readBlock(
-          channel,
+          metadata,
           indexVector(1)._2,
-          (indexVector(2)._2 - indexVector(1)._2).toInt,
-          metadata
+          (indexVector(2)._2 - indexVector(1)._2).toInt
         )
         .decompress
     ).entries shouldBe buckets.tail.head.value
