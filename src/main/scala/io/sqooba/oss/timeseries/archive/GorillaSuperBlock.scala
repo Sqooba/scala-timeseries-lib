@@ -5,7 +5,7 @@ import java.nio.channels.SeekableByteChannel
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import io.sqooba.oss.timeseries.thrift.{TBlockType, TSampledBlockType, TSuperBlockMetadata}
-import io.sqooba.thrift.ThriftMarshaller
+import io.sqooba.oss.timeseries.utils.ThriftMarshaller
 import org.apache.thrift.protocol.TCompactProtocol
 
 import scala.collection.immutable.SortedMap
