@@ -5,14 +5,16 @@ description := "Lightweight, functional and exact time-series library for scala"
 homepage := Some(url("https://github.com/Sqooba/scala-timeseries-lib"))
 licenses := Seq("Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12")
+crossScalaVersions := Seq("2.12.8", "2.11.12")
+
+resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 
 libraryDependencies ++= Seq(
   "com.storm-enroute"          %% "scalameter"         % "0.19",
   "fi.iki.yak"                 % "compression-gorilla" % "2.1.1",
   "com.typesafe.scala-logging" %% "scala-logging"      % "3.9.2",
-  "com.twitter"                %% "scrooge-core"       % "19.9.0",
   "org.apache.thrift"          % "libthrift"           % "0.12.0",
+  "com.twitter"                %% "scrooge-core"       % "19.9.0",
   "junit"                      % "junit"               % "4.12" % Test,
   "org.scalactic"              %% "scalactic"          % "3.0.8",
   "org.scalatest"              %% "scalatest"          % "3.0.8" % Test

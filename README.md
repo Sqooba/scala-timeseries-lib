@@ -3,15 +3,20 @@
 
 Easily manipulate and query time-series like data. Useful for manipulating series of discrete values associated to a validity or time-to-live duration, like sensor measures.
 
-#### High level features:
+#### High level features
 
 - Exposes time series as functions that have a value depending on time
 - Time series may be undefined for certain time intervals
-- Operators may be applied between time series, the simple ones being addition and multiplication, while custom ones that can be applied between arbitrary types are easy to implement.
+- Operators may be applied between time series, the simple ones being addition and multiplication.
+- Custom operators for arbitrary types are easy to implement.
 
 #### Explicit non-goals
 
 This library is not intended to provide in-depth statistics about time series data, only to make manipulating and querying it easy, without any kind of approximation.
+
+#### Our philosophical statement
+
+> Everything is a step function
 
 ## Usage
 In essence, a `TimeSeries` is just an ordered map of `[Long,T]`. In most use cases the key represents the time since the epoch in milliseconds, but the implementation makes no assumption about the time unit of the key.
@@ -30,7 +35,7 @@ val ts = TimeSeries(Seq(
 ))
               
 ```
-`ts` now defines a time series of `Strings that is defined on the `[1000,5000[` interval, with a hole at `[3000,4000[`
+`ts` now defines a time series of `String` that is defined on the interval `[1000,5000[`, with a hole at `[3000,4000[`
 
 The `TimeSeries.apply` contstructor is quite expensive because it sorts the entries to ensure a sane series.
 Usually, the input is already sorted. In that case there are two other constructors:
@@ -80,7 +85,7 @@ Note that there are a few quirks to be aware of when a TimeSeries has discontinu
 please refer to function comments in 
 [`NumericTimeSeries.scala`](src/main/scala/io/sqooba/oss/timeseries/NumericTimeSeries.scala) for more details.
 
-### Custom Operators: Time Series Merging
+### Custom Operators: Time-Series Merging
 For non-numeric time series, or for any particular needs, a `TimeSeries` can be merged using an 
 arbitrary merge operator: `op: (Option[A], Option[B]) => Option[C]`. For example (this method is already defined
 for you in the interface, no need to rewrite it):
@@ -125,7 +130,7 @@ The following performances can thus be expected (using the denomination
 
 Each data point is however represented by an object, which hurts memory usage. Therefore there is a second 
 implementation: `ColumnTimeSeries` which represents its entries with a column-store of three vectors 
-(`(Vector[Long], Vector[T], Vector[Long]`). This should save space for primitive types.
+`(Vector[Long], Vector[T], Vector[Long])`. This should save space for primitive types.
 
 You can create a `ColumnTimeSeries` with its builder `ColumnTimeSeries.newBuilder`.
 
@@ -145,14 +150,12 @@ Since then, we began using this for smaller projects at [Sqooba](https://sqooba.
 been taken over in May 2019.
 
 ### TODOS
-  - memory efficient implementation
-  - interoperability with something like Apache Arrow
-  - good serialization (e.g. Gorilla TSZ), bonus if it's compatible with Arrow (or Parquet?)
+  - stream/lazy-collections implementation
   - more tests for non-trivial merge operators
-  - Generic tests for any kind of TS implementation
   - benchmarks to actually compare various implementations.
   - make it easy to use from Java
-  - consider https://scalacheck.org/ for property-based testing ? (especially for ordering-related tests?)
+  - consider https://scalacheck.org/ for property-based testing?
+  - interoperability with something like Apache Arrow?
 
 
 ### Contributions
