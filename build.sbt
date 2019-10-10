@@ -22,6 +22,8 @@ libraryDependencies ++= Seq(
 )
 
 coverageHighlighting := true
+coverageExcludedPackages := "<empty>;io.sqooba.oss.timeseries.thrift.*"
+
 publishMavenStyle := true
 publishArtifact in Test := false
 pomIncludeRepository := { _ =>
