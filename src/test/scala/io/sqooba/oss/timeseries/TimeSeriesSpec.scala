@@ -1,13 +1,15 @@
 package io.sqooba.oss.timeseries
 
 import io.sqooba.oss.timeseries.immutable.{EmptyTimeSeries, TSEntry, VectorTimeSeries}
-import org.junit.Test
-import org.scalatest.junit.JUnitSuite
+import org.scalatest.{FlatSpec, Matchers}
 
-class TimeSeriesTest extends JUnitSuite {
+/** This tests all the methods that are implemented on the TimeSeries trait itself or
+  * on its companion object.
+  */
+class TimeSeriesSpec extends FlatSpec with Matchers {
 
   // Simple non-strict summing operator
-  def plus(aO: Option[Double], bO: Option[Double]): Option[Double] = {
+  private def plus(aO: Option[Double], bO: Option[Double]): Option[Double] = {
     (aO, bO) match {
       case (Some(a), Some(b)) => Some(a + b)
       case (Some(_), None)    => aO
@@ -16,7 +18,7 @@ class TimeSeriesTest extends JUnitSuite {
     }
   }
 
-  def mul(aO: Option[Double], bO: Option[Double]): Option[Double] = {
+  private def mul(aO: Option[Double], bO: Option[Double]): Option[Double] = {
     (aO, bO) match {
       case (Some(a), Some(b)) => Some(a.doubleValue * b.doubleValue)
       case (Some(x), None)    => Some(x)
@@ -25,7 +27,7 @@ class TimeSeriesTest extends JUnitSuite {
     }
   }
 
-  @Test def testSeqMergingSingleToMultiple(): Unit = {
+  "TimeSeries" should "correctly do SeqMergingSingleToMultiple" in {
     // Single to single within domain.
     val s1 = Seq(TSEntry(1, 2.0, 20))
     val m1 = Seq(TSEntry(5, 1.0, 10))
@@ -117,7 +119,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
-  @Test def testContinuousDomainMerges(): Unit = {
+  it should "correctly do ContinuousDomainMerges" in {
     // Perfectly aligned, no discontinuities
     val l1 = Seq(TSEntry(-20, 1.0, 10), TSEntry(-10, 2.0, 10), TSEntry(0, 3.0, 10), TSEntry(10, 4.0, 10))
     val r1 = Seq(TSEntry(-20, 5.0, 10), TSEntry(-10, 6.0, 10), TSEntry(0, 7.0, 10), TSEntry(10, 8.0, 10))
@@ -247,7 +249,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
-  @Test def testSlice: Unit = {
+  it should "correctly do Slice" in {
     val tri =
       VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
     assert(tri.slice(-1, 0) == EmptyTimeSeries)
@@ -266,7 +268,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
-  @Test def testSliceDiscrete: Unit = {
+  it should "correctly do SliceDiscrete" in {
     val tri =
       VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
 
@@ -279,7 +281,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(TSEntry(10, "Ho", 10) == tri.sliceDiscrete(10, 20, false, false))
   }
 
-  @Test def testSplitDiscrete: Unit = {
+  it should "correctly do SplitDiscrete" in {
     val tri =
       VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10L), TSEntry(20, "Hu", 10L)))
 
@@ -314,7 +316,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
-  @Test def testCompressionAfterMerge(): Unit = {
+  it should "correctly do CompressionAfterMerge" in {
 
     // Perfectly aligned, no discontinuities
     val l =
@@ -329,7 +331,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testFillWithoutCompression(): Unit = {
+  it should "correctly do FillWithoutCompression" in {
     // Simple cases: 0 and 1 entries
     assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
     assert(
@@ -369,7 +371,7 @@ class TimeSeriesTest extends JUnitSuite {
 
   }
 
-  @Test def testFillWithCompression(): Unit = {
+  it should "correctly do FillWithCompression" in {
     // Simple cases: 0 and 1 entries
     assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
     assert(
@@ -414,7 +416,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testAllDefinitionScenariosMerge(): Unit = {
+  it should "correctly do AllDefinitionScenariosMerge" in {
     val op =
       (left: Option[String], right: Option[String]) =>
         (left, right) match {
@@ -441,7 +443,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testApplyWithUnsortedEntries(): Unit = {
+  it should "correctly do ApplyWithUnsortedEntries" in {
     val entries = List(
       TSEntry(5, 5, 1),
       TSEntry(1, 1, 1)
@@ -453,11 +455,11 @@ class TimeSeriesTest extends JUnitSuite {
     assert(resultSeries.entries.last == entries.head)
   }
 
-  @Test def testApplyShouldFailWithTwoEntriesHavingSameTimestamps(): Unit = {
+  it should "correctly do ApplyShouldFailWithTwoEntriesHavingSameTimestamps" in {
     assertThrows[IllegalArgumentException](TimeSeries(Seq(TSEntry(1, 1, 1), TSEntry(1, 1, 1))))
   }
 
-  @Test def testAppendPrependWithEmptyShouldBeTheSame(): Unit = {
+  it should "correctly do AppendPrependWithEmptyShouldBeTheSame" in {
     val ts = TimeSeries(
       Seq(
         TSEntry(1, 1, 1),
@@ -469,7 +471,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts.prepend(EmptyTimeSeries) == ts)
   }
 
-  @Test def testAppendPrependWithOutOfDomainShouldReturnArgument(): Unit = {
+  it should "correctly do AppendPrependWithOutOfDomainShouldReturnArgument" in {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, 1, 1),
@@ -488,7 +490,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts1.prepend(ts2) == ts2)
   }
 
-  @Test def testAppendPrependShouldTrimIfNeeded(): Unit = {
+  it should "correctly do AppendPrependShouldTrimIfNeeded" in {
     val ts1 = TSEntry(0, 1, 10)
     val ts2 = TSEntry(5, 2, 10)
 
@@ -496,7 +498,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts2.prepend(ts1).entries.last.timestamp == 10)
   }
 
-  @Test def testAppendPrependShouldCompress(): Unit = {
+  it should "correctly do AppendPrependShouldCompress" in {
     val ts1 = TSEntry(1, 1, 1)
     val ts2 = TSEntry(2, 1, 1)
 
@@ -506,7 +508,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts2.prepend(ts1) == result)
   }
 
-  @Test def testFallbackUncompress(): Unit = {
+  it should "correctly do FallbackUncompress" in {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, 'a', 1),
@@ -525,7 +527,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testFallbackCompress(): Unit = {
+  it should "correctly do FallbackCompress" in {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, 'a', 1),
@@ -538,7 +540,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts1.fallback(ts2) == ts2)
   }
 
-  @Test def testDifferentSupportRatio(): Unit = {
+  it should "correctly do DifferentSupportRatio" in {
     assert(EmptyTimeSeries.supportRatio == 0)
     assert(TSEntry(1, 'a', 123098).supportRatio == 1)
 
@@ -554,7 +556,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts.supportRatio == 0.75)
   }
 
-  @Test def testStrictMerge(): Unit = {
+  it should "correctly do StrictMerge" in {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, "hel", 5),
@@ -572,7 +574,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testStrictMergeDisjoint(): Unit = {
+  it should "correctly do StrictMergeDisjoint" in {
     val ts1 = TimeSeries(Seq(TSEntry(1, "hel", 5)))
     val ts2 = TimeSeries(Seq(TSEntry(6, "lo", 5)))
 
@@ -581,7 +583,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testMergeEntriesWithUndefinedDomains(): Unit = {
+  it should "correctly do MergeEntriesWithUndefinedDomains" in {
     val ts1 = Seq(
       TSEntry(1, 1, 5),
       TSEntry(10, 2, 10)
@@ -600,7 +602,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(result.entries == Seq(TSEntry(6, 'Y', 4)))
   }
 
-  @Test def testMergeEntriesWithUndefinedDomainsButWithStartingValue(): Unit = {
+  it should "correctly do MergeEntriesWithUndefinedDomainsButWithStartingValue" in {
     val ts1 = Seq(
       TSEntry(1, 'a', 2)
     )
@@ -619,7 +621,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(result.entries == Seq(TSEntry(1, 'a', 1), TSEntry(3, 'd', 2)))
   }
 
-  @Test def testMathOperationsCompressedResult(): Unit = {
+  it should "correctly do MathOperationsCompressedResult" in {
     val ts1 = TimeSeries(
       Seq(
         TSEntry(1, 0, 1),
@@ -639,7 +641,7 @@ class TimeSeriesTest extends JUnitSuite {
     assert(ts1.multiply(ts2) == TSEntry(1, 0, 2))
   }
 
-  @Test def testMinusWithDefaults(): Unit = {
+  it should "correctly do MinusWithDefaults" in {
     val tsLeft  = TimeSeries(Seq(TSEntry(1, 1, 1), TSEntry(3, 1, 1)))
     val tsRight = TimeSeries(Seq(TSEntry(2, 5, 2)))
 
@@ -649,7 +651,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
   }
 
-  @Test def testBucketByNumber(): Unit = {
+  it should "correctly do BucketByNumber" in {
     val entries = Stream(
       TSEntry(0L, 10, 80L),
       TSEntry(100L, 22, 20L),
@@ -674,6 +676,123 @@ class TimeSeriesTest extends JUnitSuite {
           (120L, entries.slice(2, 4)),
           (180L, entries.slice(4, 5))
         )
+    )
+  }
+
+  "TimeSeries.sample" should "output an empty series for an empty input" in {
+    EmptyTimeSeries.sample(1000, 10, useClosestInWindow = false) shouldBe EmptyTimeSeries
+    EmptyTimeSeries.sample(1000, 10, useClosestInWindow = true) shouldBe EmptyTimeSeries
+  }
+
+  "TimeSeries.sample without using closest" should "take the values at the sample points" in {
+    val sampleRate = 100
+    val series = TimeSeries(
+      Seq(
+        TSEntry(100, .123, 90),
+        TSEntry(190, .234, 50),
+        TSEntry(200, .345, 10),
+        TSEntry(250, .456, 100)
+      )
+    )
+
+    series.sample(0, sampleRate, useClosestInWindow = false).entries shouldBe Seq(
+      TSEntry(100, .123, sampleRate),
+      TSEntry(200, .345, sampleRate),
+      TSEntry(300, .456, sampleRate)
+    )
+
+    series.sample(20, sampleRate, useClosestInWindow = false).entries shouldBe Seq(
+      TSEntry(120, .123, sampleRate),
+      TSEntry(320, .456, sampleRate)
+    )
+
+    val shortSampleRate = 35
+    series.sample(20, shortSampleRate, useClosestInWindow = false).entries shouldBe Seq(
+      TSEntry(125, 0.123, shortSampleRate),
+      TSEntry(160, 0.123, shortSampleRate),
+      TSEntry(195, 0.234, shortSampleRate),
+      TSEntry(265, 0.456, shortSampleRate),
+      TSEntry(300, 0.456, shortSampleRate),
+      TSEntry(335, 0.456, shortSampleRate)
+    )
+  }
+
+  it should "correctly handle edges of the entry domain" in {
+    val series = TSEntry(1, .123, 9)
+
+    series.sample(1, 10, useClosestInWindow = false).entries shouldBe Seq(TSEntry(1, .123, 10))
+    series.sample(1, 9, useClosestInWindow = false).entries shouldBe Seq(TSEntry(1, .123, 9))
+    series.sample(1, 8, useClosestInWindow = false).entries shouldBe Seq(TSEntry(1, 0.123, 8), TSEntry(9, 0.123, 8))
+  }
+
+  "TimeSeries.sample with using closest" should "split long entries" in {
+    TSEntry(10, .789, 100).sample(5, 25, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(5, .789, 25),
+      TSEntry(30, .789, 25),
+      TSEntry(55, .789, 25),
+      TSEntry(80, .789, 25),
+      TSEntry(105, .789, 25)
+    )
+  }
+
+  it should "take the closest if undefined at the sample point" in {
+    val series = TimeSeries(Seq(TSEntry(0, .123, 5), TSEntry(10, .234, 6)))
+
+    series.sample(7, 8, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(7, .234, 8),
+      TSEntry(15, .234, 8)
+    )
+  }
+
+  it should "take the closest if the previous entry is defined, but the next one starts within a half sample period" in {
+    val series = TimeSeries(Seq(TSEntry(4, .123, 7), TSEntry(14, .234, 8), TSEntry(23, .345, 8)))
+
+    series.sample(0, 10, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(0, .123, 10),
+      TSEntry(10, .234, 10),
+      TSEntry(20, .345, 10),
+      TSEntry(30, .345, 10)
+    )
+  }
+
+  it should "take the value of the entry that starts closest to the sample point among those entries starting in the " +
+    "window of half a sample period from the sample point" in {
+    val series = TimeSeries(Seq(TSEntry(7, .123, 2), TSEntry(14, .234, 6)))
+
+    series.sample(0, 10, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(10, .123, 10)
+    )
+
+    val series2 = TimeSeries(Seq(TSEntry(6, .123, 3), TSEntry(13, .234, 6)))
+
+    series2.sample(0, 10, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(10, .234, 10)
+    )
+
+    val series3 = TimeSeries(Seq(TSEntry(6, .123, 1), TSEntry(7, .234, 1), TSEntry(11, .345, 1)))
+
+    series3.sample(0, 10, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(10, .345, 10)
+    )
+  }
+
+  it should "correctly drop some short entries" in {
+    val series = TimeSeries(
+      Seq(
+        TSEntry(1, .012, 2),
+        TSEntry(5, .123, 1),
+        TSEntry(6, .234, 3),
+        TSEntry(10, .345, 2),
+        TSEntry(14, .456, 4),
+        TSEntry(21, .567, 4)
+      )
+    )
+
+    val sampleRate = 10
+    series.sample(0, sampleRate, useClosestInWindow = true).entries shouldBe Seq(
+      TSEntry(0, .012, sampleRate),
+      TSEntry(10, .345, sampleRate),
+      TSEntry(20, .567, sampleRate)
     )
   }
 }

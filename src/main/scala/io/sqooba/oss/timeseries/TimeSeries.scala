@@ -342,6 +342,68 @@ trait TimeSeries[+T] {
         .result()
     }
 
+  /** Sample this TimeSeries at fixed time intervals of length sampleRate starting at
+    * the start timestamp. All resulting entries have the duration of sampleRate.
+    *
+    * In the strict mode (useClosestInWindow = false), the sampled values are exactly
+    * equal to the value of this TimeSeries at the sample points. In the
+    * useClosestInWindow mode, the sampling looks at the entries in the window of
+    * `[samplePoint - sampleRate/2, samplePoint + sampleRate/2[`. The value of the
+    * entry that starts the closest to the samplePoint among those starting in the
+    * window is taken.
+    *
+    * @note In either case, this function does **not** perform any kind of
+    * aggregation or roll-up.
+    *
+    * @param start timestamp of first sample point
+    * @param sampleRate interval between sample points
+    * @param useClosestInWindow enables non-strict look-around sampling
+    * @return the sampled time-series
+    */
+  def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean): TimeSeries[T] = {
+
+    @inline
+    def tooFarToTake(next: TSEntry[_], samplePoint: Long): Boolean =
+      if (useClosestInWindow) next.timestamp > samplePoint + sampleRate / 2
+      else next.timestamp > samplePoint
+
+    @tailrec
+    def rec(samplePoint: Long, remaining: Seq[TSEntry[T]], builder: TimeSeriesBuilder[T]): TimeSeries[T] =
+      remaining match {
+        // No further entries, return the result
+        case Seq() => builder.result()
+
+        // The next entry is still too far away, we just go to the next sample point.
+        case next +: _ if tooFarToTake(next, samplePoint) =>
+          rec(samplePoint + sampleRate, remaining, builder)
+
+        // We take the value of the current entry if:
+        case current +: next +: _
+            // In strict mode, we only take the value if it is defined at the sample point.
+            if !useClosestInWindow && samplePoint < current.definedUntil
+
+            // In useClosest mode we take the currently defined value if the next.
+            // entry is out of the window
+            || useClosestInWindow && (
+              samplePoint < current.definedUntil && next.timestamp > samplePoint + sampleRate / 2
+
+              // But we also take the value if its start is closer to the next's start.
+              || Math.abs(current.timestamp - samplePoint) < Math.abs(next.timestamp - samplePoint)
+            ) =>
+          rec(samplePoint + sampleRate, remaining, builder += TSEntry(samplePoint, current.value, sampleRate))
+
+        // For the last entry, we only take its value if it is still defined
+        // at the sample point.
+        case Seq(last) if samplePoint < last.definedUntil =>
+          rec(samplePoint + sampleRate, remaining, builder += TSEntry(samplePoint, last.value, sampleRate))
+
+        // Otherwise, we can't use the current entry anymore and drop it.
+        case _ => rec(samplePoint, remaining.tail, builder)
+      }
+
+    rec(start, this.entries, newBuilder[T](compress = false))
+  }
+
   /**
     * Buckets this TimeSeries into sub-time-series that have a domain of definition that is at most that
     * specified by the passed bucket boundaries.
