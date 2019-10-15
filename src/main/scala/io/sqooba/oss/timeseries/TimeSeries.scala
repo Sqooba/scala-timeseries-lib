@@ -343,7 +343,9 @@ trait TimeSeries[+T] {
     }
 
   /** Sample this TimeSeries at fixed time intervals of length sampleRate starting at
-    * the start timestamp. All resulting entries have the duration of sampleRate.
+    * the start timestamp. By default, all resulting entries will have the duration
+    * of sampleRate. If equal contiguous entries are compressed (set the compress flag)
+    * all entries have a duration that is a multiple of sampleRate.
     *
     * In the strict mode (useClosestInWindow = false), the sampled values are exactly
     * equal to the value of this TimeSeries at the sample points. In the
@@ -358,9 +360,10 @@ trait TimeSeries[+T] {
     * @param start timestamp of first sample point
     * @param sampleRate interval between sample points
     * @param useClosestInWindow enables non-strict look-around sampling
+    * @param compress specifies whether equal contiguous entries should be compressed
     * @return the sampled time-series
     */
-  def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean): TimeSeries[T] = {
+  def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean, compress: Boolean = false): TimeSeries[T] = {
 
     @inline
     def tooFarToTake(next: TSEntry[_], samplePoint: Long): Boolean =
@@ -401,7 +404,7 @@ trait TimeSeries[+T] {
         case _ => rec(samplePoint, remaining.tail, builder)
       }
 
-    rec(start, this.entries, newBuilder[T](compress = false))
+    rec(start, this.entries, newBuilder[T](compress))
   }
 
   /**

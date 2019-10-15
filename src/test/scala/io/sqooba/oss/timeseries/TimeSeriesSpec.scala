@@ -795,4 +795,14 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
       TSEntry(20, .567, sampleRate)
     )
   }
+
+  it should "compress equal contiguous entries if flag set" in {
+    val series = TimeSeries(Seq(TSEntry(4, .123, 7), TSEntry(14, .234, 8), TSEntry(23, .345, 8)))
+
+    series.sample(0, 10, useClosestInWindow = true, compress = true).entries shouldBe Seq(
+      TSEntry(0, .123, 10),
+      TSEntry(10, .234, 10),
+      TSEntry(20, .345, 20)
+    )
+  }
 }
