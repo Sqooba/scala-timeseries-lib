@@ -6,6 +6,7 @@ import io.sqooba.oss.timeseries.immutable._
 import io.sqooba.oss.timeseries.archive.TimeBucketer
 
 import scala.annotation.tailrec
+import scala.collection.immutable.{AbstractSeq, LinearSeq}
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
@@ -200,10 +201,8 @@ trait TimeSeries[+T] {
     * bounds defined by min(this.head.timestamp, other.head.timestamp) and
     * max(this.last.definedUntil, other.last.definedUntil)
     */
-  // TODO make merge logic streamable. As the this.entries are called here, this creates a Seq[TSEntry] which means
-  //      that the benefits of other implementations vanish.
   def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
-    TimeSeries.ofOrderedEntriesUnsafe(TimeSeries.mergeEntries(this.entries)(other.entries)(op))
+    TimeSeries.mergeEntries(this.entries)(other.entries)(op, this.newBuilder[R]())
 
   /**
     * Merge another time series to this one, using the provided operator
@@ -502,10 +501,13 @@ object TimeSeries {
     *
     * Assumes a and b to be ORDERED!
     */
-  def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
+  def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(
+      op: (Option[A], Option[B]) => Option[C],
+      timeSeriesBuilder: TimeSeriesBuilder[C] = newBuilder[C]()
+  ): TimeSeries[C] =
     mergeEithers(
       mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A]))
-    )(op)
+    )(op, timeSeriesBuilder)
 
   /**
     * Combine two Seq's that are known to be ordered and return a Seq that is
@@ -539,67 +541,36 @@ object TimeSeries {
     * operator to be merged. Left and Right entries are passed as the first and second argument
     * of the merge operator, respectively.
     */
+  def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(
+      op: (Option[A], Option[B]) => Option[C],
+      timeSeriesBuilder: TimeSeriesBuilder[C] = newBuilder[C]()
+  ): TimeSeries[C] = {
+    @tailrec
+    def rec(remaining: Seq[TSEntry[Either[A, B]]], lastSeenDefinedUntil: Long, builder: TimeSeriesBuilder[C]): TimeSeriesBuilder[C] =
+      remaining match {
+        case Seq() => builder
 
-  // TODO make merge logic streamable. Currently, it uses the default builder which will create a VectorTimeSeries.
-  def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] = {
+        // Fill the hole when neither of the two time-series were defined over a given domain
+        case head +: _ if lastSeenDefinedUntil < head.timestamp =>
+          TSEntry.applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(op).foreach(builder += _)
 
-    // Holds the final merged list
-    val result = newBuilder[C]()
-    // Holds the current state of the entries to process
-    // TODO looks like Stack is deprecated: see if we can use a List instead
-    val current = mutable.Stack[TSEntry[Either[A, B]]](in: _*)
+          rec(remaining, head.timestamp, builder)
 
-    var lastSeenDefinedUntil: Long = Long.MaxValue
+        case head +: tail =>
+          // Take all entries with which the head overlaps and merge them
+          val (toMerge, newTail) = tail.span(_.timestamp < head.definedUntil)
 
-    while (current.nonEmpty) {
-      // entries that need to be merged
-      val toMerge = new ArrayBuffer[TSEntry[Either[A, B]]]()
-      val head    = current.pop()
+          val newHead = toMerge.lastOption
+          // and if that last entry is still defined after the head's domain
+            .filter(_.defined(head.definedUntil))
+            // it is split and the second part is reused in the next iteration
+            .map(_.trimEntryLeft(head.definedUntil))
+            .toList
 
-      // Fill the hole when neither of the two time-series were defined over a given domain
-      // In order to do se, we re-use the `definedUntil` property of the last TSentry seen
-      if (lastSeenDefinedUntil < head.timestamp) {
-        val nTimestamp = lastSeenDefinedUntil
-        op(None, None).map(TSEntry(nTimestamp, _, head.timestamp - nTimestamp)).foreach(result += _)
-
-        lastSeenDefinedUntil = head.timestamp
-
-        // We didn't process the head, so we should re-stack it
-        current.push(head)
-      } else {
-
-        // Take the head and all entries with which it overlaps and merge them.
-        while (current.nonEmpty && current.head.timestamp < head.definedUntil) {
-          toMerge.append(current.pop())
-        }
-
-        // If the last entry to merge is defined after the head,
-        // it is split and added back to the list
-        // of entries to process
-        if (toMerge.nonEmpty && toMerge.last.defined(head.definedUntil)) {
-          current.push(toMerge.last.trimEntryLeft(head.definedUntil))
-        }
-
-        // Check if there was some empty space between the last 'done' entry and the first remaining
-        val filling = result.definedUntil match {
-          case Some(definedUntil) =>
-            if (definedUntil == head.timestamp) { // Continuous domain, no filling to do
-              Seq.empty
-            } else {
-              op(None, None).map(TSEntry(definedUntil, _, head.timestamp - definedUntil)).toSeq
-            }
-          case _ => Seq.empty
-        }
-
-        lastSeenDefinedUntil = head.definedUntil
-
-        val p = TSEntry.mergeSingleToMultiple(head, toMerge.toSeq)(op)
-        result ++= filling
-        result ++= p
+          rec(newHead ++: newTail, head.definedUntil, builder ++= TSEntry.mergeSingleToMultiple(head, toMerge)(op))
       }
-    }
 
-    result.result().entries
+    rec(in, Long.MaxValue, timeSeriesBuilder).result()
   }
 
   /**

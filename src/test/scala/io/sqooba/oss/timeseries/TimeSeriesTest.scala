@@ -31,12 +31,12 @@ class TimeSeriesTest extends JUnitSuite {
     val m1 = Seq(TSEntry(5, 1.0, 10))
 
     assert(
-      TimeSeries.mergeEntries(s1)(m1)(plus) ==
+      TimeSeries.mergeEntries(s1)(m1)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 10), TSEntry(15, 2.0, 6))
     )
 
     assert(
-      TimeSeries.mergeEntries(m1)(s1)(plus) ==
+      TimeSeries.mergeEntries(m1)(s1)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 10), TSEntry(15, 2.0, 6))
     )
 
@@ -45,12 +45,12 @@ class TimeSeriesTest extends JUnitSuite {
     val m3 = Seq(TSEntry(5, 1.0, 5), TSEntry(10, 2.0, 5))
 
     assert(
-      TimeSeries.mergeEntries(s3)(m3)(plus) ==
+      TimeSeries.mergeEntries(s3)(m3)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 4.0, 5), TSEntry(15, 2.0, 6))
     )
 
     assert(
-      TimeSeries.mergeEntries(m3)(s3)(plus) ==
+      TimeSeries.mergeEntries(m3)(s3)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 4.0, 5), TSEntry(15, 2.0, 6))
     )
 
@@ -58,12 +58,12 @@ class TimeSeriesTest extends JUnitSuite {
     val m4 = Seq(TSEntry(5, 1.0, 5), TSEntry(11, 2.0, 5))
 
     assert(
-      TimeSeries.mergeEntries(s4)(m4)(plus) ==
+      TimeSeries.mergeEntries(s4)(m4)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 2.0, 1), TSEntry(11, 4.0, 5), TSEntry(16, 2.0, 5))
     )
 
     assert(
-      TimeSeries.mergeEntries(m4)(s4)(plus) ==
+      TimeSeries.mergeEntries(m4)(s4)(plus).entries ==
         Seq(TSEntry(1, 2.0, 4), TSEntry(5, 3.0, 5), TSEntry(10, 2.0, 1), TSEntry(11, 4.0, 5), TSEntry(16, 2.0, 5))
     )
 
@@ -72,12 +72,12 @@ class TimeSeriesTest extends JUnitSuite {
     val m5 = Seq(TSEntry(0, 1.0, 5), TSEntry(5, 2.0, 5), TSEntry(16, 3.0, 10))
 
     assert(
-      TimeSeries.mergeEntries(s5)(m5)(plus) ==
+      TimeSeries.mergeEntries(s5)(m5)(plus).entries ==
         Seq(TSEntry(0, 1.0, 1), TSEntry(1, 3.0, 4), TSEntry(5, 4.0, 5), TSEntry(10, 2.0, 6), TSEntry(16, 5.0, 5), TSEntry(21, 3.0, 5))
     )
 
     assert(
-      TimeSeries.mergeEntries(m5)(s5)(plus) ==
+      TimeSeries.mergeEntries(m5)(s5)(plus).entries ==
         Seq(TSEntry(0, 1.0, 1), TSEntry(1, 3.0, 4), TSEntry(5, 4.0, 5), TSEntry(10, 2.0, 6), TSEntry(16, 5.0, 5), TSEntry(21, 3.0, 5))
     )
 
@@ -86,7 +86,7 @@ class TimeSeriesTest extends JUnitSuite {
     val m6 = Seq(TSEntry(-10, -1.0, 10), TSEntry(0, 1.0, 5), TSEntry(6, 2.0, 5), TSEntry(16, 3.0, 10), TSEntry(26, 4.0, 10))
 
     assert(
-      TimeSeries.mergeEntries(s6)(m6)(plus) ==
+      TimeSeries.mergeEntries(s6)(m6)(plus).entries ==
         Seq(
           TSEntry(-10, -1, 10),
           TSEntry(0, 1.0, 1),
@@ -101,7 +101,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      TimeSeries.mergeEntries(s6)(m6)(plus) ==
+      TimeSeries.mergeEntries(s6)(m6)(plus).entries ==
         Seq(
           TSEntry(-10, -1, 10),
           TSEntry(0, 1.0, 1),
@@ -123,12 +123,12 @@ class TimeSeriesTest extends JUnitSuite {
     val r1 = Seq(TSEntry(-20, 5.0, 10), TSEntry(-10, 6.0, 10), TSEntry(0, 7.0, 10), TSEntry(10, 8.0, 10))
 
     assert(
-      TimeSeries.mergeEntries(l1)(r1)(mul) ==
+      TimeSeries.mergeEntries(l1)(r1)(mul).entries ==
         Seq(TSEntry(-20, 5.0, 10), TSEntry(-10, 12.0, 10), TSEntry(0, 21.0, 10), TSEntry(10, 32.0, 10))
     )
 
     assert(
-      TimeSeries.mergeEntries(r1)(l1)(mul) ==
+      TimeSeries.mergeEntries(r1)(l1)(mul).entries ==
         Seq(TSEntry(-20, 5.0, 10), TSEntry(-10, 12.0, 10), TSEntry(0, 21.0, 10), TSEntry(10, 32.0, 10))
     )
 
@@ -136,7 +136,7 @@ class TimeSeriesTest extends JUnitSuite {
     val r2 = r1.map(e => TSEntry(e.timestamp + 5, e.value, e.validity))
 
     assert(
-      TimeSeries.mergeEntries(l1)(r2)(mul) ==
+      TimeSeries.mergeEntries(l1)(r2)(mul).entries ==
         Seq(
           TSEntry(-20, 1.0, 5),
           TSEntry(-15, 5.0, 5),
@@ -151,7 +151,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      TimeSeries.mergeEntries(r2)(l1)(mul) ==
+      TimeSeries.mergeEntries(r2)(l1)(mul).entries ==
         Seq(
           TSEntry(-20, 1.0, 5),
           TSEntry(-15, 5.0, 5),
@@ -177,7 +177,7 @@ class TimeSeriesTest extends JUnitSuite {
                  TSEntry(15, 12.0, 5))
 
     assert(
-      TimeSeries.mergeEntries(l1)(r3)(mul) ==
+      TimeSeries.mergeEntries(l1)(r3)(mul).entries ==
         Seq(
           TSEntry(-20, 5.0, 5),
           TSEntry(-15, 6.0, 5),
@@ -191,7 +191,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      TimeSeries.mergeEntries(r3)(l1)(mul) ==
+      TimeSeries.mergeEntries(r3)(l1)(mul).entries ==
         Seq(
           TSEntry(-20, 5.0, 5),
           TSEntry(-15, 6.0, 5),
@@ -208,7 +208,7 @@ class TimeSeriesTest extends JUnitSuite {
     val r4 = r3.map(e => TSEntry(e.timestamp + 4, e.value, e.validity))
 
     assert(
-      TimeSeries.mergeEntries(l1)(r4)(mul) ==
+      TimeSeries.mergeEntries(l1)(r4)(mul).entries ==
         Seq(
           TSEntry(-20, 1.0, 4),
           TSEntry(-16, 5.0, 5),
@@ -227,7 +227,7 @@ class TimeSeriesTest extends JUnitSuite {
     )
 
     assert(
-      TimeSeries.mergeEntries(r4)(l1)(mul) ==
+      TimeSeries.mergeEntries(r4)(l1)(mul).entries ==
         Seq(
           TSEntry(-20, 1.0, 4),
           TSEntry(-16, 5.0, 5),
@@ -324,7 +324,7 @@ class TimeSeriesTest extends JUnitSuite {
       Seq(TSEntry(-20, -1.0, 10), TSEntry(-10, -2.0, 10), TSEntry(0, 3.0, 10), TSEntry(10, 1.0, 10), TSEntry(20, 2.0, 10))
 
     assert(
-      TimeSeries.mergeEntries(l)(r)(plus) ==
+      TimeSeries.mergeEntries(l)(r)(plus).entries ==
         Seq(TSEntry(-20, 0.0, 20), TSEntry(0, 6.0, 10), TSEntry(10, 2.0, 20))
     )
   }
@@ -428,7 +428,7 @@ class TimeSeriesTest extends JUnitSuite {
     val b = Seq(TSEntry(10, "b1", 10), TSEntry(30, "b2", 10))
 
     assert(
-      TimeSeries.mergeEntries(a)(b)(op) ==
+      TimeSeries.mergeEntries(a)(b)(op).entries ==
         Seq(
           TSEntry(10, "|b1", 5),
           TSEntry(15, "a1|b1", 5),
@@ -517,12 +517,10 @@ class TimeSeriesTest extends JUnitSuite {
     val ts2 = TSEntry(1, 'b', 3)
 
     assert(
-      ts1.fallback(ts2) == TimeSeries.ofOrderedEntriesUnsafe(
-        Seq(
-          TSEntry(1, 'a', 1),
-          TSEntry(2, 'b', 1),
-          TSEntry(3, 'c', 1)
-        )
+      ts1.fallback(ts2).entries == Seq(
+        TSEntry(1, 'a', 1),
+        TSEntry(2, 'b', 1),
+        TSEntry(3, 'c', 1)
       )
     )
   }
@@ -599,7 +597,7 @@ class TimeSeriesTest extends JUnitSuite {
       case _            => None
     }
 
-    assert(result == Vector(TSEntry(6, 'Y', 4)))
+    assert(result.entries == Seq(TSEntry(6, 'Y', 4)))
   }
 
   @Test def testMergeEntriesWithUndefinedDomainsButWithStartingValue(): Unit = {
@@ -618,7 +616,7 @@ class TimeSeriesTest extends JUnitSuite {
       case _               => None
     }
 
-    assert(result == Seq(TSEntry(1, 'a', 1), TSEntry(3, 'd', 2)))
+    assert(result.entries == Seq(TSEntry(1, 'a', 1), TSEntry(3, 'd', 2)))
   }
 
   @Test def testMathOperationsCompressedResult(): Unit = {

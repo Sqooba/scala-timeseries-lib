@@ -356,16 +356,13 @@ object TSEntry {
       throw new IllegalArgumentException(s"Function cannot be applied to overlapping entries: $a and $b")
     } else {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
-        emptyApply(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
+        applyEmptyMerge(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
         op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
     }.sorted
 
-  private def emptyApply[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
-    if (from == to) {
-      None
-    } else {
-      op(None, None).map(TSEntry(from, _, to - from))
-    }
+  private[timeseries] def applyEmptyMerge[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
+    if (from == to) None
+    else op(None, None).map(TSEntry(from, _, to - from))
 
   /** Merge two entries.
     * The domain covered by the returned entries (including a potential discontinuities)
@@ -392,9 +389,12 @@ object TSEntry {
 
   /** Merge the 'single' TSEntry to the 'others'.
     * The domain of definition of the 'single' entry is used:
-    * non-overlapping parts of the other entries will not be merged. */
-  def mergeSingleToMultiple[A, B, R](single: TSEntry[Either[A, B]], others: Seq[TSEntry[Either[A, B]]])(
-      op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
+    * non-overlapping parts of the other entries will not be merged.
+    */
+  def mergeSingleToMultiple[A, B, R](
+      single: TSEntry[Either[A, B]],
+      others: Seq[TSEntry[Either[A, B]]]
+  )(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     others.collect {
       // Retain only entries overlapping with 'single', and constrain them to the 'single' domain.
       case entry if single.overlaps(entry) =>
