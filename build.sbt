@@ -1,6 +1,5 @@
 organization := "io.sqooba.oss"
 name := "scala-timeseries-lib"
-version := "HEAD-SNAPSHOT"
 scalaVersion := "2.13.1"
 description := "Lightweight, functional and exact time-series library for scala"
 homepage := Some(url("https://github.com/Sqooba/scala-timeseries-lib"))

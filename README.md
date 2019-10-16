@@ -18,6 +18,24 @@ This library is not intended to provide in-depth statistics about time series da
 
 > Everything is a step function
 
+#### TL/DR
+
+```
+<dependency>
+  <groupId>io.sqooba.oss</groupId>
+  <artifactId>scala-timeseries-lib_2.13</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+or, if you want to cook your own, local, `HEAD-SNAPSHOT` release, just
+
+```
+make release-local
+# Alternatively, if you want to set a specific version when installing locally:
+make -e VERSION=1.0.0 release-local 
+```
+
 ## Usage
 In essence, a `TimeSeries` is just an ordered map of `[Long,T]`. In most use cases the key represents the time since the epoch in milliseconds, but the implementation makes no assumption about the time unit of the key.
 
