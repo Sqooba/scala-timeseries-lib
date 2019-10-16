@@ -200,7 +200,10 @@ trait TimeSeries[+T] {
     * max(this.last.definedUntil, other.last.definedUntil)
     */
   def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
-    TimeSeries.mergeEntries(this.entries)(other.entries)(op, this.newBuilder[R]())
+    TimeSeriesMerger
+      .mergeEntries(this.entries)(other.entries)(op, compress = false)
+      .foldLeft(this.newBuilder[R]())(_ += _)
+      .result()
 
   /**
     * Merge another time series to this one, using the provided operator
@@ -531,109 +534,9 @@ object TimeSeries {
     }
   }
 
-  /** Merge two time series together, using the provided merge operator.
-    *
-    * The passed TSEntry sequences will be merged according to the merge operator,
-    * which will always be applied to one of the following:
-    *    - two defined TSEntries with exactly the same domain of definition
-    *    - a defined entry from A and None from B
-    *    - a defined entry from B and None from A
-    *    - No defined entry from A nor B.
-    *
-    * Overlapping TSEntries in the sequences a and b are trimmed to fit
-    * one of the aforementioned cases before being passed to the merge function.
-    *
-    * For example,
-    *    - if 'x' and '-' respectively represent the undefined and defined parts of a TSEntry
-    *    - '|' delimits the moment on the time axis where a change in definition occurs either
-    * in the present entry or in the one with which it is currently being merged
-    *    - 'result' is the sequence resulting from the merge
-    *
-    * We apply the merge function in the following way:
-    *
-    * a_i:    xxx|---|---|xxx|xxx
-    * b_j:    xxx|xxx|---|---|xxx
-    *
-    * result: (1) (2) (3) (4) (5)
-    *
-    * (1),(5) : op(None, None)
-    * (2) : op(Some(a_i.value), None)
-    * (3) : op(Some(a_i.value), Some(b_j.value))
-    * (4) : op(None, Some(b_j.value))
-    *
-    * Assumes a and b to be ORDERED!
-    */
-  def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(
-      op: (Option[A], Option[B]) => Option[C],
-      timeSeriesBuilder: TimeSeriesBuilder[C] = newBuilder[C]()
-  ): TimeSeries[C] =
-    mergeEithers(
-      mergeOrderedSeqs(a.map(_.toLeftEntry[B]), b.map(_.toRightEntry[A]))
-    )(op, timeSeriesBuilder)
-
-  /**
-    * Combine two Seq's that are known to be ordered and return a Seq that is
-    * both ordered and that contains both of the elements in 'a' and 'b'.
-    * Adapted from http://stackoverflow.com/a/19452304/1997056
-    */
-  def mergeOrderedSeqs[E](a: Seq[E], b: Seq[E])(implicit o: Ordering[E]): Seq[E] = {
-    @tailrec
-    def rec(x: Seq[E], y: Seq[E], acc: mutable.Builder[E, Seq[E]]): mutable.Builder[E, Seq[E]] = {
-      (x, y) match {
-        case (Nil, Nil) => acc
-        case (_, Nil)   => acc ++= x
-        case (Nil, _)   => acc ++= y
-        case (xh +: xt, yh +: yt) =>
-          if (o.lteq(xh, yh)) {
-            rec(xt, y, acc += xh)
-          } else {
-            rec(x, yt, acc += yh)
-          }
-      }
-    }
-    // Use an ArrayBuffer set to the correct capacity as a Builder
-    rec(a, b, Seq.newBuilder).result
-  }
-
-  /** Merge a sequence composed of entries containing Eithers.
-    *
-    * Entries of Eithers of a same kind (Left or Right) cannot overlap.
-    *
-    * Overlapping entries will be split where necessary and their values passed to the
-    * operator to be merged. Left and Right entries are passed as the first and second argument
-    * of the merge operator, respectively.
-    */
-  def mergeEithers[A, B, C](in: Seq[TSEntry[Either[A, B]]])(
-      op: (Option[A], Option[B]) => Option[C],
-      timeSeriesBuilder: TimeSeriesBuilder[C] = newBuilder[C]()
-  ): TimeSeries[C] = {
-    @tailrec
-    def rec(remaining: Seq[TSEntry[Either[A, B]]], lastSeenDefinedUntil: Long, builder: TimeSeriesBuilder[C]): TimeSeriesBuilder[C] =
-      remaining match {
-        case Seq() => builder
-
-        // Fill the hole when neither of the two time-series were defined over a given domain
-        case head +: _ if lastSeenDefinedUntil < head.timestamp =>
-          TSEntry.applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(op).foreach(builder += _)
-
-          rec(remaining, head.timestamp, builder)
-
-        case head +: tail =>
-          // Take all entries with which the head overlaps and merge them
-          val (toMerge, newTail) = tail.span(_.timestamp < head.definedUntil)
-
-          val newHead = toMerge.lastOption
-          // and if that last entry is still defined after the head's domain
-            .filter(_.defined(head.definedUntil))
-            // it is split and the second part is reused in the next iteration
-            .map(_.trimEntryLeft(head.definedUntil))
-            .toList
-
-          rec(newHead ++: newTail, head.definedUntil, builder ++= TSEntry.mergeSingleToMultiple(head, toMerge)(op))
-      }
-
-    rec(in, Long.MaxValue, timeSeriesBuilder).result()
-  }
+  /** @see [[TimeSeriesMerger.mergeEntries]] */
+  def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
+    TimeSeriesMerger.mergeEntries(a)(b)(op)
 
   /**
     * Groups the entries in the stream into substreams that each contain at most
@@ -661,19 +564,6 @@ object TimeSeries {
     */
   def splitEntriesLongerThan[T](entries: Seq[TSEntry[T]], entryMaxLength: Long): Seq[TSEntry[T]] =
     entries.flatMap(entry => entry.splitEntriesLongerThan(entryMaxLength).entries)
-
-  /**
-    * This is needed to be able to pattern match on Vectors:
-    * https://stackoverflow.com/questions/10199171/matcherror-when-match-receives-an-indexedseq-but-not-a-linearseq
-    */
-  // scalastyle:off object_name
-  object +: {
-
-    def unapply[T](s: Seq[T]): Option[(T, Seq[T])] =
-      s.headOption.map(head => (head, s.tail))
-  }
-
-  // scalastyle:on object_name
 
   /**
     * Computes the union of the passed time-series' loose domains

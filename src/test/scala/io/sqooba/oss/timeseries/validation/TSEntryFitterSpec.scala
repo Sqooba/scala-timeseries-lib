@@ -7,7 +7,7 @@ class TSEntryFitterSpec extends FlatSpec with Matchers {
 
   private def newFitter(compress: Boolean) = new TSEntryFitter[Int](compress)
 
-  "A TSEntry" should "return no last entry if nothing was added" in {
+  "TSEntryFitter" should "return no last entry if nothing was added" in {
     newFitter(true).lastEntry shouldBe None
   }
 
@@ -39,11 +39,11 @@ class TSEntryFitterSpec extends FlatSpec with Matchers {
 
   it should "not compress two equal overlapping entries if not compressing" in {
     val fitter = newFitter(false)
-    val entry1 = TSEntry(1, 77, 5)
+    val entry1 = TSEntry(1, 77, 20)
     val entry2 = TSEntry(10, 77, 5)
 
     fitter.addAndFitLast(entry1) shouldBe None
-    fitter.addAndFitLast(entry2) shouldBe Some(entry1)
+    fitter.addAndFitLast(entry2) shouldBe Some(TSEntry(1, 77, 9))
     fitter.lastEntry shouldBe Some(entry2)
   }
 
@@ -103,5 +103,34 @@ class TSEntryFitterSpec extends FlatSpec with Matchers {
 
     fitter.addAndFitLast(entry2)
     an[IllegalArgumentException] should be thrownBy fitter.addAndFitLast(entry1)
+  }
+
+  "TSEntryFitter.validateEntries" should "return an empty Seq for an empty input Seq" in {
+    TSEntryFitter.validateEntries(Seq.empty, compress = false) shouldBe Seq.empty
+    TSEntryFitter.validateEntries(Seq.empty, compress = true) shouldBe Seq.empty
+  }
+
+  it should "compress two overlapping equal entries" in {
+    val seq = Seq(TSEntry(1, 77, 10), TSEntry(5, 77, 10))
+
+    TSEntryFitter.validateEntries(seq, true) shouldBe Seq(TSEntry(1, 77, 14))
+  }
+
+  it should "compress two contiguous equal entries" in {
+    val seq = Seq(TSEntry(1, 77, 4), TSEntry(5, 77, 5))
+
+    TSEntryFitter.validateEntries(seq, true) shouldBe Seq(TSEntry(1, 77, 9))
+  }
+
+  it should "not compress two equal entries with a gap" in {
+    val seq = Seq(TSEntry(1, 77, 5), TSEntry(10, 77, 10))
+
+    TSEntryFitter.validateEntries(seq, true) shouldBe seq
+  }
+
+  it should "not compress two equal overlapping entries if not compressing" in {
+    val seq = Seq(TSEntry(1, 77, 20), TSEntry(10, 77, 10))
+
+    TSEntryFitter.validateEntries(seq, false) shouldBe seq.updated(0, TSEntry(1, 77, 9))
   }
 }

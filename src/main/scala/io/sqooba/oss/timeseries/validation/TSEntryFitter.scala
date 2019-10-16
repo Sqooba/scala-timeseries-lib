@@ -69,3 +69,14 @@ class TSEntryFitter[T](compress: Boolean) {
     isDomainCont = true
   }
 }
+
+object TSEntryFitter {
+
+  def validateEntries[T](entries: Seq[TSEntry[T]], compress: Boolean): Seq[TSEntry[T]] = {
+    val fitter = new TSEntryFitter[T](compress)
+
+    def last: Stream[TSEntry[T]] = fitter.lastAdded.to(Stream)
+
+    entries.to(Stream).flatMap(fitter.addAndFitLast) #::: last
+  }
+}

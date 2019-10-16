@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging"           % "3.9.2",
   "org.apache.thrift"          % "libthrift"                % "0.12.0",
   "com.twitter"                %% "scrooge-core"            % "19.9.0",
+  "com.chuusai"                %% "shapeless"               % "2.3.3",
   "junit"                      % "junit"                    % "4.12" % Test,
   "org.scalactic"              %% "scalactic"               % "3.0.8",
   "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
@@ -46,7 +47,7 @@ developers := List(
   Developer("yannbolliger", "Yann Bolliger", "", url("https://github.com/yannbolliger"))
 )
 
-// For releases, check the Manual Release part on 
+// For releases, check the Manual Release part on
 // http://caryrobbins.com/dev/sbt-publishing/
 
 publishTo := {
@@ -54,6 +55,5 @@ publishTo := {
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
   else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
-

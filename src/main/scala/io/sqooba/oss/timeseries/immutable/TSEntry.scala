@@ -2,7 +2,7 @@ package io.sqooba.oss.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.oss.timeseries.TimeSeries
+import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesMerger}
 
 import scala.reflect.runtime.universe._
 
@@ -313,6 +313,16 @@ object TSEntry {
     */
   implicit def orderByTs[T]: Ordering[TSEntry[T]] = TSEntryOrdering.asInstanceOf[Ordering[TSEntry[T]]]
 
+  /** Merge two entries.
+    * The domain covered by the returned entries (including a potential discontinuities)
+    * will be between min(a.timestamp, b.timestamp) and max(a.definedUntil, b.definedUntil) */
+  def merge[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
+    if (!a.overlaps(b)) {
+      mergeDisjointDomain(a, b)(op)
+    } else {
+      mergeOverlapping(a, b)(op)
+    }
+
   /** Merge two overlapping TSEntries and return the result as an
     * ordered sequence of TSEntries.
     *
@@ -350,98 +360,20 @@ object TSEntry {
   }
 
   /** Merge two entries that have a disjoint domain.
-    * The merge operator will be applied to each individually */
+    * The merge operator will be applied to each individually
+    */
   protected def mergeDisjointDomain[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     if (a.overlaps(b)) {
       throw new IllegalArgumentException(s"Function cannot be applied to overlapping entries: $a and $b")
     } else {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
-        applyEmptyMerge(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
+        TimeSeriesMerger.applyEmptyMerge(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
         op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
     }.sorted
-
-  private[timeseries] def applyEmptyMerge[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
-    if (from == to) None
-    else op(None, None).map(TSEntry(from, _, to - from))
-
-  /** Merge two entries.
-    * The domain covered by the returned entries (including a potential discontinuities)
-    * will be between min(a.timestamp, b.timestamp) and max(a.definedUntil, b.definedUntil) */
-  def merge[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
-    if (!a.overlaps(b)) {
-      mergeDisjointDomain(a, b)(op)
-    } else {
-      mergeOverlapping(a, b)(op)
-    }
-
-  /** Merge two TSEntries each containing an Either[A,B]
-    * Simply calls the normal merge function after determining which of
-    * the entries contains what type. */
-  def mergeEithers[A, B, R](a: TSEntry[Either[A, B]], b: TSEntry[Either[A, B]])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
-    (a, b) match {
-      case (TSEntry(tsA, Left(valA), dA), TSEntry(tsB, Right(valB), dB)) =>
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
-      case (TSEntry(tsB, Right(valB), dB), TSEntry(tsA, Left(valA), dA)) =>
-        merge(TSEntry(tsA, valA, dA), TSEntry(tsB, valB, dB))(op)
-      case _ =>
-        throw new IllegalArgumentException(s"Can't pass two entries with same sided-eithers: $a, $b")
-    }
-
-  /** Merge the 'single' TSEntry to the 'others'.
-    * The domain of definition of the 'single' entry is used:
-    * non-overlapping parts of the other entries will not be merged.
-    */
-  def mergeSingleToMultiple[A, B, R](
-      single: TSEntry[Either[A, B]],
-      others: Seq[TSEntry[Either[A, B]]]
-  )(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
-    others.collect {
-      // Retain only entries overlapping with 'single', and constrain them to the 'single' domain.
-      case entry if single.overlaps(entry) =>
-        entry.trimEntryLeftNRight(single.timestamp, single.definedUntil)
-    } match {
-      // Merge remaining constrained entries
-      case Seq() => mergeEitherToNone(single)(op).toSeq
-
-      case Seq(alone) => mergeEithers(single, alone)(op)
-
-      case toMerge =>
-        // Take care of the potentially undefined domain before the 'others'
-        mergeDefinedEmptyDomain(single)(single.timestamp, toMerge.head.timestamp)(op) ++
-          // Merge the others to the single entry, including potential
-          // undefined spaces between them.
-          // Group by pairs of entries to be able to trim the single
-          // one to the relevant domain for the individual merges
-          toMerge
-            .sliding(2)
-            .flatMap[TSEntry[R]](
-              p => mergeEithers(single.trimEntryLeftNRight(p.head.timestamp, p.last.timestamp), p.head)(op)
-            ) ++
-          // Take care of the last entry and the potentially undefined domain
-          // after it and the end of the single one.
-          mergeEithers(toMerge.last, single.trimEntryLeft(toMerge.last.timestamp))(op)
-    }
-
-  /** Merge the provided entry to a None on the domain spawned by [from, until[ */
-  private def mergeDefinedEmptyDomain[A, B, R](e: TSEntry[Either[A, B]])(from: Long, until: Long)(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
-    if (from == until) {
-      Seq.empty
-    } else {
-      mergeEitherToNone(e.trimEntryLeftNRight(from, until))(op).toSeq
-    }
 
   /** Convenience function to merge the values present in the entries at time 'at' and
     * create an entry valid until 'until' from the result, if the merge operation is defined
     * for the input. */
   private def mergeValues[A, B, R](a: TSEntry[A], b: TSEntry[B])(at: Long, until: Long)(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     op(a.at(at), b.at(at)).map(TSEntry(at, _, until - at)).toSeq
-
-  /** Merge the provided entry to a None, using the specified operator */
-  def mergeEitherToNone[A, B, R](e: TSEntry[Either[A, B]])(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] = {
-    e match {
-      case TSEntry(_, Left(valA), _)  => op(Some(valA), None)
-      case TSEntry(_, Right(valB), _) => op(None, Some(valB))
-    }
-  }.map(TSEntry(e.timestamp, _, e.validity))
-
 }
