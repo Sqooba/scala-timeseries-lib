@@ -3,14 +3,12 @@ package io.sqooba.oss.timeseries.archive
 import java.io.OutputStream
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
-import io.sqooba.oss.timeseries.utils.SliceableByteChannel
 import io.sqooba.oss.timeseries.thrift.{TBlockType, TSampledBlockType, TSuperBlockMetadata}
-import io.sqooba.oss.timeseries.utils.ThriftMarshaller
+import io.sqooba.oss.timeseries.utils.{SliceableByteChannel, ThriftMarshaller}
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TCompactProtocol
 
 import scala.collection.immutable.SortedMap
-import scala.collection.mutable
 
 // See the doc of the GorillaSuperBlock object for the format specification.
 
@@ -95,7 +93,8 @@ case class GorillaSuperBlock(channel: SliceableByteChannel) {
     * @param metaLength the length of the thrift metadata block in the footer
     * @return a sequence of gorilla encoded blocks of a timeseries
     */
-  def readAllBlocks(metadata: TSuperBlockMetadata, metaLength: Int): Seq[TSEntry[GorillaBlock]] =
+  def readAllBlocks(metadata: TSuperBlockMetadata, metaLength: Int): Seq[TSEntry[GorillaBlock]] = {
+    import scala.collection.compat._
     readIndex(metaLength).toSeq
       .sliding(2)
       .map {
@@ -106,7 +105,8 @@ case class GorillaSuperBlock(channel: SliceableByteChannel) {
             nextTs - ts
           )
       }
-      .to(LazyList)
+      .to(Stream)
+  }
 
   /** Read all of the information of this GorillaSuperBlock and lazily return
     * all contained GorillaBlocks. This uses the more granular methods of this
@@ -163,10 +163,10 @@ object GorillaSuperBlock {
     * @param output the stream to write to
     */
   def write[B <: GorillaBlock](buckets: Seq[TSEntry[B]], output: OutputStream): Unit =
-    buckets.foldLeft(new GorillaSuperBlock.Writer[B](output))(_ += _).close()
+    buckets.foldLeft(new GorillaSuperBlock.Writer[B](output))(_ addOne _).close()
 
   /** A 'mutable.Growable' for the iterative writing of a GorillaSuperBlock. */
-  class Writer[B <: GorillaBlock](output: OutputStream) extends mutable.Growable[TSEntry[B]] with AutoCloseable {
+  class Writer[B <: GorillaBlock](output: OutputStream) extends AutoCloseable {
 
     // A map of (timestamps -> offset of encoded block in output)
     private var index: SortedMap[Long, Long]          = SortedMap.empty[Long, Long]
@@ -176,7 +176,7 @@ object GorillaSuperBlock {
     private var lastDefinedUntil = 0L
     private var resultCalled     = false
 
-    override def addOne(entry: TSEntry[B]): Writer.this.type = {
+    def addOne(entry: TSEntry[B]): Writer.this.type = {
       val TSEntry(ts, gorillaBlock, _) = entry
 
       if (metadata.isEmpty) {
@@ -195,7 +195,7 @@ object GorillaSuperBlock {
       this
     }
 
-    override def clear(): Unit = {
+    def clear(): Unit = {
       index = SortedMap.empty[Long, Long]
       lastLength = 0
       lastDefinedUntil = 0

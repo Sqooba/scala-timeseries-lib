@@ -28,7 +28,7 @@ class MultiSeriesBlockSpec extends FlatSpec with Matchers {
 
   // each series has one entry more than the previous one, last == entries
   private val series =
-    entries.scanLeft(Seq.empty[TSEntry[Double]])(_.appended(_)).tail
+    entries.scanLeft(Seq.empty[TSEntry[Double]])(_ :+ _).tail
 
   private val blocks = series.map { entriesInSeries =>
     TimeBucketer

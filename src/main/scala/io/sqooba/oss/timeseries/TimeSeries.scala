@@ -2,13 +2,11 @@ package io.sqooba.oss.timeseries
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.oss.timeseries.immutable._
 import io.sqooba.oss.timeseries.archive.TimeBucketer
+import io.sqooba.oss.timeseries.immutable._
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{AbstractSeq, LinearSeq}
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, Builder}
 import scala.concurrent.duration.TimeUnit
 import scala.reflect.runtime.universe._
 
@@ -355,12 +353,11 @@ trait TimeSeries[+T] {
     * window is taken.
     *
     * @note In either case, this function does **not** perform any kind of
-    * aggregation or roll-up.
-    *
-    * @param start timestamp of first sample point
-    * @param sampleRate interval between sample points
+    *       aggregation or roll-up.
+    * @param start              timestamp of first sample point
+    * @param sampleRate         interval between sample points
     * @param useClosestInWindow enables non-strict look-around sampling
-    * @param compress specifies whether equal contiguous entries should be compressed
+    * @param compress           specifies whether equal contiguous entries should be compressed
     * @return the sampled time-series
     */
   def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean, compress: Boolean = false): TimeSeries[T] = {
@@ -642,7 +639,7 @@ object TimeSeries {
     * Groups the entries in the stream into substreams that each contain at most
     * maxNumberOfEntries.
     *
-    * @param entries as a stream
+    * @param entries            as a stream
     * @param maxNumberOfEntries contained by each substream of the result
     * @return a stream of (bucket-start, bucket-entries)
     */
@@ -657,6 +654,7 @@ object TimeSeries {
 
   /**
     * Splits up all entries in the input that are longer than the given maximal length.
+    *
     * @param entryMaxLength to use for splitting
     * @return a sequence of entries guaranteed to be shorter than the given
     *         maximal length
@@ -711,10 +709,10 @@ object TimeSeries {
     * @note The sequence has to be chronologically ordered, otherwise the time-series might
     *       not behave correctly. In general, you should use a `TimeSeries.newBuilder`. Furthermore, no
     *       two entries should have the same timestamp. Finally, entries will NOT be compressed.
-    * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
-    *           well-formed (no duplicated timestamps)
-    * @param isCompressed Flags whether the xs' have been compressed in their construction.
-    *                     Will be passed to the underlying implementation.
+    * @param xs                A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+    *                          well-formed (no duplicated timestamps)
+    * @param isCompressed      Flags whether the xs' have been compressed in their construction.
+    *                          Will be passed to the underlying implementation.
     * @param isDomainContinous Flags whether all the entries span a continuous time domain without holes.
     *                          Will be passed to the underlying implementation.
     * @tparam T The underlying type of the time-series
@@ -743,8 +741,8 @@ object TimeSeries {
     * As we are using a `TimeSeriesBuilder`, the entries will be compressed if possible.
     *
     * @note No two entries can have the same timestamp, an exception will be thrown if it's the case.
-    * @param xs A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
-    *           well-formed (no duplicated timestamps)
+    * @param xs       A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+    *                 well-formed (no duplicated timestamps)
     * @param compress A flag specifying whether the entries should be compressed or not.
     * @tparam T The underlying type of the time-series
     * @return A compressed time-series with a correct implementation

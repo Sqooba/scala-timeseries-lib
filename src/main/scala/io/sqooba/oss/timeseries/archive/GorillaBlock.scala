@@ -1,10 +1,9 @@
 package io.sqooba.oss.timeseries.archive
 
-import io.sqooba.oss.timeseries.immutable.TSEntry
 import fi.iki.yak.ts.compression.gorilla._
+import io.sqooba.oss.timeseries.immutable.TSEntry
 import io.sqooba.oss.timeseries.validation.{TSEntryFitter, TimestampValidator}
 
-import scala.collection.mutable
 import scala.util.Success
 
 /** A GorillaBlock represents a compressed/encoded TimeSeries as defined in this
@@ -210,7 +209,7 @@ object GorillaBlock {
   class Builder private[GorillaBlock] (
       validity: Option[Long],
       compress: Boolean
-  ) extends mutable.Builder[TSEntry[Double], GorillaBlock] {
+  ) {
 
     require(validity.forall(_ > 0), "Sampling rate must be positive.")
 
@@ -228,7 +227,7 @@ object GorillaBlock {
     // Reset the builder to its initial state. The compressors must be set to null,
     // because they rely on the first timestamp which is only available at the
     // first addition of an element.
-    override def clear(): Unit = {
+    def clear(): Unit = {
       valueOutput = new LongArrayOutput()
       validityOutput = new LongArrayOutput()
       valueCompressor = null
@@ -238,7 +237,9 @@ object GorillaBlock {
       resultCalled = false
     }
 
-    override def addOne(entry: TSEntry[Double]): this.type = {
+    def +=(entry: TSEntry[Double]): this.type = addOne(entry)
+
+    def addOne(entry: TSEntry[Double]): this.type = {
       // If this is the first element added, initialise the compressors with its timestamp.
       if (lastEntry.isEmpty) {
         // NOTE: Don't forget to validate the first timestamp, if a block timestamp
@@ -268,7 +269,7 @@ object GorillaBlock {
       */
     def isDomainContinuous: Boolean = entryBuilder.isDomainContinuous
 
-    override def result(): GorillaBlock = {
+    def result(): GorillaBlock = {
       if (resultCalled) {
         throw new IllegalStateException(
           "Cannot call result more than once, unless the builder was cleared."

@@ -1,24 +1,25 @@
-
-organization := "io.sqooba"
-scalaVersion := "2.13.0"
+organization := "io.sqooba.oss"
 name := "scala-timeseries-lib"
+version := "HEAD-SNAPSHOT"
+scalaVersion := "2.13.1"
 description := "Lightweight, functional and exact time-series library for scala"
 homepage := Some(url("https://github.com/Sqooba/scala-timeseries-lib"))
 licenses := Seq("Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12")
+crossScalaVersions := Seq("2.13.1", "2.12.10")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 
 libraryDependencies ++= Seq(
-  "com.storm-enroute"          %% "scalameter"         % "0.19",
-  "fi.iki.yak"                 % "compression-gorilla" % "2.1.1",
-  "com.typesafe.scala-logging" %% "scala-logging"      % "3.9.2",
-  "org.apache.thrift"          % "libthrift"           % "0.12.0",
-  "com.twitter"                %% "scrooge-core"       % "19.9.0",
-  "junit"                      % "junit"               % "4.12" % Test,
-  "org.scalactic"              %% "scalactic"          % "3.0.8",
-  "org.scalatest"              %% "scalatest"          % "3.0.8" % Test
+  "com.storm-enroute"          %% "scalameter"              % "0.19",
+  "fi.iki.yak"                 % "compression-gorilla"      % "2.1.1",
+  "com.typesafe.scala-logging" %% "scala-logging"           % "3.9.2",
+  "org.apache.thrift"          % "libthrift"                % "0.12.0",
+  "com.twitter"                %% "scrooge-core"            % "19.9.0",
+  "junit"                      % "junit"                    % "4.12" % Test,
+  "org.scalactic"              %% "scalactic"               % "3.0.8",
+  "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
+  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2"
 )
 
 coverageHighlighting := true
@@ -44,3 +45,15 @@ developers := List(
   Developer("nsanglar", "NSanglar", "", url("https://github.com/nsanglar")),
   Developer("yannbolliger", "Yann Bolliger", "", url("https://github.com/yannbolliger"))
 )
+
+// For releases, check the Manual Release part on 
+// http://caryrobbins.com/dev/sbt-publishing/
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
+

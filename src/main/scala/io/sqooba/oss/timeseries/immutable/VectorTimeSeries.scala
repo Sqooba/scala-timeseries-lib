@@ -241,7 +241,7 @@ object VectorTimeSeries {
 
     private var resultCalled = false
 
-    override def addOne(elem: TSEntry[T]): this.type = {
+    def addOne(elem: TSEntry[T]): this.type = {
       entryBuilder.addAndFitLast(elem).foreach(resultBuilder += _)
       this
     }

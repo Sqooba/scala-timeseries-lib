@@ -259,7 +259,7 @@ object ColumnTimeSeries {
       entries: Seq[TSEntry[T]],
       compress: Boolean = true
   ): TimeSeries[T] =
-    entries.foldLeft(newBuilder[T](compress))(_ += _).result()
+    entries.foldLeft(newBuilder[T](compress))(_ addOne _).result()
 
   /**
     * @param columns the built, SORTED and valid column vectors representing the entries of the timeseries. The first
