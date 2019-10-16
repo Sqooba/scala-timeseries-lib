@@ -1,11 +1,11 @@
 organization := "io.sqooba.oss"
 name := "scala-timeseries-lib"
-scalaVersion := "2.13.1"
+scalaVersion := "2.13.0"
 description := "Lightweight, functional and exact time-series library for scala"
 homepage := Some(url("https://github.com/Sqooba/scala-timeseries-lib"))
 licenses := Seq("Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 
-crossScalaVersions := Seq("2.13.1", "2.12.10")
+crossScalaVersions := Seq("2.13.0", "2.12.10")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 
