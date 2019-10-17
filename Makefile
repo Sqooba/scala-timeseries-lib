@@ -14,5 +14,6 @@ test:
 release:
 	sbt 'set version := "$(VERSION)"' +publishSigned
 
+# Do a +publishLocal if you need it in your local .ivy2 repo
 release-local:
-	sbt 'set version := "$(VERSION)"' +publishLocal
+	sbt 'set version := "$(VERSION)"' +publishM2
