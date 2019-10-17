@@ -1,5 +1,6 @@
 package io.sqooba.oss.timeseries.archive
 
+import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}
 

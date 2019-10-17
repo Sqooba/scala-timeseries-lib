@@ -503,4 +503,21 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
       TSEntry(20, .345, 20)
     )
   }
+
+  "TimeSeries.rollup" should "properly rollup the content of the buckets" in {
+    val series = TimeSeries(Seq(TSEntry(0, .0, 10), TSEntry(10, 1.0, 10), TSEntry(20, 2.0, 10)))
+
+    series
+      .rollup(Stream.from(0, 10).map(_.toLong), ts => ts.entries.head.value)
+      .shouldBe(TimeSeries(Seq(TSEntry(0, .0, 10), TSEntry(10, 1.0, 10), TSEntry(20, 2.0, 10))))
+
+    series
+      .rollup(Stream.from(-5, 10).map(_.toLong), ts => ts.entries.head.value)
+      .shouldBe(TimeSeries(Seq(TSEntry(-5, .0, 10), TSEntry(5, .0, 10), TSEntry(15, 1.0, 10), TSEntry(25, 2.0, 10))))
+
+    // Refuse buckets starting after first entry
+    an[IllegalArgumentException] should be thrownBy series
+      .rollup(Range.Long(10, 20, 10).toStream, ts => ts.entries.head.value)
+
+  }
 }

@@ -3,6 +3,7 @@ package io.sqooba.oss.timeseries.archive
 import java.io.{ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
 
 import io.sqooba.oss.timeseries.TimeSeries
+import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.immutable.{NestedTimeSeries, TSEntry}
 import io.sqooba.oss.timeseries.thrift.{TBlockType, TSampledBlockType, TTupleBlockType}
 import io.sqooba.oss.timeseries.utils.SliceableByteChannel

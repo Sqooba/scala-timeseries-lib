@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   "org.scalactic"              %% "scalactic"               % "3.0.8",
   "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
   "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2"
+
 )
 
 coverageHighlighting := true
@@ -52,8 +53,10 @@ developers := List(
 
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
+  if (isSnapshot.value) {
     Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
+  } else {
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  }
 }
+

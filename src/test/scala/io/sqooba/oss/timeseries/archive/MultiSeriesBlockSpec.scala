@@ -4,6 +4,7 @@ import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
 import java.nio.file.{Files, Path}
 
+import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.immutable.{NestedTimeSeries, TSEntry}
 import io.sqooba.oss.timeseries.utils.SliceableByteChannel
 import org.scalatest.{FlatSpec, Matchers}

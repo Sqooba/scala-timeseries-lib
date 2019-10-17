@@ -1,7 +1,7 @@
-package io.sqooba.oss.timeseries.archive
+package io.sqooba.oss.timeseries.bucketing
 
-import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesBuilder}
 import io.sqooba.oss.timeseries.immutable.TSEntry
+import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesBuilder}
 
 /**
   * Helper for bucketing/slicing a stream of TSEntries in order to be stored as
@@ -11,7 +11,7 @@ object TimeBucketer {
 
   /**
     * Buckets the passed entries into blocks/chunks that have domains delimited by the given
-    * bucketTimstamps. If such a block exceeds the passed maximal number of entries in size
+    * bucketTimestamps. If such a block exceeds the passed maximal number of entries in size
     * then it is further split up into multiple blocks within the bucket timestamp domain.
     *
     * A block is represented by a TSEntry containing the entries of the block as a stream.

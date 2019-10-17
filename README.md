@@ -21,11 +21,8 @@ This library is not intended to provide in-depth statistics about time series da
 #### TL/DR
 
 ```
-<dependency>
-  <groupId>io.sqooba.oss</groupId>
-  <artifactId>scala-timeseries-lib_2.13</artifactId>
-  <version>1.0.0</version>
-</dependency>
+// https://mvnrepository.com/artifact/io.sqooba.oss/scala-timeseries-lib
+libraryDependencies += "io.sqooba.oss" %% "scala-timeseries-lib" % "1.1.0"
 ```
 
 or, if you want to cook your own, local, `HEAD-SNAPSHOT` release, just

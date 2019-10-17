@@ -6,7 +6,7 @@ import io.sqooba.oss.timeseries.immutable.TSEntry
 import io.sqooba.oss.timeseries.windowing.{IntegratingAggregator, WindowSlider}
 
 import scala.annotation.tailrec
-import scala.collection.mutable.{ArrayBuffer, Builder}
+import scala.collection.mutable.Builder
 import scala.concurrent.duration.TimeUnit
 
 object NumericTimeSeries {
@@ -44,6 +44,8 @@ object NumericTimeSeries {
     }
   }
 
+  // TODO migrate this to the windowed stuff (and check if it's used anyhow)
+  @deprecated("Please use the new windowing functions. See WindowSlider.scala")
   def rolling[T](ts: TimeSeries[T], aggregator: Seq[T] => T, windowMs: Long, compress: Boolean = true)(implicit n: Numeric[T]): TimeSeries[T] =
     ts.mapWithTime(
       { (time, currentVal) =>

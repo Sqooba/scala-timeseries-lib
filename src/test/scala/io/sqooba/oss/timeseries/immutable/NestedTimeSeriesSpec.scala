@@ -1,6 +1,6 @@
 package io.sqooba.oss.timeseries.immutable
 
-import io.sqooba.oss.timeseries.archive.TimeBucketer
+import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesTestBench}
 import org.scalatest.{FlatSpec, Matchers}
 
