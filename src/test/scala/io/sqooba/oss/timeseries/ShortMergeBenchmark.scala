@@ -5,7 +5,7 @@ object ShortMergeBenchmark {
   def main(args: Array[String]): Unit = {
     val (avg1, std1) = benchmarkFunction(iterations = 10) { () =>
       val (ts1, ts2) = createFixture
-      TimeSeriesMerger.mergeEntries(ts1.entries)(ts2.entries)(NumericTimeSeries.nonStrictPlus[Int, Int])
+      TimeSeriesMerger.mergeEntries(ts1.entries, ts2.entries)(NumericTimeSeries.nonStrictPlus[Int, Int])
     }
 
     printResults("TimeSeriesMerger.mergeEntries", avg1, std1)

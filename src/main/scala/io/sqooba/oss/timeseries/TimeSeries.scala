@@ -201,11 +201,11 @@ trait TimeSeries[+T] {
     *
     * In any case, the returned time series will only be defined between the
     * bounds defined by min(this.head.timestamp, other.head.timestamp) and
-    * max(this.last.definedUntil, other.last.definedUntil)
+    * max(this.last.definedUntil, other.last.definedUntil).
     */
   def merge[O, R](op: (Option[T], Option[O]) => Option[R])(other: TimeSeries[O]): TimeSeries[R] =
     TimeSeriesMerger
-      .mergeEntries(this.entries)(other.entries)(op, compress = false)
+      .mergeEntries(this.entries, other.entries, compress = false)(op)
       .foldLeft(this.newBuilder[R]())(_ += _)
       .result()
 
@@ -562,7 +562,7 @@ object TimeSeries {
 
   /** @see [[TimeSeriesMerger.mergeEntries]] */
   def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
-    TimeSeriesMerger.mergeEntries(a)(b)(op)
+    TimeSeriesMerger.mergeEntries(a, b)(op)
 
   /**
     * Groups the entries in the stream into substreams that each contain at most

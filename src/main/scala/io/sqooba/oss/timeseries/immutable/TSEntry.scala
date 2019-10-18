@@ -2,7 +2,7 @@ package io.sqooba.oss.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import io.sqooba.oss.timeseries.{TimeSeries, TimeSeriesMerger}
+import io.sqooba.oss.timeseries.TimeSeries
 
 import scala.reflect.runtime.universe._
 
@@ -63,7 +63,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     }
 
   /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws
-    * if 'at' is before the entry's timestamp. */
+    * if 'at' is before the entry's timestamp.
+    */
   def trimEntryRight(at: Long): TSEntry[T] =
     if (at <= timestamp) { // Trim before or exactly on value start: result is empty.
       throw new IllegalArgumentException(s"Attempting to trim right at $at before entry's domain has started ($timestamp)")
@@ -97,7 +98,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     }
 
   /** Similar to trimLeft, but returns a TSEntry instead of a time series and throws
-    * if 'at' exceeds the entry's definition. */
+    * if 'at' exceeds the entry's definition.
+    */
   def trimEntryLeft(at: Long): TSEntry[T] =
     if (at >= definedUntil) { // Nothing left from the value on the right side of the trim
       throw new IllegalArgumentException(s"Attempting to trim left at $at after entry's domain has ended ($definedUntil)")
@@ -317,7 +319,8 @@ object TSEntry {
 
   /** Merge two entries.
     * The domain covered by the returned entries (including a potential discontinuities)
-    * will be between min(a.timestamp, b.timestamp) and max(a.definedUntil, b.definedUntil) */
+    * will be between min(a.timestamp, b.timestamp) and max(a.definedUntil, b.definedUntil)
+    */
   def merge[A, B, R](a: TSEntry[A], b: TSEntry[B])(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     if (!a.overlaps(b)) {
       mergeDisjointDomain(a, b)(op)
@@ -369,7 +372,7 @@ object TSEntry {
       throw new IllegalArgumentException(s"Function cannot be applied to overlapping entries: $a and $b")
     } else {
       op(Some(a.value), None).map(TSEntry(a.timestamp, _, a.validity)).toSeq ++
-        TimeSeriesMerger.applyEmptyMerge(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
+        applyEmptyMerge(Math.min(a.definedUntil, b.definedUntil), Math.max(a.timestamp, b.timestamp))(op).toSeq ++
         op(None, Some(b.value)).map(TSEntry(b.timestamp, _, b.validity)).toSeq
     }.sorted
 
@@ -378,4 +381,8 @@ object TSEntry {
     * for the input. */
   private def mergeValues[A, B, R](a: TSEntry[A], b: TSEntry[B])(at: Long, until: Long)(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     op(a.at(at), b.at(at)).map(TSEntry(at, _, until - at)).toSeq
+
+  private def applyEmptyMerge[A, B, R](from: Long, to: Long)(op: (Option[A], Option[B]) => Option[R]): Option[TSEntry[R]] =
+    if (from == to) None
+    else op(None, None).map(TSEntry(from, _, to - from))
 }
