@@ -1,5 +1,7 @@
 package io.sqooba.oss.timeseries.validation
 
+import io.sqooba.oss.timeseries.TimeSeries
+import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}
 
 class TimestampValidatorSpec extends FlatSpec with Matchers {
@@ -57,5 +59,15 @@ class TimestampValidatorSpec extends FlatSpec with Matchers {
 
   it should "have the correct gap constant" in {
     TimestampValidator.MaxGapToBlock shouldBe 134217726
+  }
+
+  it should "not complain about big gaps in non-Gorilla contexts" in {
+    noException should be thrownBy TimeSeries(
+      Seq(
+        TSEntry(0, 0.0, 1000),
+        TSEntry(TimestampValidator.MaxGapToBlock + 1001, 0.1, 1000),
+        TSEntry(TimestampValidator.MaxGapToBlock + TimestampValidator.MaxGap + 1002, 0.2, 1000)
+      )
+    )
   }
 }

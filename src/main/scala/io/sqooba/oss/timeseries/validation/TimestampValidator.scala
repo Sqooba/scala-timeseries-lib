@@ -89,11 +89,6 @@ object TimestampValidator {
       lastTs < currentTs,
       s"The timestamps need to be strictly increasing, was $lastTs before $currentTs."
     )
-
-    require(
-      currentTs < lastTs + MaxGap,
-      s"Timestamps cannot have a difference larger than $MaxGap, was $currentTs - $lastTs = ${currentTs - lastTs}."
-    )
   }
 
   private def requirePositive(ts: Long): Unit =
