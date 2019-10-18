@@ -20,8 +20,8 @@ libraryDependencies ++= Seq(
   "junit"                      % "junit"                    % "4.12" % Test,
   "org.scalactic"              %% "scalactic"               % "3.0.8",
   "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
-  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2"
-
+  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
+  "io.dropwizard.metrics"      % "metrics-core"             % "4.0.0" % Test
 )
 
 coverageHighlighting := true
@@ -59,4 +59,3 @@ publishTo := {
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
   }
 }
-
