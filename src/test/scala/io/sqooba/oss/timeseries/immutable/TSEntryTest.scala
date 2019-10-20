@@ -593,4 +593,12 @@ class TSEntryTest extends JUnitSuite {
         == 100000
     )
   }
+
+  @Test def testEntries(): Unit = {
+    assert(TSEntry(1, 42, 100000).entries == Seq(TSEntry(1, 42, 100000)))
+  }
+
+  @Test def testValues(): Unit = {
+    assert(TSEntry(1, 42, 100000).values == Seq(42))
+  }
 }

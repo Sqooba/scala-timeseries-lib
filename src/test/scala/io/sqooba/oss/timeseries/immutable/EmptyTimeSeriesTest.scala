@@ -43,6 +43,8 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testEntries: Unit = assert(ts.entries == Seq())
 
+  @Test def testValues: Unit = assert(ts.values == Seq())
+
   @Test def testHead: Unit = {
     intercept[NoSuchElementException] {
       ts.head

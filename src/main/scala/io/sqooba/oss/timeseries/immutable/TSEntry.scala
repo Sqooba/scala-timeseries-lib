@@ -157,6 +157,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   def entries: Seq[TSEntry[T]] = Seq(this)
 
+  override def values: Seq[T] = Seq(value)
+
   /** Append the other entry to this one.
     * Any part of this entry that is defined for t > other.timestamp will be overwritten,
     * either by 'other' or by nothing if 'others's validity does not reach t.

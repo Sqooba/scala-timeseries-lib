@@ -39,6 +39,8 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def entries: Seq[TSEntry[Nothing]] = Seq()
 
+  override def values: Seq[Nothing] = Seq()
+
   def head: TSEntry[Nothing] = throw new NoSuchElementException()
 
   def headOption: Option[TSEntry[Nothing]] = None

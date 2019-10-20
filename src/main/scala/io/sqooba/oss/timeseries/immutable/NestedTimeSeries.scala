@@ -36,6 +36,8 @@ case class NestedTimeSeries[+T] private (
   // construct a large sequence of all entries each time, therefore we use a stream.
   def entries: Seq[TSEntry[T]] = underlying.entries.toStream.flatMap(_.value.entries)
 
+  override def values: Seq[T] = underlying.values.flatMap(_.values)
+
   def head: TSEntry[T]               = underlying.head.value.head
   def headOption: Option[TSEntry[T]] = underlying.head.value.headOption
   def last: TSEntry[T]               = underlying.last.value.last

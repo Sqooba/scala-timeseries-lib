@@ -115,6 +115,10 @@ trait TimeSeries[+T] {
   /** Return a Seq of the TSEntries representing this time series. */
   def entries: Seq[TSEntry[T]]
 
+  /** Return a Seq of the values contained by this series, in their chronological order. */
+  def values: Seq[T] =
+    entries.map(_.value)
+
   /** Return the first (chronological) entry in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */

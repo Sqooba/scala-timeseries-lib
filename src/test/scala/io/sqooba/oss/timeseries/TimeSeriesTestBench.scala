@@ -451,6 +451,10 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       )
     }
 
+    it should "return the correct values" in {
+      assert(tri.values == tri.entries.map(_.value))
+    }
+
     it should "return the correct head" in {
       assert(tri.head === TSEntry(1, 111d, 10))
     }

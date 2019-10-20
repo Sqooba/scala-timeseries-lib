@@ -19,7 +19,7 @@ import scala.reflect.runtime.universe._
   */
 case class ColumnTimeSeries[+T] private (
     timestamps: Vector[Long],
-    values: Vector[T],
+    override val values: Vector[T],
     validities: Vector[Long],
     isCompressed: Boolean = false,
     isDomainContinuous: Boolean = false
