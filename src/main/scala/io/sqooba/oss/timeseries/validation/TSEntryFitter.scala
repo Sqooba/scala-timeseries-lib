@@ -1,6 +1,7 @@
 package io.sqooba.oss.timeseries.validation
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
+import scala.collection.compat._
 
 /**
   * This encapsulates the logic of fitting TSEntries one after another. It is used in TimeSeriesBuilders to take

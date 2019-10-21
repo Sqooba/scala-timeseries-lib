@@ -98,7 +98,7 @@ case class GorillaSuperBlock(channel: SliceableByteChannel) {
     readIndex(metaLength).toSeq
       .sliding(2)
       .map {
-        case (ts, offset) :: (nextTs, nextOffset) :: _ =>
+        case (ts, offset) +: (nextTs, nextOffset) +: _ =>
           TSEntry(
             ts,
             readBlock(metadata, offset, (nextOffset - offset).toInt),

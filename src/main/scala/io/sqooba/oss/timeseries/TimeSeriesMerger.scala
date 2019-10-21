@@ -5,6 +5,7 @@ import io.sqooba.oss.timeseries.validation.TSEntryFitter
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.compat._
 
 object TimeSeriesMerger {
 
@@ -73,7 +74,7 @@ object TimeSeriesMerger {
           }
       }
     }
-    rec(a, b, a.iterableFactory.newBuilder).result
+    rec(a, b, Seq.newBuilder).result
   }
 
   /** Merge a sequence composed of entries containing Eithers.
@@ -115,7 +116,7 @@ object TimeSeriesMerger {
         rec(newHead ++ newTail, head.definedUntil, builder ++= mergeSingleToMultiple(head, toMerge)(op))
     }
 
-    rec(in, Long.MaxValue, in.iterableFactory.newBuilder)
+    rec(in, Long.MaxValue, Seq.newBuilder)
   }
 
   /** Merge the 'single' TSEntry to the 'others'.
