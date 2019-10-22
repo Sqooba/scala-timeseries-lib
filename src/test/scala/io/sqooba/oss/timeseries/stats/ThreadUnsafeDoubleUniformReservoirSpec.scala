@@ -35,12 +35,14 @@ class ThreadUnsafeDoubleUniformReservoirSpec extends FlatSpec with Matchers {
     res.values shouldBe Array(1.0, 2.0)
   }
   it should "properly pass the real min and max to the snapshot" in {
-    new ThreadUnsafeDoubleUniformReservoir(2)
+    val snap = new ThreadUnsafeDoubleUniformReservoir(2)
       .update(1.0)
       .update(2.0)
       .update(3.0)
       .snapshot()
-      .shouldBe(Stats(1.0, 3.0, 2.0, 1.4142135623730951, 2.0))
+
+    snap.min shouldBe 1.0
+    snap.max shouldBe 3.0
   }
   it should "return a zero-snapshot if no value was sampled" in {
     new ThreadUnsafeDoubleUniformReservoir(2)
