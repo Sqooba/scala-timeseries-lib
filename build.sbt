@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "fi.iki.yak"                 % "compression-gorilla"      % "2.1.1",
   "com.typesafe.scala-logging" %% "scala-logging"           % "3.9.2",
   "org.apache.thrift"          % "libthrift"                % "0.12.0",
-  "com.twitter"                %% "scrooge-core"            % "19.9.0",
+  "com.twitter"                %% "scrooge-core"            % "19.10.0",
   "com.chuusai"                %% "shapeless"               % "2.3.3",
   "junit"                      % "junit"                    % "4.12" % Test,
   "org.scalactic"              %% "scalactic"               % "3.0.8",
