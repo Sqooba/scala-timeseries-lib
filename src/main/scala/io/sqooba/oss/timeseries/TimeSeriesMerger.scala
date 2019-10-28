@@ -142,7 +142,7 @@ object TimeSeriesMerger {
     def rec(remaining: Stream[TSEntry[T]], lastSeenDefinedUntil: Long): Stream[TSEntry[C]] = remaining match {
       case Seq() => Stream.empty
 
-      // Fill the hole when neither of the two time-series were defined over a given domain
+      // Fill the hole when neither of the two time series were defined over a given domain
       case head +: _ if lastSeenDefinedUntil < head.timestamp =>
         applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(allNone).to(Stream) #::: rec(remaining, head.timestamp)
 

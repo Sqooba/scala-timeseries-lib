@@ -59,7 +59,7 @@ case class MultiSeriesBlock(channel: SliceableByteChannel) {
   * that contains the index and optionally names/string-keys for each SuperBlock.
   *
   * The start and the end of the blob are marked with the 4-byte magic number
-  * 'STS\n': 53 54 53 0a  that stands for "super time-series".
+  * 'STS\n': 53 54 53 0a  that stands for "super time series".
   *
   * GorillaSuperBlock Format
   * +---+-------+-------+ ... +----- -+----------+---+---+

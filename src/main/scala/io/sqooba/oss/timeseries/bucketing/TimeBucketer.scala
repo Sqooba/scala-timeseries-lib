@@ -59,7 +59,7 @@ object TimeBucketer {
       entries: Seq[TSEntry[T]]
   ): Stream[(Long, Seq[TSEntry[T]])] =
     if (entries.isEmpty) {
-      // When entries is empty, we do return one value with the current bucket's head and an empty time-series.
+      // When entries is empty, we do return one value with the current bucket's head and an empty time series.
       (buckets.head, Seq.empty) +: Stream.empty
     } else {
       // Sanity check...
@@ -85,13 +85,13 @@ object TimeBucketer {
     }
 
   /**
-    * Bucket the passed entries into time-series that have domains delimited by
+    * Bucket the passed entries into time series that have domains delimited by
     * the given buckets. Individual entries will be split/trimmed wherever required.
     *
     * @param buckets generates the bucket boundaries
     * @param entries entries to be bucketed.
     * @param builder that will construct all the resulting timeseries
-    * @return a stream of (bucket-start, corresponding-time-series)
+    * @return a stream of (bucket-start, corresponding-time series)
     */
   def bucketEntriesToTimeSeries[T](
       buckets: Stream[Long],

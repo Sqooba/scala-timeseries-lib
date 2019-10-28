@@ -253,7 +253,7 @@ object ColumnTimeSeries {
     * @param entries A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
     *           well-formed (no duplicated timestamps)
     * @param compress A flag specifying whether the entries should be compressed or not.
-    * @tparam T The underlying type of the time-series
+    * @tparam T The underlying type of the time series
     */
   def ofOrderedEntriesSafe[T](
       entries: Seq[TSEntry[T]],

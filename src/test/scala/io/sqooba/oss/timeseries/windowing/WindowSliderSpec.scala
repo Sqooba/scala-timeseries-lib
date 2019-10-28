@@ -26,7 +26,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .shouldBe(Stream(TSEntry(10, Queue(e), 5)))
 
   }
-  it should "build correct windows for a discontinuous two-elements time-series" in {
+  it should "build correct windows for a discontinuous two-elements time series" in {
     val biGap = TimeSeries(Seq(TSEntry(1, "A", 1000), TSEntry(2001, "B", 2000)))
 
     WindowSlider
@@ -49,7 +49,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
         )
       )
   }
-  it should "build correct windows for a continuous two-elements time-series" in {
+  it should "build correct windows for a continuous two-elements time series" in {
     val biCont =
       TimeSeries(Seq(TSEntry(1, "A", 1000), TSEntry(1001, "B", 2000)))
 
@@ -83,7 +83,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
         )
       )
   }
-  it should "build correct windows for a discontinuous time-series" in {
+  it should "build correct windows for a discontinuous time series" in {
     val triGap = TimeSeries(
       Seq(TSEntry(1, "A", 100), TSEntry(200, "B", 50), TSEntry(300, "C", 30))
     )
@@ -191,7 +191,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       )
 
   }
-  it should "build correct windows for a continuous time-series" in {
+  it should "build correct windows for a continuous time series" in {
 
     val triCont = TimeSeries(
       Seq(TSEntry(1, "A", 100), TSEntry(101, "B", 49), TSEntry(150, "C", 30))
@@ -244,7 +244,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       )
 
   }
-  it should "build correct windows for a time-series with contiguous and non-contiguous entries" in {
+  it should "build correct windows for a time series with contiguous and non-contiguous entries" in {
 
     val argl = TimeSeries(
       Seq(TSEntry(1, "A", 100), TSEntry(101, "B", 49), TSEntry(200, "C", 30))

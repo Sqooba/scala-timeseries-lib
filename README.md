@@ -1,39 +1,32 @@
-# scala-timeseries-lib [![Build Status](https://travis-ci.com/Sqooba/scala-timeseries-lib.svg?branch=master)](https://travis-ci.com/Sqooba/scala-timeseries-lib) [![Coverage Status](https://coveralls.io/repos/github/Sqooba/scala-timeseries-lib/badge.svg?branch=master)](https://coveralls.io/github/Sqooba/scala-timeseries-lib?branch=master)
-> Lightweight, functional and exact time-series library for scala
+# scala-timeseries-lib 
 
-Easily manipulate and query time-series like data. Useful for manipulating series of discrete values associated to a validity or time-to-live duration, like sensor measures.
+[![Build Status](https://travis-ci.com/Sqooba/scala-timeseries-lib.svg?branch=master)](https://travis-ci.com/Sqooba/scala-timeseries-lib) 
+[![Coverage Status](https://coveralls.io/repos/github/Sqooba/scala-timeseries-lib/badge.svg?branch=master)](https://coveralls.io/github/Sqooba/scala-timeseries-lib?branch=master)
 
-#### High level features
+> Lightweight, functional and exact time series library for scala
 
-- Exposes time series as functions that have a value depending on time
-- Time series may be undefined for certain time intervals
-- Operators may be applied between time series, the simple ones being addition and multiplication.
-- Custom operators for arbitrary types are easy to implement.
+See the [microsite](https://scala-timeseries-lib.github.io) for more information and documentation.
 
-#### Explicit non-goals
+## TL;DR
 
-This library is not intended to provide in-depth statistics about time series data, only to make manipulating and querying it easy, without any kind of approximation.
-
-#### Our philosophical statement
-
-> Everything is a step function
-
-#### TL/DR
-
-```
+```sbt
 // https://mvnrepository.com/artifact/io.sqooba.oss/scala-timeseries-lib
 libraryDependencies += "io.sqooba.oss" %% "scala-timeseries-lib" % "1.1.0"
 ```
 
 or, if you want to cook your own, local, `HEAD-SNAPSHOT` release, just
 
-```
+```bash
 make release-local
-# Alternatively, if you want to set a specific version when installing locally:
+```
+
+Alternatively, if you want to set a specific version when installing locally:
+```bash
 make -e VERSION=1.0.0 release-local 
 ```
 
 ## Usage
+
 In essence, a `TimeSeries` is just an ordered map of `[Long,T]`. In most use cases the key represents the time since the epoch in milliseconds, but the implementation makes no assumption about the time unit of the key.
 
 
@@ -42,14 +35,14 @@ In essence, a `TimeSeries` is just an ordered map of `[Long,T]`. In most use cas
 The `TimeSeries` trait has a default implementation: `VectorTimeSeries[T]`, referring to the underlying collection holding the data.
 There are other implementations as well.
 
-```
+```scala
 val ts = TimeSeries(Seq(
   TSEntry(1000L, "One",  1000L),   // String 'One' lives at 1000 on the timeline and is valid for 1000.
   TSEntry(2000L, "Two",  1000L),
   TSEntry(4000L, "Four", 1000L)
-))
-              
+))      
 ```
+
 `ts` now defines a time series of `String` that is defined on the interval `[1000,5000[`, with a hole at `[3000,4000[`
 
 The `TimeSeries.apply` contstructor is quite expensive because it sorts the entries to ensure a sane series.
@@ -67,7 +60,7 @@ Usually, the input is already sorted. In that case there are two other construct
 The simplest function exposed by a time series is `at(t: Long): Option[T]`. With `ts` defined as above, calling `at()`
 yields the following results:
 
-```
+```scala
     ts.at(999)  // None
     ts.at(1000) // Some("One")
     ts.at(1999) // Some("One")
@@ -82,7 +75,7 @@ yields the following results:
 ### Basic Operations
 `TimeSeries` of any `Numeric` type come with basic operators you might expect for such cases:
 
-```
+```scala
 val tsa = TimeSeries(Seq(
   TSEntry(0L,  1.0, 10L),
   TSEntry(10L, 2.0, 10L)
@@ -100,12 +93,12 @@ Note that there are a few quirks to be aware of when a TimeSeries has discontinu
 please refer to function comments in 
 [`NumericTimeSeries.scala`](src/main/scala/io/sqooba/oss/timeseries/NumericTimeSeries.scala) for more details.
 
-### Custom Operators: Time-Series Merging
+### Custom Operators: time series Merging
 For non-numeric time series, or for any particular needs, a `TimeSeries` can be merged using an 
 arbitrary merge operator: `op: (Option[A], Option[B]) => Option[C]`. For example (this method is already defined
 for you in the interface, no need to rewrite it):
 
-```
+```scala
 def plus(aO: Option[Double], bO: Option[Double]) = 
   (aO, bO) match {
     // Wherever both time series share a defined domain, return the sum of the values
@@ -167,10 +160,34 @@ been taken over in May 2019.
 ### TODOS
   - stream/lazy-collections implementation
   - more tests for non-trivial merge operators
-  - benchmarks to actually compare various implementations.
+  - benchmarks to actually compare various implementations
   - make it easy to use from Java
   - consider https://scalacheck.org/ for property-based testing?
   - interoperability with something like Apache Arrow?
+  
+### Publish the microsite
+
+You need write access on the Github repo to push the microsite. The site is built
+entirely with `sbt` plugins and lives on the `gh-pages` branch. You can edit it in
+`/docs`. Scaladoc is automatically created.
+
+In order to build the site locally you need `sbt` version `1.3.3+` and `jekyll`
+version `3.8.5+` (the [installation on
+macOS](https://jekyllrb.com/docs/installation/macos/#rbenv) is a bit tricky because
+or ruby.)
+
+Once you have this, you can 
+
+```bash 
+sbt makeMicrosite && jekyll serve -s target/site
+```
+You can now visit the site under http://localhost:4000/scala-timeseries-lib. To publish, just
+```bash 
+sbt publishMicrosite
+```
+
+If you are having trouble with an error like this: `fatal: not a git repository `,
+check [that](https://github.com/sbt/sbt-ghpages/issues/40).
 
 
 ### Contributions

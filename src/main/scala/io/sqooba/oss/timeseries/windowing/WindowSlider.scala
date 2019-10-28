@@ -40,7 +40,7 @@ object WindowSlider {
     * the content of that entry can be interpreted as:
     *   "All entries from the original series that are within t-window and t, for t in [ts_e, ts_e + d_e[".
     *
-    * The returned stream can be seen as a time-series that, when queried for time 't', answers the question
+    * The returned stream can be seen as a time series that, when queried for time 't', answers the question
     * "All the entries that have a domain that is at least partly contained in 't-window' and 't', along with
     * the aggregated value computed through the aggregator.
     *

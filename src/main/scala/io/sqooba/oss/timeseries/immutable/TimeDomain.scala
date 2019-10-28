@@ -3,7 +3,7 @@ package io.sqooba.oss.timeseries.immutable
 import scala.math.{max, min}
 
 /**
-  * This trait represents the definition of a time-series' domain
+  * This trait represents the definition of a time series' domain
   *
   * By convention, a `TimeDomain` is a set of timestamps (`Long`) inclusive on its left,
   * and exclusive on its right.
