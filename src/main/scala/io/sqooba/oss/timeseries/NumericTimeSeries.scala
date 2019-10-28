@@ -3,7 +3,7 @@ package io.sqooba.oss.timeseries
 import java.util.concurrent.TimeUnit
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
-import io.sqooba.oss.timeseries.windowing.{IntegratingAggregator, WindowSlider}
+import io.sqooba.oss.timeseries.window.{Aggregator, IntegralAggregator, WindowSlider}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.Builder
@@ -102,7 +102,7 @@ object NumericTimeSeries {
       .window(
         entries.toStream,
         window,
-        new IntegratingAggregator[T](timeUnit)
+        Aggregator.integral[T](timeUnit)
       )
       .map {
         // Drop the content of the window, just keep the integral's result.

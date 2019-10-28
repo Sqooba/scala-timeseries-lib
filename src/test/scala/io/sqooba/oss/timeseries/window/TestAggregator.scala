@@ -1,11 +1,11 @@
-package io.sqooba.oss.timeseries.windowing
+package io.sqooba.oss.timeseries.window
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
 import scala.collection.immutable.Queue
 import scala.collection.mutable
 
-class TestAggregator extends ReversibleAggregator[String, Int] {
+class TestAggregator extends TimeUnawareReversibleAggregator[String, Int] {
 
   var currentValC = 0
   var addAnDropC  = 0
@@ -20,13 +20,17 @@ class TestAggregator extends ReversibleAggregator[String, Int] {
     Some(currentValC)
   }
 
-  def addEntry(e: TSEntry[String], currentWindow: Queue[TSEntry[String]]): Unit = {
+  override def addEntry(e: TSEntry[String], currentWindow: Queue[TSEntry[String]]): Unit = {
     added += e
     addedWindows += currentWindow
   }
 
-  def dropHead(currentWindow: Queue[TSEntry[String]]): Unit =
+  override def addEntry(e: TSEntry[String]): Unit = addEntry(e, Queue())
+
+  override def dropHead(currentWindow: Queue[TSEntry[String]]): Unit =
     droppedWindows += currentWindow
+
+  def dropEntry(entry: TSEntry[String]): Unit = dropHead(Queue(entry))
 
   override def addAndDrop(add: TSEntry[String], currentWindow: Queue[TSEntry[String]]): Unit = {
     addAnDropC += 1

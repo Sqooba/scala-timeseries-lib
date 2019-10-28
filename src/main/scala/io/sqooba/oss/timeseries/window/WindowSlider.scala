@@ -1,4 +1,4 @@
-package io.sqooba.oss.timeseries.windowing
+package io.sqooba.oss.timeseries.window
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
@@ -8,46 +8,37 @@ object WindowSlider {
 
   type Window[T] = TSEntry[Queue[TSEntry[T]]]
 
-  /**
-    * See #window[T]() below.
+  /** See [[WindowSlider.window[T, A]()]]
     *
     * @param in the entries over which to slide a window
     * @param windowWidth width of the window
-    * @return a stream of entries representing the content of the window between a time-interval.
+    * @return a stream of entries representing the content of the window in a time-interval
     */
   def window[T](
       in: Stream[TSEntry[T]],
       windowWidth: Long
-  ): Stream[Window[T]] = {
-    require(windowWidth > 0, "Needs a strictly positive window size")
-    if (in.isEmpty) {
-      Stream.Empty
-    } else {
-      windowRec(
-        in,
-        Queue.empty,
-        in.head.timestamp,
-        windowWidth,
-        DoNothingAggregator.asInstanceOf[ReversibleAggregator[T, Nothing]]
-      ).map(_._1)
-    }
-  }
+  ): Stream[Window[T]] =
+    window(
+      in,
+      windowWidth,
+      DoNothingAggregator.asInstanceOf[ReversibleAggregator[T, Nothing]]
+    ).map(_._1)
 
-  /**
-    * Slide a window of size 'windowWidth' on the entries present in 'in'.
+  /** Slide a window of size 'windowWidth' on the entries present in 'in'.
     *
     * In the returned stream, for every entry 'E' with timestamp ts_e and validity d_e,
     * the content of that entry can be interpreted as:
-    *   "All entries from the original series that are within t-window and t, for t in [ts_e, ts_e + d_e[".
+    *   "All entries from the original series that are within t - window and t, for t in [ts_e, ts_e + d_e[".
     *
-    * The returned stream can be seen as a time series that, when queried for time 't', answers the question
-    * "All the entries that have a domain that is at least partly contained in 't-window' and 't', along with
-    * the aggregated value computed through the aggregator.
+    * The returned stream can be seen as a time series that, when queried for time
+    * 't', answers the question "All the entries that have a domain that is at least
+    * partly contained in 't - window' and 't', along with the aggregated value
+    * computed through the aggregator.
     *
     * @param in the entries over which to slide a window
     * @param windowWidth width of the window
     * @param aggregator a reversible aggregator to efficiently compute aggregations over the window
-    * @return a stream of entries representing the content of the window between a time-interval, along with
+    * @return a stream of entries representing the content of the window in a time-interval, along with
     *         the aggregated value
     */
   def window[T, A](
@@ -200,21 +191,17 @@ object WindowSlider {
 
     // Determine what kind of updates we need to do to the window content
     val takeFromRemaining =
-      remaining.headOption
-        .map(_.timestamp - timeCursor == 0)
-        .getOrElse(false)
+      remaining.headOption.exists(_.timestamp - timeCursor == 0)
 
     // We need to remove an entry from the elements in the sliding window once their 'definedUntil' is about to be
     // equal to the window tail
     val removeFromWindow =
-      previousBucket.headOption
-        .map(_.definedUntil - (timeCursor - windowWidth) == 0)
-        .getOrElse(false)
+      previousBucket.headOption.exists(_.definedUntil - (timeCursor - windowWidth) == 0)
 
     // Determine by how much we can advance the window:
     // (what we must add to the cursor so it is equal to the next addition's timestamp)
     val (spaceUntilNextAddition) = remaining match {
-      case head #:: tail =>
+      case head +: tail =>
         if (takeFromRemaining) {
           // If we are taking from the remaining now, the next one to be added is the first of the remaining entries.
           // If no more entries are remaining, the cursor should only be advanced to the end of the last entry's domain.
@@ -251,5 +238,55 @@ object WindowSlider {
     assert(takeFromRemaining || removeFromWindow, "Looks like a bug, mate...")
     (takeFromRemaining, removeFromWindow, nextAdvance)
   }
+
+  /** Slides windows over the given TSEntries that are dynamically defined by a start
+    * and a stop condition. Once the start condition is true on an entry, the window
+    * extends from this entry up to but not including the entry where the stop
+    * condition returns true. (If both conditions are true, no window is started.)
+    *
+    * The returned entries contain the value of the aggregator after the last entry
+    * of the window has been added. Their validity is given by the loose domain of
+    * the entries in the window. A new aggregator is taken for each window.
+    *
+    * @param entries over which to slide windows
+    * @param start defines the start of the windows
+    * @param stop defines the end of the windows
+    * @param aggregator a by-name aggregator to use for each window
+    * @return the value of the aggregator for each window
+    */
+  def dynamicWindow[T, A](
+      entries: Stream[TSEntry[T]],
+      start: TSEntry[T] => Boolean,
+      stop: TSEntry[T] => Boolean,
+      aggregator: => Aggregator[T, A]
+  ): Stream[TSEntry[A]] =
+    // To start a window, the starting condition needs to be true and the stopping
+    // condition needs to be false: dropWhile takes the negation of that:
+    // !(start && !stop) === !start || stop
+    entries.dropWhile(e => !start(e) || stop(e)) match {
+      // Nothing to do
+      case Stream() => Stream()
+
+      case started =>
+        // Window contains all entries _before_ stop is true.
+        val (window, remaining) = started.span(!stop(_))
+        // As stop is true on the first element, the window is guaranteed to have at
+        // least one entry.
+
+        // Add each entry of the window to the aggregator. Because the aggregator
+        // also takes the window as an argument, we fold that as well.
+        val (finalAgg, _) = window.foldLeft((aggregator, Queue.empty[TSEntry[T]])) {
+          case ((agg, prevWindow), entry) =>
+            agg.addEntry(entry, prevWindow)
+            (agg, prevWindow :+ entry)
+        }
+
+        val aggregatedEntry = finalAgg.currentValue.map(
+          TSEntry(window.head.timestamp, _, window.last.definedUntil - window.head.timestamp)
+        )
+
+        // lazily evaluate the rest of the stream
+        aggregatedEntry.toStream #::: dynamicWindow(remaining, start, stop, aggregator)
+    }
 
 }

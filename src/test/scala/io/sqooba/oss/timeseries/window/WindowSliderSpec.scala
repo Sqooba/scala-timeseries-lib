@@ -1,6 +1,8 @@
-package io.sqooba.oss.timeseries.windowing
+package io.sqooba.oss.timeseries.window
 
-import io.sqooba.oss.timeseries.TimeSeries
+import java.util.concurrent.TimeUnit
+
+import io.sqooba.oss.timeseries.{NumericTimeSeries, TimeSeries}
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -8,7 +10,7 @@ import scala.collection.immutable.Queue
 
 class WindowSliderSpec extends FlatSpec with Matchers {
 
-  "The WindowBuilder" should "build no windows for and empty series" in {
+  "WindowBuilder" should "build no windows for an empty series" in {
     WindowSlider.window(Stream(), 1) shouldBe Stream()
   }
   it should "build a single window for a single entry" in {
@@ -497,4 +499,34 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .shouldBe((false, true, 3))
   }
 
+  private val sineEntries = Stream
+    .iterate(0)(_ + 30)
+    .map(angle => TSEntry(angle, Math.sin(Math.toRadians(angle)), 30))
+
+  "WindowSlider.dynamicWindow" should "determine windows with conditions" in {
+    val result = WindowSlider
+      .dynamicWindow[Double, Double](
+        sineEntries,
+        _.value == 1,
+        _.value == -1,
+        Aggregator.mean[Double]
+      )
+      .take(3)
+
+    // clunky comparison is required because of the imprecision object
+    result.map(_.timestamp) shouldBe Seq(90, 450, 810)
+    result.map(_.validity) shouldBe Seq(180, 180, 180)
+    result.map(_.value).foreach(_ shouldBe 0.166 +- 0.001)
+  }
+
+  it should "not create a window if both conditions are true" in {
+    WindowSlider
+      .dynamicWindow[Double, Double](
+        sineEntries.take(100),
+        _.value == 1,
+        _.value == 1,
+        Aggregator.mean[Double]
+      )
+      .take(3) shouldBe Seq()
+  }
 }

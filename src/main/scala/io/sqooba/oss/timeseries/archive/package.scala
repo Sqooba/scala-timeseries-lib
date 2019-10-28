@@ -6,7 +6,7 @@ import fi.iki.yak.ts.compression.gorilla.{GorillaDecompressor, LongArrayInput}
 
 import scala.util.Try
 
-/** Provides abstraction and tools for compressing/archiving timeseries data. The
+/** Provides abstraction and tools for compressing/archiving time series data. The
   * compression used is Gorilla TSC encoding implemented by the Java library
   * [[fi.iki.yak.ts.compression.gorilla]].
   *

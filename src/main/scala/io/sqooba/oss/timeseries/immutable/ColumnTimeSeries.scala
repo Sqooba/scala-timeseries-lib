@@ -222,19 +222,6 @@ case class ColumnTimeSeries[+T] private (
       }
     }
 
-  override def slidingIntegral[U >: T](
-      window: Long,
-      timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-  )(implicit n: Numeric[U]): TimeSeries[Double] =
-    if (this.size < 2) {
-      this.map[Double](n.toDouble)
-    } else {
-      // TODO: have slidingSum return compressed output so we can use the unsafe constructor and save an iteration.
-      // TODO: don't use entries but directly operate on the column vectors.
-      ColumnTimeSeries
-        .ofOrderedEntriesSafe(NumericTimeSeries.slidingIntegral[U](this.entries, window, timeUnit))
-    }
-
   def looseDomain: TimeDomain = ContiguousTimeDomain(timestamps.head, timestamps.last + validities.last)
 
   lazy val supportRatio: Double = validities.sum.toDouble / looseDomain.size
