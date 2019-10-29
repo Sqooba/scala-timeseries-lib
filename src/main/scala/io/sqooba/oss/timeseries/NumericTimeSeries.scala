@@ -3,10 +3,10 @@ package io.sqooba.oss.timeseries
 import java.util.concurrent.TimeUnit
 
 import io.sqooba.oss.timeseries.immutable.TSEntry
-import io.sqooba.oss.timeseries.window.{Aggregator, IntegralAggregator, WindowSlider}
+import io.sqooba.oss.timeseries.window.{Aggregator, WindowSlider}
 
 import scala.annotation.tailrec
-import scala.collection.mutable.Builder
+import scala.collection.mutable
 import scala.concurrent.duration.TimeUnit
 
 object NumericTimeSeries {
@@ -57,25 +57,24 @@ object NumericTimeSeries {
       compress
     )
 
-  /**
-    * Compute an integral of the passed entries, such that each entry is equal
-    * to its own value plus the sum of the entries that came before.
+  /** Compute an integral of the passed entries, such that each entry is equal to its
+    * own value plus the sum of the entries that came before. The time is integrated
+    * as seconds, you may provide the unit with which the validities are converted to
+    * seconds.
     *
+    * @note The result is still a step function.
     *
-    * Please note that the result is still a step function.
+    * @param entries  entries over which to integrate
+    * @param timeUnit time unit used to convert validities to seconds
     */
-  def stepIntegral[T](seq: Seq[TSEntry[T]], timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
-    if (seq.isEmpty) {
-      Seq()
-    } else {
-      integrateMe[T](.0, seq, Seq.newBuilder)(timeUnit)(n)
-    }
+  def stepIntegral[T](entries: Seq[TSEntry[T]], timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
+    integrateMe[T](.0, entries, Seq.newBuilder)(timeUnit)(n)
 
   @tailrec
   private def integrateMe[T](
       sumUntilNow: Double,
       seq: Seq[TSEntry[T]],
-      acc: Builder[TSEntry[Double], Seq[TSEntry[Double]]]
+      acc: mutable.Builder[TSEntry[Double], Seq[TSEntry[Double]]]
   )(timeUnit: TimeUnit)(implicit n: Numeric[T]): Seq[TSEntry[Double]] = {
     if (seq.isEmpty) {
       acc.result()
@@ -85,28 +84,43 @@ object NumericTimeSeries {
     }
   }
 
-  /**
-    * @param entries entries over which to do a sliding sum
-    * @param window width of the window over which we sum
-    * @return a sequence of entries representing the sum of each entry within the window over time.
-    *         NOTE: Entries that are only partially within the window are counted entirely
+  /** First samples the entries and then calculates a sliding integral. This means
+    * the resulting entries represent the value of the integral over the window `[t -
+    * window, t]` of the original series.
+    *
+    * The sampling controls the resolution of the returned entries and hence the
+    * (im-)precision of the integral. Therefore, the sampling rate cannot be larger
+    * than the window size. Otherwise, the output becomes very un-intuitive and will
+    * generally not make any sense.
+    *
+    * @note For optimal (im-)precision and maximally intuitive output, a `window` that
+    * is a multiple of the `sampleRate` is recommended.
+    *
+    * @param entries  entries over which to integrate
+    * @param window   width of the window
+    * @param timeUnit time unit used to convert validities to seconds
+    * @param sampleRate frequency of resampling
+    * @return a sequence of entries representing the integral over the windows
     */
-  // TODO: return output guaranteed to be compressed
-  // TODO: implement a "real" integral as this is darn imprecise.
   def slidingIntegral[T](
       entries: Seq[TSEntry[T]],
       window: Long,
+      sampleRate: Long,
       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-  )(implicit n: Numeric[T]): Seq[TSEntry[Double]] =
+  )(implicit n: Numeric[T]): Seq[TSEntry[Double]] = {
+    require(window >= sampleRate, "The window must be as least as large as the sample rate.")
+
     WindowSlider
       .window(
         entries.toStream,
         window,
-        Aggregator.integral[T](timeUnit)
+        Aggregator.integral[T](timeUnit),
+        sampleRate
       )
       .map {
         // Drop the content of the window, just keep the integral's result.
         case (entry, integral) => entry.map[Double](_ => integral.get)
       }
+  }
 
 }

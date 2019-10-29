@@ -1,8 +1,6 @@
 package io.sqooba.oss.timeseries.window
 
-import java.util.concurrent.TimeUnit
-
-import io.sqooba.oss.timeseries.{NumericTimeSeries, TimeSeries}
+import io.sqooba.oss.timeseries.TimeSeries
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -10,7 +8,7 @@ import scala.collection.immutable.Queue
 
 class WindowSliderSpec extends FlatSpec with Matchers {
 
-  "WindowBuilder" should "build no windows for an empty series" in {
+  "WindowSlider" should "build no windows for an empty series" in {
     WindowSlider.window(Stream(), 1) shouldBe Stream()
   }
   it should "build a single window for a single entry" in {
@@ -35,9 +33,9 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .window(biGap.entries.toStream, 1)
       .shouldBe(
         Stream(
-          TSEntry(1, Queue(biGap.entries.head), 1001),
+          TSEntry(1, Queue(biGap.head), 1001),
           TSEntry(1002, Queue(), 999),
-          TSEntry(2001, Queue(biGap.entries.tail.head), 2000)
+          TSEntry(2001, Queue(biGap.last), 2000)
         )
       )
 
@@ -60,7 +58,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
       .shouldBe(
         Stream(
           TSEntry(1, Queue(biCont.entries.head), 1000),
-          TSEntry(1001, Queue(biCont.entries: _*), 1),
+          TSEntry(1001, biCont.entries, 1),
           TSEntry(1002, Queue(biCont.entries.last), 1999)
         )
       )

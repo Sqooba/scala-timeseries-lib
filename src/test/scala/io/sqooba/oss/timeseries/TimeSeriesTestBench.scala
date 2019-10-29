@@ -721,54 +721,38 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       }
     }
 
-    it should "integrate a window of a timeseries between two times" in {
-      val tri =
-        newTs(Seq(TSEntry(10, 1, 10), TSEntry(20, 2, 10), TSEntry(30, 3, 10)))
-
-      assert(tri.integrateBetween(0, 10) === 0)
-      assert(tri.integrateBetween(10, 15) === 1)
-      assert(tri.integrateBetween(10, 20) === 1)
-      assert(tri.integrateBetween(15, 20) === 1)
-      assert(tri.integrateBetween(10, 21) === 3)
-      assert(tri.integrateBetween(10, 30) === 3)
-      assert(tri.integrateBetween(20, 25) === 2)
-      assert(tri.integrateBetween(20, 31) === 5)
-      assert(tri.integrateBetween(20, 40) === 5)
-      assert(tri.integrateBetween(20, 30) === 2)
-      assert(tri.integrateBetween(20, 50) === 5)
-      assert(tri.integrateBetween(10, 40) === 6)
-      assert(tri.integrateBetween(10, 50) === 6)
-      assert(tri.integrateBetween(0, 50) === 6)
-    }
-
     it should "do a sliding integral of a timeseries" in {
-      val triA =
-        newTs(
-          Seq(
-            TSEntry(10, 1, 10),
-            TSEntry(21, 2, 2),
-            TSEntry(24, 3, 10)
-          )
+      val triA = TimeSeries(
+        Seq(
+          TSEntry(10, 1, 10),
+          TSEntry(20, 2, 2),
+          TSEntry(22, 3, 10)
         )
-
-      assert(
-        triA.slidingIntegral(1, TimeUnit.SECONDS).entries ===
-          Seq(
-            TSEntry(10, 10, 11),
-            TSEntry(21, 4, 3),
-            TSEntry(24, 30, 10)
-          )
       )
 
-      assert(
-        triA.slidingIntegral(9, TimeUnit.SECONDS).entries ===
-          Seq(
-            TSEntry(10, 10, 11),
-            TSEntry(21, 14, 3),
-            TSEntry(24, 44, 5),
-            TSEntry(29, 34, 3),
-            TSEntry(32, 30, 2)
-          )
+      triA.slidingIntegral(2, 2, TimeUnit.SECONDS).entries shouldBe Seq(
+        TSEntry(10, 2, 2),
+        TSEntry(12, 4, 8),
+        TSEntry(20, 6, 2),
+        TSEntry(22, 10, 2),
+        TSEntry(24, 12, 8)
+      )
+
+      triA.slidingIntegral(4, 2, TimeUnit.SECONDS).entries shouldBe Seq(
+        TSEntry(10, 2, 2),
+        TSEntry(12, 4, 2),
+        TSEntry(14, 6, 6),
+        TSEntry(20, 8, 2),
+        TSEntry(22, 12, 2),
+        TSEntry(24, 16, 2),
+        TSEntry(26, 18, 6)
+      )
+
+      triA.slidingIntegral(12, 8, TimeUnit.SECONDS).entries shouldBe Seq(
+        TSEntry(10, 8.0, 8),
+        TSEntry(18, 24.0, 8),
+        TSEntry(26, 48.0, 4),
+        TSEntry(30, 40.0, 4)
       )
     }
 

@@ -3,9 +3,10 @@ package io.sqooba.oss.timeseries.immutable
 import java.util.concurrent.TimeUnit
 
 import org.junit.Test
+import org.scalatest.Matchers
 import org.scalatest.junit.JUnitSuite
 
-class TSEntryTest extends JUnitSuite {
+class TSEntryTest extends JUnitSuite with Matchers {
 
   // Simple summing operator
   def plus(aO: Option[Double], bO: Option[Double]): Option[Double] =
@@ -573,10 +574,14 @@ class TSEntryTest extends JUnitSuite {
   }
 
   @Test def testSlidingSum(): Unit = {
-    assert(
-      TSEntry(1, 42, 10).slidingIntegral(10)
-        == TSEntry(1, 42, 10)
-    )
+    TSEntry(1, 42, 10)
+      .slidingIntegral(10, 10, TimeUnit.SECONDS) shouldBe
+      TSEntry(1, 10 * 42, 10)
+
+    TSEntry(1, 42, 10)
+      .slidingIntegral(10, 1, TimeUnit.SECONDS)
+      .entries shouldBe
+      (1 to 10).map(i => TSEntry(i, i * 42, 1))
   }
 
   @Test def testSliceEntries(): Unit = {

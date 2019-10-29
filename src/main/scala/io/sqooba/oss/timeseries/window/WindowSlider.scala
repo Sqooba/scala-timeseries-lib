@@ -1,5 +1,6 @@
 package io.sqooba.oss.timeseries.window
 
+import io.sqooba.oss.timeseries.TimeSeries
 import io.sqooba.oss.timeseries.immutable.TSEntry
 
 import scala.collection.immutable.Queue
@@ -21,19 +22,18 @@ object WindowSlider {
     window(
       in,
       windowWidth,
-      DoNothingAggregator.asInstanceOf[ReversibleAggregator[T, Nothing]]
+      DoNothingAggregator.asInstanceOf[TimeUnawareReversibleAggregator[T, Nothing]]
     ).map(_._1)
 
-  /** Slide a window of size 'windowWidth' on the entries present in 'in'.
+  /** Slides a window of size 'windowWidth' on the entries present in 'in'. And
+    * calculate some aggregate that does not depend on the time of validity of the
+    * entries.
     *
-    * In the returned stream, for every entry 'E' with timestamp ts_e and validity d_e,
-    * the content of that entry can be interpreted as:
-    *   "All entries from the original series that are within t - window and t, for t in [ts_e, ts_e + d_e[".
-    *
-    * The returned stream can be seen as a time series that, when queried for time
-    * 't', answers the question "All the entries that have a domain that is at least
-    * partly contained in 't - window' and 't', along with the aggregated value
-    * computed through the aggregator.
+    * Each returned entry E contains the entries of the original time series that
+    * intersect with any window that ends in the domain of E. The returned stream can
+    * be seen as a time series that, when queried for time 't', answers the question
+    * "All the entries that have a domain that is at least partly contained in 't -
+    * window' and 't', along with the aggregated value for those entries.
     *
     * @param in the entries over which to slide a window
     * @param windowWidth width of the window
@@ -44,14 +44,43 @@ object WindowSlider {
   def window[T, A](
       in: Stream[TSEntry[T]],
       windowWidth: Long,
-      aggregator: ReversibleAggregator[T, A]
+      aggregator: TimeUnawareReversibleAggregator[T, A]
   ): Stream[(Window[T], Option[A])] = {
     require(windowWidth > 0, "Needs a strictly positive window size")
-    if (in.isEmpty) {
-      Stream.empty
-    } else {
+
+    if (in.isEmpty) Stream.empty
+    else {
       windowRec(
         in,
+        Queue.empty,
+        in.head.timestamp,
+        windowWidth,
+        aggregator
+      )
+    }
+  }
+
+  /** See [[window()]] above. This function slides a window and uses a time-aware
+    * aggregator. Therefore it samples the entries first.
+    *
+    * @param sampleRate to resample the entries
+    * @param useClosestInWindow whether to sample strictly or not (see [[TimeSeries.sample()]])
+    * @return a stream of entries representing the content of the window in a time-interval, along with
+    *         the aggregated value
+    */
+  def window[T, A](
+      in: Stream[TSEntry[T]],
+      windowWidth: Long,
+      aggregator: TimeAwareReversibleAggregator[T, A],
+      sampleRate: Long,
+      useClosestInWindow: Boolean = true
+  ): Stream[(Window[T], Option[A])] = {
+    require(windowWidth > 0, "Needs a strictly positive window size")
+
+    if (in.isEmpty) Stream.empty
+    else {
+      windowRec(
+        TimeSeries.sample(in, in.head.timestamp, sampleRate, useClosestInWindow).toStream,
         Queue.empty,
         in.head.timestamp,
         windowWidth,

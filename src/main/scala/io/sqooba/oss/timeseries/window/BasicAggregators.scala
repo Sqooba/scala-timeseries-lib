@@ -132,5 +132,5 @@ abstract class QueueAggregator[T, A] extends TimeUnawareReversibleAggregator[T, 
     queue += e.value
 
   def dropEntry(entry: TSEntry[T]): Unit =
-    queue.dequeue()
+    queue.dequeue
 }

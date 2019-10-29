@@ -293,12 +293,7 @@ trait TimeSeries[+T] {
     )
   }
 
-  /**
-    * Compute the integral of this time series between the two specified points.
-    * Simply sums values on the [from, to] interval.
-    * If you need to call this multiple times, consider using #stepIntegral()
-    * depending on your use case.
-    */
+  @deprecated("This function does only sum values in a slice of the series. Use slice and stepIntegral or slidingIntegral.")
   def integrateBetween[U >: T](from: Long, to: Long)(implicit n: Numeric[U]): U =
     this.slice(from, to).entries.map(_.value).sum(n)
 
@@ -319,33 +314,29 @@ trait TimeSeries[+T] {
       .foldLeft(newBuilder[T](compress = false))(_ += _)
       .result()
 
-  /**
-    * Compute a new time series that will contain, for any query time t, the sum
-    * of entries present in this time series that are defined for a time
+  /** Compute a new time series that will contain, for any query time t, the integral
+    * over the entries present in this time series that are defined for a time
     * between t - window and t.
     *
-    * Note: returns a step function, meaning that there is a slight level of imprecision
-    * depending on your resolution.
-    * The bigger the window is relative to individual entries' durations, the smaller the imprecision becomes.
+    * Note: returns a step function, meaning that there is a slight level of
+    * imprecision depending on your resolution. The bigger the window is relative to
+    * the sampleRate, the smaller the imprecision becomes.
     *
-    * @param window width of the sliding integration window
+    * @param window   width of the window
+    * @param timeUnit time unit used for this entry. By default, milliseconds are assumed.
+    * @param sampleRate frequency of resampling
     * @return a TimeSeries that for any queried time will return an approximate integral of
     *         this time series over the past window
     */
   def slidingIntegral[U >: T](
       window: Long,
+      sampleRate: Long,
       timeUnit: TimeUnit = TimeUnit.MILLISECONDS
   )(implicit n: Numeric[U]): TimeSeries[Double] =
-    if (this.size < 2) {
-      this.map(n.toDouble)
-    } else {
-      // TODO: have slidingSum return compressed output so we can use the unsafe constructor
-      //   and save an iteration
-      NumericTimeSeries
-        .slidingIntegral[U](this.entries, window, timeUnit)
-        .foldLeft(newBuilder[Double]())(_ += _)
-        .result()
-    }
+    NumericTimeSeries
+      .slidingIntegral[U](this.entries, window, sampleRate, timeUnit)
+      .foldLeft(newBuilder[Double]())(_ += _)
+      .result()
 
   /** Sample this TimeSeries at fixed time intervals of length sampleRate starting at
     * the start timestamp. By default, all resulting entries will have the duration
@@ -367,49 +358,11 @@ trait TimeSeries[+T] {
     * @param compress           specifies whether equal contiguous entries should be compressed
     * @return the sampled time series
     */
-  def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean, compress: Boolean = false): TimeSeries[T] = {
-
-    @inline
-    def tooFarToTake(next: TSEntry[_], samplePoint: Long): Boolean =
-      if (useClosestInWindow) next.timestamp > samplePoint + sampleRate / 2
-      else next.timestamp > samplePoint
-
-    @tailrec
-    def rec(samplePoint: Long, remaining: Seq[TSEntry[T]], builder: TimeSeriesBuilder[T]): TimeSeries[T] =
-      remaining match {
-        // No further entries, return the result
-        case Seq() => builder.result()
-
-        // The next entry is still too far away, we just go to the next sample point.
-        case next +: _ if tooFarToTake(next, samplePoint) =>
-          rec(samplePoint + sampleRate, remaining, builder)
-
-        // We take the value of the current entry if:
-        case current +: next +: _
-            // In strict mode, we only take the value if it is defined at the sample point.
-            if !useClosestInWindow && samplePoint < current.definedUntil
-
-            // In useClosest mode we take the currently defined value if the next.
-            // entry is out of the window
-            || useClosestInWindow && (
-              samplePoint < current.definedUntil && next.timestamp > samplePoint + sampleRate / 2
-
-              // But we also take the value if its start is closer to the next's start.
-              || Math.abs(current.timestamp - samplePoint) < Math.abs(next.timestamp - samplePoint)
-            ) =>
-          rec(samplePoint + sampleRate, remaining, builder += TSEntry(samplePoint, current.value, sampleRate))
-
-        // For the last entry, we only take its value if it is still defined
-        // at the sample point.
-        case Seq(last) if samplePoint < last.definedUntil =>
-          rec(samplePoint + sampleRate, remaining, builder += TSEntry(samplePoint, last.value, sampleRate))
-
-        // Otherwise, we can't use the current entry anymore and drop it.
-        case _ => rec(samplePoint, remaining.tail, builder)
-      }
-
-    rec(start, this.entries, newBuilder[T](compress))
-  }
+  def sample(start: Long, sampleRate: Long, useClosestInWindow: Boolean, compress: Boolean = false): TimeSeries[T] =
+    TimeSeries
+      .sample(this.entries, start, sampleRate, useClosestInWindow)
+      .foldLeft(newBuilder[T](compress))(_ += _)
+      .result()
 
   /**
     * Buckets this TimeSeries into sub-time series that have a domain of definition that is at most that
@@ -590,6 +543,56 @@ object TimeSeries {
     */
   def splitEntriesLongerThan[T](entries: Seq[TSEntry[T]], entryMaxLength: Long): Seq[TSEntry[T]] =
     entries.flatMap(entry => entry.splitEntriesLongerThan(entryMaxLength).entries)
+
+  /** See [[TimeSeries.sample()]] in the trait. Implements the sampling on a stream
+    * of entries with lazy stream evaluation.
+    */
+  def sample[T](
+      entries: Seq[TSEntry[T]],
+      start: Long,
+      sampleRate: Long,
+      useClosestInWindow: Boolean
+  ): Seq[TSEntry[T]] = {
+
+    @inline
+    def tooFarToTake(next: TSEntry[_], samplePoint: Long): Boolean =
+      if (useClosestInWindow) next.timestamp > samplePoint + sampleRate / 2
+      else next.timestamp > samplePoint
+
+    def rec(samplePoint: Long, remaining: Stream[TSEntry[T]]): Stream[TSEntry[T]] =
+      remaining match {
+        case Stream() => Stream()
+
+        // The next entry is still too far away, we just go to the next sample point.
+        case next +: _ if tooFarToTake(next, samplePoint) =>
+          rec(samplePoint + sampleRate, remaining)
+
+        // We take the value of the current entry if:
+        case current +: next +: _
+            // In strict mode, we only take the value if it is defined at the sample point.
+            if !useClosestInWindow && samplePoint < current.definedUntil
+
+            // In useClosest mode we take the currently defined value if the next.
+            // entry is out of the window
+            || useClosestInWindow && (
+              samplePoint < current.definedUntil && next.timestamp > samplePoint + sampleRate / 2
+
+              // But we also take the value if its start is closer to the next's start.
+              || Math.abs(current.timestamp - samplePoint) < Math.abs(next.timestamp - samplePoint)
+            ) =>
+          TSEntry(samplePoint, current.value, sampleRate) #:: rec(samplePoint + sampleRate, remaining)
+
+        // For the last entry, we only take its value if it is still defined
+        // at the sample point.
+        case Seq(last) if samplePoint < last.definedUntil =>
+          TSEntry(samplePoint, last.value, sampleRate) #:: rec(samplePoint + sampleRate, remaining)
+
+        // Otherwise, we can't use the current entry anymore and drop it.
+        case _ => rec(samplePoint, remaining.tail)
+      }
+
+    rec(start, entries.toStream)
+  }
 
   /**
     * Computes the union of the passed time series' loose domains

@@ -128,19 +128,15 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   override def defined(at: Long): Boolean = at >= timestamp && at < definedUntil
 
-  /** the last moment where this entry is valid, non-inclusive */
+  /** Non-inclusive end of validity of the entry. E.g. the first timestamp where it
+    * is not defined anymore.
+    */
   def definedUntil: Long = timestamp + validity
 
   /** return true if this and the other entry have an overlapping domain of definition.
     * False if the domains are only contiguous. */
   def overlaps[O](other: TSEntry[O]): Boolean =
     this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
-
-  def toLeftEntry[O]: TSEntry[Either[T, O]] =
-    TSEntry(timestamp, Left[T, O](value), validity)
-
-  def toRightEntry[O]: TSEntry[Either[O, T]] =
-    TSEntry(timestamp, Right[O, T](value), validity)
 
   /** Map value contained in this timeseries using the passed function */
   def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TSEntry[O] =
@@ -266,29 +262,21 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     builder.result()
   }
 
-  /**
-    * Compute the integral of this entry. The caller may specify what time unit is used for this entry.
+  /** Compute the integral of this entry that is essentially "value * validity", with
+    * the validity first being converted to seconds according to the passed time
+    * unit. By default, milliseconds are assumed and converted.
     *
-    * By default, milliseconds are assumed.
-    *
-    * This function essentially computes "value * validity", with the validity first  being converted
-    * to seconds according to the passed time unit.
-    *
-    * This currently returns a double value.
-    *
-    * TODO: return a (initVal, slope) tuple or something like an "IntegralEntry" instead ?
+    * @note This currently only returns doubles.
     */
-  def integral[U >: T](timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): Double = {
-    import n._
-
+  // TODO: return a (initVal, slope) tuple or something like an "IntegralEntry" instead ?
+  def integral[U >: T](timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): Double =
     // - Obtain the duration in milliseconds
     // - Compute the number of seconds (double division by 1000)
     // - Multiply by the value
-    (TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0) * value.toDouble
-  }
+    TimeUnit.MILLISECONDS.convert(validity, timeUnit) / 1000.0 * n.toDouble(this.value)
 
   /**
-    * See #integral
+    * See [[integral]].
     */
   def integralEntry[U >: T](timeUnit: TimeUnit = TimeUnit.MILLISECONDS)(implicit n: Numeric[U]): TSEntry[Double] =
     this.map((_: T) => integral[U](timeUnit)(n))
