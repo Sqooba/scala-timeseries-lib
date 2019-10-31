@@ -5,7 +5,7 @@
 
 > Lightweight, functional and exact time series library for scala
 
-See the [microsite](https://scala-timeseries-lib.github.io) for more information and documentation.
+See the [microsite](https://sqooba.github.io/scala-timeseries-lib/) for more information and documentation.
 
 ## TL;DR
 
