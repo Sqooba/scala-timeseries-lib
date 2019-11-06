@@ -1,5 +1,14 @@
 # Change log
 
+## 1.2.0 6.11.19
+* [feature] Adapt sliding integral.
+* [feature] Rework window aggregation and add dynamic windowing.
+* [internal] Shapeless merge for pairs.
+
+Note: this release introduces a dependency on shapeless. We are aware that this may be slightly suboptimal. We are experimenting with it for an upcomming feature that would allow to merge an arbitrary number of series.
+
+Depending on future choices, that dependency may be removed in the future.
+
 ## 1.1.0 22.10.19
 
 * [fix] fix flapping test
