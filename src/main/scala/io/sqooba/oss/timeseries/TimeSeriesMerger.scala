@@ -136,38 +136,41 @@ object TimeSeriesMerger {
       implicit zipper: Zip.Aux[T :: T :: HNil, ZO],
       mapper: Mapper.Aux[Merge.type, ZO, T]
   ): Seq[TSEntry[C]] = {
+    // TODO: the implementation of this function introduced in commit: "[timeseries]
+    //   Shapeless merge for pairs. a5e45f8962dff0c1f7" does support streaming by using
+    //   LazyList. Revert to that implementation once Scala 2.12 is not needed anymore.
 
-    // Returns a lazily evaluated stream of the merged result entries.
-    // Streaming is applied to all types of input sequences for performance reasons.
-    def rec(remaining: Stream[TSEntry[T]], lastSeenDefinedUntil: Long): Stream[TSEntry[C]] = remaining match {
-      case Seq() => Stream.empty
+    @tailrec
+    def rec(remaining: List[TSEntry[T]], lastSeenDefinedUntil: Long, builder: mutable.Builder[TSEntry[C], Seq[TSEntry[C]]]): Seq[TSEntry[C]] =
+      remaining match {
+        case Seq() => builder.result
 
-      // Fill the hole when neither of the two time series were defined over a given domain
-      case head +: _ if lastSeenDefinedUntil < head.timestamp =>
-        applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(allNone).to(Stream) #::: rec(remaining, head.timestamp)
+        // Fill the hole when neither of the two time series were defined over a given domain
+        case head +: _ if lastSeenDefinedUntil < head.timestamp =>
+          rec(remaining, head.timestamp, builder ++= applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(allNone))
 
-      case entries =>
-        // Take all entries that start at the same time as head, including the head.
-        val (startAtHead, newTail) = entries.span(_.timestamp == entries.head.timestamp)
+        case entries =>
+          // Take all entries that start at the same time as head, including the head.
+          val (startAtHead, newTail) = entries.span(_.timestamp == entries.head.timestamp)
 
-        val closestDefinedUntil = startAtHead.map(_.definedUntil).min
+          val closestDefinedUntil = startAtHead.map(_.definedUntil).min
 
-        // The next cut occurs when any of the TimeSeries to merge changes value. The
-        // cut is either the closest definedUntil of any of the entries that start at
-        // the same time as the head. Or it is the beginning of the next closest
-        // entry.
-        val nextCutTs =
-          if (newTail.isEmpty) closestDefinedUntil
-          else Math.min(newTail.head.timestamp, closestDefinedUntil)
+          // The next cut occurs when any of the TimeSeries to merge changes value. The
+          // cut is either the closest definedUntil of any of the entries that start at
+          // the same time as the head. Or it is the beginning of the next closest
+          // entry.
+          val nextCutTs =
+            if (newTail.isEmpty) closestDefinedUntil
+            else Math.min(newTail.head.timestamp, closestDefinedUntil)
 
-        val toMerge = startAtHead.map(_.trimEntryRight(nextCutTs))
-        // Retain the entries that extend longer than the cut
-        val newHeads = startAtHead.filter(_.definedUntil > nextCutTs).map(_.trimEntryLeft(nextCutTs))
+          val toMerge = startAtHead.map(_.trimEntryRight(nextCutTs))
+          // Retain the entries that extend longer than the cut
+          val newHeads = startAtHead.filter(_.definedUntil > nextCutTs).map(_.trimEntryLeft(nextCutTs))
 
-        mergeSameDomain(toMerge)(op).to(Stream) #::: rec(newHeads #::: newTail, entries.head.definedUntil)
-    }
+          rec(newHeads ::: newTail, entries.head.definedUntil, builder ++= mergeSameDomain(toMerge)(op))
+      }
 
-    rec(in.to(Stream), Long.MaxValue)
+    rec(in.toList, Long.MaxValue, Seq.newBuilder)
   }
 
   /**
