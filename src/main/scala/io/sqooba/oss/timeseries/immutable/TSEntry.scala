@@ -138,8 +138,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
   def overlaps[O](other: TSEntry[O]): Boolean =
     this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
 
-  /** Map value contained in this timeseries using the passed function */
-  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TSEntry[O] =
+  // Overridden to return an entry instead of a series.
+  override def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(value), validity)
 
   def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
@@ -148,10 +148,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     if (predicate(this)) this else EmptyTimeSeries
 
-  def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    if (predicate(this.value)) this else EmptyTimeSeries
-
-  def fill[U >: T](whenUndef: U): TimeSeries[U] = this
+  override def fill[U >: T](whenUndef: U): TimeSeries[U] = this
 
   def entries: Seq[TSEntry[T]] = Seq(this)
 
@@ -208,11 +205,11 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
       Seq(other)
     }
 
-  def head: TSEntry[T] = this
+  override def head: TSEntry[T] = this
 
   def headOption: Option[TSEntry[T]] = Some(this)
 
-  def last: TSEntry[T] = this
+  override def last: TSEntry[T] = this
 
   def lastOption: Option[TSEntry[T]] = Some(this)
 

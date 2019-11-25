@@ -27,25 +27,17 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
 
-  def map[O: WeakTypeTag](f: Nothing => O, compress: Boolean = true): TimeSeries[O] = this
-
   def mapWithTime[O: WeakTypeTag](f: (Long, Nothing) => O, compress: Boolean = true): TimeSeries[O] = this
 
   def filter(predicate: TSEntry[Nothing] => Boolean): TimeSeries[Nothing] = this
 
-  def filterValues(predicate: Nothing => Boolean): TimeSeries[Nothing] = this
-
-  def fill[U >: Nothing](whenUndef: U): TimeSeries[U] = this
+  override def fill[U >: Nothing](whenUndef: U): TimeSeries[U] = this
 
   def entries: Seq[TSEntry[Nothing]] = Seq()
 
   override def values: Seq[Nothing] = Seq()
 
-  def head: TSEntry[Nothing] = throw new NoSuchElementException()
-
   def headOption: Option[TSEntry[Nothing]] = None
-
-  def last: TSEntry[Nothing] = throw new NoSuchElementException()
 
   def lastOption: Option[TSEntry[Nothing]] = None
 

@@ -38,9 +38,7 @@ case class NestedTimeSeries[+T] private (
 
   override def values: Seq[T] = underlying.values.flatMap(_.values)
 
-  def head: TSEntry[T]               = underlying.head.value.head
   def headOption: Option[TSEntry[T]] = underlying.head.value.headOption
-  def last: TSEntry[T]               = underlying.last.value.last
   def lastOption: Option[TSEntry[T]] = underlying.last.value.lastOption
 
   def looseDomain: TimeDomain = ContiguousTimeDomain(head.timestamp, last.definedUntil)
@@ -65,19 +63,13 @@ case class NestedTimeSeries[+T] private (
       underlying.map(f).filter(_.value.nonEmpty)
     )
 
-  def map[O: universe.WeakTypeTag](f: T => O, compress: Boolean): TimeSeries[O] =
-    mapInnerSeries(_.map(f, compress))
-
   def mapWithTime[O: universe.WeakTypeTag](f: (Long, T) => O, compress: Boolean): TimeSeries[O] =
     mapInnerSeries(_.mapWithTime(f, compress))
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     mapInnerSeries(_.filter(predicate))
 
-  def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    mapInnerSeries(_.filterValues(predicate))
-
-  def fill[U >: T](whenUndef: U): TimeSeries[U] =
+  override def fill[U >: T](whenUndef: U): TimeSeries[U] =
     mapInnerSeries(_.fill(whenUndef))
 
   def trimRight(at: Long): TimeSeries[T] =

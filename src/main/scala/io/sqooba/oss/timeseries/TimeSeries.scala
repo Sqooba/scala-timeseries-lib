@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.immutable._
+import io.sqooba.oss.timeseries.window.WindowSlider.window
+import io.sqooba.oss.timeseries.window.{TimeAwareReversibleAggregator, TimeUnawareReversibleAggregator, WindowSlider}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -92,37 +94,48 @@ trait TimeSeries[+T] {
   def isCompressed: Boolean
 
   /** Map the values within the time series.
-    * the 'compress' parameters allows callers to control whether or not compression should occur.
-    * If set to false, timestamps and validities remain unchanged. Defaults to true */
-  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O]
+    *
+    * @param compress controls whether or not compression should occur on the output series.
+    *                 If set to false, timestamps and validities remain unchanged. Defaults to true.
+    */
+  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
+    mapWithTime[O]((_, value) => f(value), compress)
 
-  /** Map the values within the time series.
-    * Timestamps and validities of entries remain unchanged,
-    * but the time is made available for cases where the new value would depend on it. */
+  /** Map the values within the time series. If not compressing, the timestamps and
+    * validities of entries remain unchanged, but the time is made available for
+    * cases where the new value would depend on it.
+    *
+    * @param compress controls whether or not compression should occur on the output series.
+    *                 Defaults to true.
+    */
   def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O]
 
   /** Return a time series that will only contain entries for which the passed predicate returned True. */
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T]
 
   /** Return a time series that will only contain entries containing values for which the passed predicate returned True. */
-  def filterValues(predicate: T => Boolean): TimeSeries[T]
+  def filterValues(predicate: T => Boolean): TimeSeries[T] =
+    filter(tse => predicate(tse.value))
 
   /** Fill the wholes in the definition domain of this time series with the passed value.
     * The resulting time series will have a single continuous definition domain,
-    * provided the original time series was non-empty. */
-  def fill[U >: T](whenUndef: U): TimeSeries[U]
+    * provided the original time series was non-empty.
+    */
+  def fill[U >: T](whenUndef: U): TimeSeries[U] = {
+    val (start, end) = (this.head.timestamp, this.last.definedUntil)
+    this.fallback(TSEntry(start, whenUndef, end - start))
+  }
 
   /** Return a Seq of the TSEntries representing this time series. */
   def entries: Seq[TSEntry[T]]
 
   /** Return a Seq of the values contained by this series, in their chronological order. */
-  def values: Seq[T] =
-    entries.map(_.value)
+  def values: Seq[T] = entries.map(_.value)
 
   /** Return the first (chronological) entry in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */
-  def head: TSEntry[T]
+  def head: TSEntry[T] = headOption.get
 
   /** Return a filled option containing the first (chronological) entry in this
     * time series.
@@ -142,7 +155,7 @@ trait TimeSeries[+T] {
   /** Return the last (chronological) entry in this time series.
     *
     * @throws NoSuchElementException if this time series is empty. */
-  def last: TSEntry[T]
+  def last: TSEntry[T] = lastOption.get
 
   /** Return a filled option containing the last (chronological) entry in this
     * time series.
@@ -338,6 +351,55 @@ trait TimeSeries[+T] {
       .foldLeft(newBuilder[Double]())(_ += _)
       .result()
 
+  /** Slides a window of size 'windowWidth' over the entries present in this series.
+    * It calculates some aggregate on each window that does not depend on the time of
+    * validity of the entries. As the given aggregator is reversible this can be done
+    * efficiently.
+    *
+    * Each returned entry E is calculated from the entries of the original time
+    * series that intersect with any window that ends in the domain of E.
+    *
+    * @note The difference between [[rollup()]] and [[slidingWindow()]] is that
+    * rollup generates disjoint slices of the time series and aggregates over those,
+    * whereas for sliding window an entry can be part of multiple windows.
+    *
+    * @param windowWidth width of the window
+    * @param aggregator a reversible aggregator to efficiently compute aggregations over the window
+    * @return a new series contianing all the aggregates as entries
+    */
+  def slidingWindow[U >: T, A](
+      windowWidth: Long,
+      aggregator: TimeUnawareReversibleAggregator[U, A]
+  ): TimeSeries[A] =
+    aggregateStreamToSeries(
+      WindowSlider.window(this.entries.toStream, windowWidth, aggregator)
+    )
+
+  /** See [[slidingWindow()]]. This function slides a window and uses a time-aware
+    * aggregator, i.e. the aggregated values can depend on the duration of validity
+    * of each entry (example: average weighted by time of validity). Therefore it
+    * samples the entries first.
+    *
+    * @param sampleRate to resample the entries
+    * @param useClosestInWindow whether to sample strictly or not (see [[TimeSeries.sample()]])
+    */
+  def slidingWindow[U >: T, A](
+      windowWidth: Long,
+      aggregator: TimeAwareReversibleAggregator[U, A],
+      sampleRate: Long,
+      useClosestInWindow: Boolean = true
+  ): TimeSeries[A] =
+    aggregateStreamToSeries(
+      WindowSlider.window(this.entries.toStream, windowWidth, aggregator, sampleRate, useClosestInWindow)
+    )
+
+  private def aggregateStreamToSeries[A](seq: Seq[(TSEntry[_], Option[A])]): TimeSeries[A] =
+    seq.flatMap {
+      // Drop the content of the window, just keep the aggregator's result.
+      case (entry, aggregateOpt) => aggregateOpt.map(a => entry.map(_ => a))
+    }.foldLeft(newBuilder[A]())(_ += _)
+      .result()
+
   /** Sample this TimeSeries at fixed time intervals of length sampleRate starting at
     * the start timestamp. By default, all resulting entries will have the duration
     * of sampleRate. If equal contiguous entries are compressed (set the compress flag)
@@ -372,17 +434,21 @@ trait TimeSeries[+T] {
     *                will generate buckets with domain (([a, b[), ([b, c[), ...)
     *                Note that it is wise to have 'buckets' start at a meaningfully close point in time
     *                relative to the time series first entry.
-    * @return a stream of (bucket-start, timeseries).
+    * @return a stream of (bucket-start, time series).
     */
   def bucket(buckets: Stream[Long]): Stream[(Long, TimeSeries[T])] =
     TimeBucketer.bucketEntriesToTimeSeries(buckets, this.entries, newBuilder[T]())
 
-  /**
-    * Given the passed bucket delimiters, apply 'aggregator' for each generated bucket.
+  /** Given the passed bucket delimiters, apply 'aggregator' for each generated bucket.
     *
-    * Note that the timestamps and validities of the entries present in the returned timeseries
-    * are ONLY driven by the boundaries generated by 'buckets': the first and last entry
-    * may well be defined outside of the domain of definition of this time series
+    * Note that the timestamps and validities of the entries present in the returned
+    * time series are ONLY driven by the boundaries generated by 'buckets': the first
+    * and last entry may well be defined outside of the domain of definition of this
+    * time series.
+    *
+    * @note The difference between [[rollup()]] and [[slidingWindow()]] is that
+    * rollup generates disjoint slices of the time series and aggregates over those,
+    * whereas for sliding window an entry can be part of multiple windows.
     *
     * @param buckets a stream generating the bucket boundaries for the rollup/aggregation
     * @param aggregator a function that computes an aggregate over a time series
@@ -454,64 +520,7 @@ object TimeSeries {
     * The result will be properly fitted and compressed as well.
     */
   def fillGaps[T](in: Seq[TSEntry[T]], fillValue: T): Seq[TSEntry[T]] =
-    if (in.size < 2) {
-      in
-    } else {
-      fillMe(in, fillValue, Seq.newBuilder[TSEntry[T]])
-    }
-
-  @tailrec
-  private def fillMe[T](in: Seq[TSEntry[T]], fillValue: T, acc: mutable.Builder[TSEntry[T], Seq[TSEntry[T]]]): Seq[TSEntry[T]] =
-    in match {
-      case Seq(first, last) =>
-        // Only two elements remaining: the recursion can end
-        (acc ++= fillAndCompress(first, last, fillValue)).result()
-      case Seq(first, second, tail @ _*) =>
-        // Fill the gap, and check the result
-        fillAndCompress(first, second, fillValue) match {
-          // the above may return 1, 2 or 3 entries,
-          // of which the last one must not yet
-          // be added to the accumulator,
-          // instead it is prepended to what is passed to the recursive call
-          case Seq(compressed) =>
-            // Nothing to add to acc:
-            // compressed may still be extended by the next filler
-            fillMe(compressed +: tail, fillValue, acc)
-          case Seq(one, two) =>
-            // The fill value either extended 'first' or advanced 'second:
-            // we don't need to know and just add first to acc
-            fillMe(two +: tail, fillValue, acc += one)
-          case Seq(_, filler, _) =>
-            // the fill value did not extend the first,
-            // and did not advance the second
-            // first and filler are added to the accumulator
-            fillMe(second +: tail, fillValue, acc ++= Seq(first, filler))
-        }
-    }
-
-  /** Returns a Sequence of entries such that there is no discontinuity
-    * between current.timestamp and next.definedUntil, filling the gap
-    * between the entries and compression them if necessary. */
-  def fillAndCompress[T](first: TSEntry[T], second: TSEntry[T], fillValue: T): Seq[TSEntry[T]] = {
-    if (first.definedUntil == second.timestamp) {
-      // Entries contiguous.
-      Seq(first, second)
-    } else {
-      // There is space to fill
-      first.appendEntry(
-        TSEntry(first.definedUntil, fillValue, second.timestamp - first.definedUntil)
-      ) match {
-        case Seq(single) =>
-          // 'first' was extended.
-          // // Check if 'second' can be compressed into the result
-          single.appendEntry(second)
-        case Seq(notExtended, filler) =>
-          // 'first' was not extended.
-          // Check if 'second' can be advanced with the filling value
-          notExtended +: filler.appendEntry(second)
-      }
-    }
-  }
+    TimeSeries.ofOrderedEntriesUnsafe(in).fill(fillValue).entries
 
   /** @see [[TimeSeriesMerger.mergeEntries]] */
   def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =

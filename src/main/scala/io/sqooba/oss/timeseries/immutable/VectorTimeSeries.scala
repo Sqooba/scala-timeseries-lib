@@ -40,16 +40,6 @@ case class VectorTimeSeries[+T] private (
   def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] =
     VectorTimeSeries.dichotomicSearch(data, t)
 
-  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
-    if (compress) {
-      // Use a builder to handle compression
-      data
-        .foldLeft(newBuilder[O]())((b, n) => b += n.map(f))
-        .result()
-    } else {
-      new VectorTimeSeries[O](data.map(_.map(f)))
-    }
-
   def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
     data
       .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
@@ -58,12 +48,6 @@ case class VectorTimeSeries[+T] private (
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
     TimeSeries.ofOrderedEntriesUnsafe(this.data.filter(predicate))
-
-  def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    filter(tse => predicate(tse.value))
-
-  def fill[U >: T](whenUndef: U): TimeSeries[U] =
-    new VectorTimeSeries[U](TimeSeries.fillGaps(data, whenUndef).toVector)
 
   lazy val size: Int = data.size
 
@@ -135,11 +119,7 @@ case class VectorTimeSeries[+T] private (
 
   def entries: Seq[TSEntry[T]] = data
 
-  def head: TSEntry[T] = data.head
-
   def headOption: Option[TSEntry[T]] = data.headOption
-
-  def last: TSEntry[T] = data.last
 
   def lastOption: Option[TSEntry[T]] = data.lastOption
 

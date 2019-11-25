@@ -58,16 +58,13 @@ case class ColumnTimeSeries[+T] private (
 
   private def entryAtIndex(index: Int): TSEntry[T] = TSEntry(timestamps(index), values(index), validities(index))
 
-  def head: TSEntry[T] = entryAtIndex(0)
+  override def head: TSEntry[T] = entryAtIndex(0)
 
   def headOption: Option[TSEntry[T]] = Some(head)
 
-  def last: TSEntry[T] = entryAtIndex(timestamps.length - 1)
+  override def last: TSEntry[T] = entryAtIndex(timestamps.length - 1)
 
   def lastOption: Option[TSEntry[T]] = Some(last)
-
-  def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
-    mapWithTime[O]((_, value) => f(value), compress)
 
   def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = {
     val mappedVs = (timestamps, values).zipped.map(f)
@@ -82,29 +79,10 @@ case class ColumnTimeSeries[+T] private (
   }
 
   def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
-    filterTriples((ts, value, valid) => predicate(TSEntry(ts, value, valid)))
-
-  def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    filterTriples((_, value, _) => predicate(value))
-
-  private def filterTriples(predicate: (Long, T, Long) => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
     ColumnTimeSeries.ofColumnVectorsUnsafe(
-      (timestamps, values, validities).zipped.filter(predicate)
+      (timestamps, values, validities).zipped.filter((ts, value, valid) => predicate(TSEntry(ts, value, valid)))
     )
-
-  def fill[U >: T](whenUndef: U): TimeSeries[U] =
-    (timestamps, values, validities).zipped
-      .foldLeft(newBuilder[U]()) {
-        case (builder, (ts, va, vd)) =>
-          // if the last entry does not extend until the next entry, we add a filler
-          if (builder.definedUntil.exists(_ < ts)) {
-            val fillerTs = builder.definedUntil.get
-            builder += TSEntry(fillerTs, whenUndef, ts - fillerTs)
-          }
-          builder += TSEntry(ts, va, vd)
-      }
-      .result()
 
   lazy val size: Int = timestamps.size
 

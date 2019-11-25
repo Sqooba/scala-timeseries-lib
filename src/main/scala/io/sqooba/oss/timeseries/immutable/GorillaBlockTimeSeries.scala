@@ -22,12 +22,7 @@ case class GorillaBlockTimeSeries private[immutable] (
 
   def entries: Seq[TSEntry[Double]] = block.decompress
 
-  def head: TSEntry[Double] = entries.head
-
   def headOption: Option[TSEntry[Double]] = entries.headOption
-
-  def last: TSEntry[Double] = entries.last
-
   def lastOption: Option[TSEntry[Double]] = entries.lastOption
 
   def at(t: Long): Option[Double] = entryAt(t).map(_.value)
@@ -46,9 +41,6 @@ case class GorillaBlockTimeSeries private[immutable] (
   lazy val supportRatio: Double =
     entries.map(_.looseDomain.size).sum.toFloat / looseDomain.size
 
-  def map[O: WeakTypeTag](f: Double => O, compress: Boolean = true): TimeSeries[O] =
-    mapEntries[O](e => f(e.value), compress)
-
   def mapWithTime[O: WeakTypeTag](f: (Long, Double) => O, compress: Boolean = true): TimeSeries[O] =
     mapEntries[O](e => f(e.timestamp, e.value), compress)
 
@@ -62,15 +54,6 @@ case class GorillaBlockTimeSeries private[immutable] (
     GorillaBlockTimeSeries.ofOrderedEntriesSafe(
       entries.filter(predicate).toStream
     )
-
-  def filterValues(predicate: Double => Boolean): TimeSeries[Double] =
-    filter(e => predicate(e.value))
-
-  def fill[U >: Double](whenUndef: U): TimeSeries[U] =
-    TimeSeries
-      .fillGaps(entries, whenUndef)
-      .foldLeft(newBuilder[U]())(_ += _)
-      .result()
 
   def trimRight(t: Long): TimeSeries[Double] =
     // trimRight can handle the case where t is before the timestamp of the entry
