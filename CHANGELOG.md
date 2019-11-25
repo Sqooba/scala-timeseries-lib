@@ -1,5 +1,10 @@
 # Change log
 
+## 1.3.0 25.11.19
+* [feature] Add sliding window methods on time series trait.
+* [internal] Reduce number of abstract functions in time series trait and reduce boilerplate.
+* [fix] Fix a stack overflow bug in the merge operation.
+
 ## 1.2.0 6.11.19
 * [feature] Adapt sliding integral.
 * [feature] Rework window aggregation and add dynamic windowing.
