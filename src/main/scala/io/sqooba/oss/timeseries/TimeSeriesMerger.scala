@@ -3,16 +3,10 @@ package io.sqooba.oss.timeseries
 import io.sqooba.oss.timeseries.immutable.TSEntry
 import io.sqooba.oss.timeseries.validation.TSEntryFitter
 
-import shapeless._
-import shapeless.ops.hlist._
-import shapeless.UnaryTCConstraint.*->*
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.compat._
 import scala.language.reflectiveCalls
-
-// This is needed for the lambda symbol that is used in some type constraints.
-// scalastyle:off non.ascii.character.disallowed
 
 object TimeSeriesMerger {
 
@@ -52,33 +46,91 @@ object TimeSeriesMerger {
     *                 by a TSEntryFitter. This should only be omitted if the entries
     *                 will be passed to a TimeSeriesBuilder subsequently.
     */
-  def mergeEntries[A, B, C](a: Seq[TSEntry[A]], b: Seq[TSEntry[B]], compress: Boolean = true)(
-      op: (Option[A], Option[B]) => Option[C]
-  ): Seq[TSEntry[C]] = {
-    type OptionHList = Option[A] :: Option[B] :: HNil
+  def mergeEntries[A, B, R](a: Seq[TSEntry[A]], b: Seq[TSEntry[B]], compress: Boolean = true)(
+      op: (Option[A], Option[B]) => Option[R]
+  ): Seq[TSEntry[R]] =
+    mergeEntries[(Option[A], Option[B]), R](
+      mergeOrderedSeqs(
+        a.map(_.map(av => (Some(av), None))),
+        b.map(_.map(bv => (None, Some(bv))))
+      ),
+      op.tupled,
+      (None, None),
+      (pair1, pair2) => (pair1._1 orElse pair2._1, pair1._2 orElse pair2._2),
+      compress
+    )
 
-    // the given merge operator but taking an HList as an argument
-    val hlistOp: OptionHList => Option[C] = cp => op tupled Generic[(Option[A], Option[B])].from(cp)
-
-    // the result of the merge operator when all input TimeSeries are None
-    val allNoneResult: Option[C] = hlistOp(allNoneHList(hListLength[OptionHList]))
-
-    // def instead of val to guarantee laziness
-    def mergedEntries: Seq[TSEntry[C]] =
-      mergeEitherSeq(
+  /** See [[mergeEntries]]. The same as mergeEntries for two sequences but for three. */
+  def mergeEntries[A, B, C, R](a: Seq[TSEntry[A]], b: Seq[TSEntry[B]], c: Seq[TSEntry[C]], compress: Boolean)(
+      op: (Option[A], Option[B], Option[C]) => Option[R]
+  ): Seq[TSEntry[R]] =
+    mergeEntries[(Option[A], Option[B], Option[C]), R](
+      mergeOrderedSeqs(
+        a.map(_.map(av => (Some(av), None, None))),
         mergeOrderedSeqs(
-          a.map(_.map(av => Some(av) :: None :: HNil)),
-          b.map(_.map(bv => None :: Some(bv) :: HNil))
+          b.map(_.map(bv => (None, Some(bv), None))),
+          c.map(_.map(cv => (None, None, Some(cv))))
         )
-        // IntelliJ unfortunately complains about implicits here but it is wrong – just ignore.
-      )(hlistOp, allNoneResult)
+      ),
+      op.tupled,
+      (None, None, None),
+      (pair1, pair2) => (pair1._1 orElse pair2._1, pair1._2 orElse pair2._2, pair1._3 orElse pair2._3),
+      compress
+    )
+
+  /** Takes a sequence of entries that are possibly overlapping in time and returns a
+    * sequence where all overlapping entries have first been reduced to a single
+    * value (`reduceOp`) and then merged to the new type (`mergeOp`).
+    *
+    * @note Because this function is agnostic of the type it can (as an example) work
+    *       on tuples of any length. This allows us to encode merges of any arity with the
+    *       following tuple encoding:
+    *
+    *       The tuples have a length equal to the number of TimeSeries' to merge.
+    *       Each tuple corresponds to one original TSEntry. Example: if there are
+    *       three TimeSeries to merge `tsA`, `tsB` and `tsC` then a `TSEntry(ts, v, d)`
+    *       of `tsC` will be converted to an entry of the following form:
+    *       {{{
+    *         TSEntry(ts, (None, None, Some(v)), d)
+    *       }}}
+    *
+    *       Overlapping entries from different TimeSeries will be split where
+    *       necessary and, subsequently, all entries covering the same time will be
+    *       reduced to single one where more than one position of the tuple has a
+    *       Some. For example:
+    *       {{{
+    *         TSEntry(ts, (Some(va), None, Some(vc)), d)
+    *       }}}
+    *       means that at the time `ts` until `ts + d` the `tsA` has value `va` and
+    *       the `tsC` has value `vc`. The contained tuple now corresponds to the
+    *       argument of the `mergeOp`; it can simply be applied.
+    *
+    *
+    * @param in       sequence of entries that can overlap in time by are strictly ordered by timestamp
+    * @param mergeOp  operator from the entry type to the final type or None
+    * @param allNone  the value to use for the merge operator when no entry is defined
+    * @param reduceOp reduces overlapping entry-values to a single one
+    * @param compress specifies whether the entries should be validated and compressed
+    *                 by a TSEntryFitter. This should only be omitted if the entries
+    *                 will be passed to a TimeSeriesBuilder subsequently.
+    * @return the sequence of merged but not validated/compressed TSEntries of the result type
+    */
+  def mergeEntries[T, R](
+      in: => Seq[TSEntry[T]],
+      mergeOp: T => Option[R],
+      allNone: T,
+      reduceOp: (T, T) => T,
+      compress: Boolean
+  ): Seq[TSEntry[R]] = {
+    // def instead of val to guarantee laziness
+    def mergedEntries =
+      mergeEitherSeq(in, mergeOp, allNone, reduceOp)
 
     if (compress) TSEntryFitter.validateEntries(mergedEntries, compress)
     else mergedEntries
   }
 
-  /**
-    * Combine two Seq's that are known to be ordered and return a Seq that is
+  /** Combine two Seq's that are known to be ordered and return a Seq that is
     * both ordered and that contains both of the elements in 'a' and 'b'.
     * Adapted from http://stackoverflow.com/a/19452304/1997056
     */
@@ -100,41 +152,12 @@ object TimeSeriesMerger {
     rec(a, b, Seq.newBuilder).result
   }
 
-  /** Merge a sequence of HLists of Options ordered by timestamp, with the given
-    * operator.
-    *
-    * The HLists have a length equal to the number of TimeSeries' to merge. Each
-    * HList corresponds to one original TSEntry. If there are three TimeSeries to
-    * merge tsA, tsB and tsC then a TSEntry(ts, v, d) of tsC will be converted to an
-    * entry of the following form:
-    *
-    * TSEntry(ts, None :: None :: Some(v) :: HNil, d)
-    *
-    * Overlapping entries from different TimeSeries will be split where necessary
-    * and, subsequently, all entries covering the same time will be merged. For
-    * example:
-    *
-    * TSEntry(ts, Some(va) :: None :: Some(vc) :: HNil, d)
-    *
-    * means that at the time 'ts' until 'ts + d' the tsA has value va and the tsC has
-    * value vc. The contained HList now also corresponds to the argument of the
-    * transformed merge operator that takes an HList as argument. It can simply be
-    * applied.
-    *
-    * @param in sequence of HLists of Options ordered by timestamp
-    * @param op merge operator from HList to the result type or None
-    * @param allNone the value of the merge operator when passed an HList of only None
-    * @return the sequence of merged but not validated/compressed TSEntries of the result type C
-    */
-  private def mergeEitherSeq[
-      // an HList of Options
-      T <: HList: *->*[Option]#λ,
-      ZO <: HList,
-      C
-  ](in: Seq[TSEntry[T]])(op: T => Option[C], allNone: Option[C])(
-      // implicits for mergeHLists
-      implicit zipper: Zip.Aux[T :: T :: HNil, ZO],
-      mapper: Mapper.Aux[Merge.type, ZO, T]
+  /** See the general [[mergeEntries]] for explanation of the algorithm. */
+  private def mergeEitherSeq[T, C](
+      in: Seq[TSEntry[T]],
+      op: T => Option[C],
+      allNone: T,
+      mergeValues: (T, T) => T
   ): Seq[TSEntry[C]] = {
     // TODO: the implementation of this function introduced in commit: "[timeseries]
     //   Shapeless merge for pairs. a5e45f8962dff0c1f7" does support streaming by using
@@ -147,7 +170,7 @@ object TimeSeriesMerger {
 
         // Fill the hole when neither of the two time series were defined over a given domain
         case head +: _ if lastSeenDefinedUntil < head.timestamp =>
-          rec(remaining, head.timestamp, builder ++= applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(allNone))
+          rec(remaining, head.timestamp, builder ++= applyEmptyMerge(lastSeenDefinedUntil, head.timestamp)(allNone, op))
 
         case entries =>
           // Take all entries that start at the same time as head, including the head.
@@ -167,62 +190,40 @@ object TimeSeriesMerger {
           // Retain the entries that extend longer than the cut
           val newHeads = startAtHead.filter(_.definedUntil > nextCutTs).map(_.trimEntryLeft(nextCutTs))
 
-          rec(newHeads ::: newTail, entries.head.definedUntil, builder ++= mergeSameDomain(toMerge)(op))
+          rec(newHeads ::: newTail, entries.head.definedUntil, builder ++= mergeSameDomain(toMerge, op, mergeValues))
       }
 
     rec(in.toList, Long.MaxValue, Seq.newBuilder)
   }
 
-  /**
-    * Merge a sequence of entries of exactly the same domain. There must be at least
+  /** Merge a sequence of entries of exactly the same domain. There must be at least
     * one entry and at most one per TimeSeries to merge, as they cannot overlap. The
-    * entries are first merged to a single HList and then passed to the merge
-    * operator.
+    * entries' values are merged by the given operator
     *
     * @param entriesSameDomain to merge, at least one
     * @param op merge operator from HList to the result type or None
     * @return a TSEntry of the result type or None
     */
-  private def mergeSameDomain[T <: HList, ZO <: HList, R](entriesSameDomain: Seq[TSEntry[T]])(op: T => Option[R])(
-      // implicits for mergeHLists
-      implicit zipper: Zip.Aux[T :: T :: HNil, ZO],
-      mapper: Mapper.Aux[Merge.type, ZO, T]
+  private def mergeSameDomain[T, R](
+      entriesSameDomain: Seq[TSEntry[T]],
+      op: T => Option[R],
+      mergeValues: (T, T) => T
   ): Option[TSEntry[R]] =
     entriesSameDomain match {
       // check that all entries have the same start timestamp and end
       case TSEntry(ts, _, d) +: others if others.forall(e => e.timestamp == ts && e.validity == d) =>
-        op(entriesSameDomain.map(_.value).reduce(mergeHLists[T, ZO])).map(TSEntry(ts, _, d))
+        op(entriesSameDomain.map(_.value).reduce(mergeValues)).map(TSEntry(ts, _, d))
 
       case _ =>
         throw new IllegalArgumentException("Can only merge a non-empty sequence of entries with exactly the same domain.")
     }
 
-  // Shapeless merge operator for HLists of Options.
-  private def mergeHLists[T <: HList, ZO <: HList](accumulator: T, element: T)(
-      implicit zipper: Zip.Aux[T :: T :: HNil, ZO],
-      mapper: Mapper.Aux[Merge.type, ZO, T]
-  ): T = {
-    (accumulator zip element) map Merge
-  }
-
-  // Shapeless type class for the merge operator. It compares the two options at
-  // the same position in the two HLists. If the first one is defined it takes that
-  // value. Otherwise it takes the second option.
-  private object Merge extends Poly1 {
-    implicit def default[A]: Case.Aux[(Option[A], Option[A]), Option[A]] =
-      at { case (accOpt, elemOpt) => accOpt.orElse(elemOpt) }
-  }
-
-  /** Create a TSEntry with the given value or None. */
-  private def applyEmptyMerge[R](from: Long, to: Long)(allNone: Option[R]): Option[TSEntry[R]] =
+  /** Create a TSEntry with the empty value's result or None. */
+  private def applyEmptyMerge[T, R](from: Long, to: Long)(
+      allNone: T,
+      op: T => Option[R]
+  ): Option[TSEntry[R]] =
     if (from >= to) None
-    else allNone.map(TSEntry(from, _, to - from))
+    else op(allNone).map(TSEntry(from, _, to - from))
 
-  /** Create an HList of only None with the given shapeless length. */
-  private def allNoneHList(length: Nat)(implicit fill: Fill[length.N, None.type]): fill.Out =
-    HList.fill(length)(None)(fill)
-
-  /** Return the shapeless length of an HList type. */
-  private def hListLength[T <: HList](implicit length: Length[T]): length.Out = length()
 }
-// scalastyle:on non.ascii.character.disallowed
