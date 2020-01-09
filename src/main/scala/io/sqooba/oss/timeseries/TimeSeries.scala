@@ -524,7 +524,7 @@ object TimeSeries {
 
   /** @see [[TimeSeriesMerger.mergeEntries]] */
   def mergeEntries[A, B, C](a: Seq[TSEntry[A]])(b: Seq[TSEntry[B]])(op: (Option[A], Option[B]) => Option[C]): Seq[TSEntry[C]] =
-    TimeSeriesMerger.mergeEntries(a, b)(op)
+    TimeSeriesMerger.mergeEntries(a, b, compress = true)(op)
 
   /**
     * Groups the entries in the stream into substreams that each contain at most
