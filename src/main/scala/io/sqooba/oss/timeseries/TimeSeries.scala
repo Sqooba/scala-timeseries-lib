@@ -4,11 +4,8 @@ import java.util.concurrent.TimeUnit
 
 import io.sqooba.oss.timeseries.bucketing.TimeBucketer
 import io.sqooba.oss.timeseries.immutable._
-import io.sqooba.oss.timeseries.window.WindowSlider.window
 import io.sqooba.oss.timeseries.window.{TimeAwareReversibleAggregator, TimeUnawareReversibleAggregator, WindowSlider}
 
-import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.concurrent.duration.TimeUnit
 import scala.reflect.runtime.universe._
 

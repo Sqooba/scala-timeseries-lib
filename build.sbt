@@ -12,6 +12,9 @@ scalaVersion := "2.13.0"
 crossScalaVersions := Seq("2.13.0", "2.12.10")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
+resolvers += Resolver.sonatypeRepo("snapshots")
+
+val zioVersion = "1.0.0-RC17"
 
 libraryDependencies ++= Seq(
   "com.storm-enroute"          %% "scalameter"              % "0.19",
@@ -19,12 +22,18 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging"           % "3.9.2",
   "org.apache.thrift"          % "libthrift"                % "0.12.0",
   "com.twitter"                %% "scrooge-core"            % "19.10.0",
+  "dev.zio"                    %% "zio"                     % zioVersion,
+  "dev.zio"                    %% "zio-streams"             % zioVersion,
+  "dev.zio"                    %% "zio-test"                % zioVersion % Test,
+  "dev.zio"                    %% "zio-test-sbt"            % zioVersion % Test,
   "junit"                      % "junit"                    % "4.12" % Test,
   "org.scalactic"              %% "scalactic"               % "3.0.8",
   "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
   "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
   "io.dropwizard.metrics"      % "metrics-core"             % "4.0.0" % Test
 )
+
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 coverageHighlighting := true
 coverageExcludedPackages := "<empty>;io.sqooba.oss.timeseries.thrift.*"
