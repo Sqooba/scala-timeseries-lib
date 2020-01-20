@@ -15,7 +15,7 @@ class StrictZipTest extends JUnitSuite {
 
     assert(
       tsA.strictZip(tsB).entries ==
-        Seq(TSEntry(-10, ("A1", "B1"), 10), TSEntry(0, ("A2", "B2"), 10), TSEntry(10, ("A3", "B3"), 10))
+          Seq(TSEntry(-10, ("A1", "B1"), 10), TSEntry(0, ("A2", "B2"), 10), TSEntry(10, ("A3", "B3"), 10))
     )
 
     val tsC = VectorTimeSeries.ofOrderedEntriesUnsafe(Seq(TSEntry(-10, "C1", 10), TSEntry(0, "C2", 10), TSEntry(10, "C3", 10)))
@@ -23,7 +23,7 @@ class StrictZipTest extends JUnitSuite {
     tsA.strictZip(tsB).strictZip(tsC)
     assert(
       tsA.strictZip(tsB).strictZip(tsC).entries ==
-        Seq(TSEntry(-10, (("A1", "B1"), "C1"), 10), TSEntry(0, (("A2", "B2"), "C2"), 10), TSEntry(10, (("A3", "B3"), "C3"), 10))
+          Seq(TSEntry(-10, (("A1", "B1"), "C1"), 10), TSEntry(0, (("A2", "B2"), "C2"), 10), TSEntry(10, (("A3", "B3"), "C3"), 10))
     )
   }
 
@@ -34,8 +34,8 @@ class StrictZipTest extends JUnitSuite {
 
     assert(
       vta.strictZip(vtb).entries ==
-        // (We expect the first entry to have been trimmed.)
-        Seq(TSEntry(1528943988000L, (468000.0, -468000.0), 600000), TSEntry(1528944588000L, (475000.0, -475000.0), 660000))
+          // (We expect the first entry to have been trimmed.)
+          Seq(TSEntry(1528943988000L, (468000.0, -468000.0), 600000), TSEntry(1528944588000L, (475000.0, -475000.0), 660000))
     )
   }
 }

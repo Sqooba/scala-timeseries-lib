@@ -76,7 +76,8 @@ class NumericTimeSeriesSpec extends FlatSpec with Matchers {
     // Sum the stuff!
     assert(
       NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 2, 10000)))
-        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 30.0, 10000)))
+        == Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 30.0, 10000))
+    )
 
     NumericTimeSeries.stepIntegral(Seq(TSEntry(0, 1, 10000), TSEntry(10000, 2, 10000), TSEntry(20000, 3, 10000))) shouldBe
       Seq(TSEntry(0, 10.0, 10000), TSEntry(10000, 30.0, 10000), TSEntry(20000, 60.0, 10000))
@@ -183,14 +184,16 @@ class NumericTimeSeriesSpec extends FlatSpec with Matchers {
 
     // Window shorter than the shortest entry
     slidingIntegral(twoB, 4, 2, TimeUnit.SECONDS) shouldBe
-      Seq(TSEntry(10, 2, 2),
-          TSEntry(12, 4, 2),
-          TSEntry(14, 6, 2),
-          TSEntry(16, 6, 2),
-          TSEntry(18, 6, 2),
-          TSEntry(20, 8, 2),
-          TSEntry(22, 10, 2),
-          TSEntry(24, 12, 2))
+      Seq(
+        TSEntry(10, 2, 2),
+        TSEntry(12, 4, 2),
+        TSEntry(14, 6, 2),
+        TSEntry(16, 6, 2),
+        TSEntry(18, 6, 2),
+        TSEntry(20, 8, 2),
+        TSEntry(22, 10, 2),
+        TSEntry(24, 12, 2)
+      )
 
     // Window equal to the shortest entry
     slidingIntegral(twoB, 5, 5, TimeUnit.SECONDS) shouldBe
@@ -247,14 +250,16 @@ class NumericTimeSeriesSpec extends FlatSpec with Matchers {
       )
 
     slidingIntegral(triA, 9, 3, TimeUnit.SECONDS) shouldBe
-      Seq(TSEntry(10, 3.0, 3),
-          TSEntry(13, 6.0, 3),
-          TSEntry(16, 9.0, 3),
-          TSEntry(19, 15.0, 3),
-          TSEntry(22, 21.0, 3),
-          TSEntry(25, 27.0, 3),
-          TSEntry(28, 33.0, 3),
-          TSEntry(31, 36.0, 3))
+      Seq(
+        TSEntry(10, 3.0, 3),
+        TSEntry(13, 6.0, 3),
+        TSEntry(16, 9.0, 3),
+        TSEntry(19, 15.0, 3),
+        TSEntry(22, 21.0, 3),
+        TSEntry(25, 27.0, 3),
+        TSEntry(28, 33.0, 3),
+        TSEntry(31, 36.0, 3)
+      )
 
     slidingIntegral(triA, 12, 8, TimeUnit.SECONDS) shouldBe
       Seq(TSEntry(10, 8.0, 8), TSEntry(18, 24.0, 8), TSEntry(26, 48.0, 4), TSEntry(30, 40.0, 4))
@@ -267,15 +272,17 @@ class NumericTimeSeriesSpec extends FlatSpec with Matchers {
     )
 
     slidingIntegral(twoA, 2, 2, TimeUnit.SECONDS) shouldBe
-      Seq(TSEntry(10, 2, 2),
-          TSEntry(12, 4, 2),
-          TSEntry(14, 4, 2),
-          TSEntry(16, 6, 2),
-          TSEntry(18, 8, 2),
-          TSEntry(20, 8, 2),
-          TSEntry(22, 8, 2),
-          TSEntry(24, 8, 2),
-          TSEntry(26, 8, 2))
+      Seq(
+        TSEntry(10, 2, 2),
+        TSEntry(12, 4, 2),
+        TSEntry(14, 4, 2),
+        TSEntry(16, 6, 2),
+        TSEntry(18, 8, 2),
+        TSEntry(20, 8, 2),
+        TSEntry(22, 8, 2),
+        TSEntry(24, 8, 2),
+        TSEntry(26, 8, 2)
+      )
 
     slidingIntegral(twoA, 5, 5, TimeUnit.SECONDS) shouldBe
       Seq(TSEntry(10, 5, 5), TSEntry(15, 15, 5), TSEntry(20, 20, 5), TSEntry(25, 20, 5))

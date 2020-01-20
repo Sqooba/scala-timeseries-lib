@@ -34,12 +34,12 @@ class GorillaBlockTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesT
   }
 
   it should behave like nonEmptyNonSingletonDoubleTimeSeries(
-    GorillaBlockTimeSeries.ofOrderedEntriesSafe(_)
-  )
+        GorillaBlockTimeSeries.ofOrderedEntriesSafe(_)
+      )
 
   it should behave like nonEmptyNonSingletonDoubleTimeSeriesWithCompression(
-    GorillaBlockTimeSeries.ofOrderedEntriesSafe(_)
-  )
+        GorillaBlockTimeSeries.ofOrderedEntriesSafe(_)
+      )
 
   it should "have entries that are traversable multiple times" in {
     val inputEntries = Seq(TSEntry(1, 1d, 1), TSEntry(2, 4d, 1))

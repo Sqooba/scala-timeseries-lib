@@ -124,11 +124,11 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       // Trimming on the first entry
       assert(
         Seq(TSEntry(2, 111d, 9), TSEntry(12, 222d, 10), TSEntry(22, 333d, 10)) ===
-          three.trimLeft(2).entries
+            three.trimLeft(2).entries
       )
       assert(
         Seq(TSEntry(10, 111d, 1), TSEntry(12, 222d, 10), TSEntry(22, 333d, 10)) ===
-          three.trimLeft(10).entries
+            three.trimLeft(10).entries
       )
 
       // Trimming between entries:
@@ -242,11 +242,11 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       // Trimming on the last entry
       assert(
         Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 10), TSEntry(22, 333d, 9)) ===
-          three.trimRight(31).entries
+            three.trimRight(31).entries
       )
       assert(
         Seq(TSEntry(1, 111d, 10), TSEntry(12, 222d, 10), TSEntry(22, 333d, 1)) ===
-          three.trimRight(23).entries
+            three.trimRight(23).entries
       )
 
       // Trimming between 2nd and 3rd entries:
@@ -412,42 +412,42 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
       assert(
         tri.fill(333d).entries ===
-          Seq(
-            TSEntry(1, 111d, 9),
-            TSEntry(10, 333d, 10),
-            TSEntry(20, 222d, 10),
-            TSEntry(30, 333d, 10),
-            TSEntry(40, 444d, 10)
-          )
+            Seq(
+              TSEntry(1, 111d, 9),
+              TSEntry(10, 333d, 10),
+              TSEntry(20, 222d, 10),
+              TSEntry(30, 333d, 10),
+              TSEntry(40, 444d, 10)
+            )
       )
 
       assert(
         tri.fill(111d).entries ===
-          Seq(
-            TSEntry(1, 111d, 19),
-            TSEntry(20, 222d, 10),
-            TSEntry(30, 111d, 10),
-            TSEntry(40, 444d, 10)
-          )
+            Seq(
+              TSEntry(1, 111d, 19),
+              TSEntry(20, 222d, 10),
+              TSEntry(30, 111d, 10),
+              TSEntry(40, 444d, 10)
+            )
       )
 
       assert(
         tri.fill(222d).entries ===
-          Seq(
-            TSEntry(1, 111d, 9),
-            TSEntry(10, 222d, 30),
-            TSEntry(40, 444d, 10)
-          )
+            Seq(
+              TSEntry(1, 111d, 9),
+              TSEntry(10, 222d, 30),
+              TSEntry(40, 444d, 10)
+            )
       )
 
       assert(
         tri.fill(444d).entries ===
-          Seq(
-            TSEntry(1, 111d, 9),
-            TSEntry(10, 444d, 10),
-            TSEntry(20, 222d, 10),
-            TSEntry(30, 444d, 20)
-          )
+            Seq(
+              TSEntry(1, 111d, 9),
+              TSEntry(10, 444d, 10),
+              TSEntry(20, 222d, 10),
+              TSEntry(30, 444d, 20)
+            )
       )
     }
 
@@ -677,13 +677,14 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
       assert(
         tri.stepIntegral(10, TimeUnit.SECONDS).entries ===
-          Seq(TSEntry(100, 10.0, 10), TSEntry(110, 30.0, 10), TSEntry(120, 60.0, 10)))
+            Seq(TSEntry(100, 10.0, 10), TSEntry(110, 30.0, 10), TSEntry(120, 60.0, 10))
+      )
 
       val withSampling = TSEntry(100, 1, 30)
 
       assert(
         withSampling.stepIntegral(10, TimeUnit.SECONDS).entries ===
-          Seq(TSEntry(100, 10.0, 10), TSEntry(110, 20.0, 10), TSEntry(120, 30.0, 10))
+            Seq(TSEntry(100, 10.0, 10), TSEntry(110, 20.0, 10), TSEntry(120, 30.0, 10))
       )
     }
 
@@ -692,12 +693,12 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
       assert(
         withSlicing.splitEntriesLongerThan(10).entries ===
-          Seq(TSEntry(100, 1, 10), TSEntry(110, 1, 10), TSEntry(120, 1, 10))
+            Seq(TSEntry(100, 1, 10), TSEntry(110, 1, 10), TSEntry(120, 1, 10))
       )
 
       assert(
         withSlicing.splitEntriesLongerThan(20).entries ===
-          Seq(TSEntry(100, 1, 20), TSEntry(120, 1, 10))
+            Seq(TSEntry(100, 1, 20), TSEntry(120, 1, 10))
       )
     }
 
@@ -825,42 +826,42 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
 
       assert(
         tri.fill("Ha").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Ha", 10),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Ha", 10),
-            TSEntry(40, "Hu", 10)
-          )
+            Seq(
+              TSEntry(0, "Hi", 10),
+              TSEntry(10, "Ha", 10),
+              TSEntry(20, "Ho", 10),
+              TSEntry(30, "Ha", 10),
+              TSEntry(40, "Hu", 10)
+            )
       )
 
       assert(
         tri.fill("Hi").entries ===
-          Seq(
-            TSEntry(0, "Hi", 20),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Hi", 10),
-            TSEntry(40, "Hu", 10)
-          )
+            Seq(
+              TSEntry(0, "Hi", 20),
+              TSEntry(20, "Ho", 10),
+              TSEntry(30, "Hi", 10),
+              TSEntry(40, "Hu", 10)
+            )
       )
 
       assert(
         tri.fill("Ho").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Ho", 30),
-            TSEntry(40, "Hu", 10)
-          )
+            Seq(
+              TSEntry(0, "Hi", 10),
+              TSEntry(10, "Ho", 30),
+              TSEntry(40, "Hu", 10)
+            )
       )
 
       assert(
         tri.fill("Hu").entries ===
-          Seq(
-            TSEntry(0, "Hi", 10),
-            TSEntry(10, "Hu", 10),
-            TSEntry(20, "Ho", 10),
-            TSEntry(30, "Hu", 20)
-          )
+            Seq(
+              TSEntry(0, "Hi", 10),
+              TSEntry(10, "Hu", 10),
+              TSEntry(20, "Ho", 10),
+              TSEntry(30, "Hu", 20)
+            )
       )
     }
   }

@@ -462,7 +462,7 @@ class WindowSliderSpec extends FlatSpec with Matchers {
 
   }
   it should "return the termination condition when the cursor points to the end of the last added queue entry," +
-    "and the remaining entries are empty" in {
+          "and the remaining entries are empty" in {
     WindowSlider
       .whatToUpdate(Stream(), Queue(TSEntry(10, (), 5)), 15, 1)
       .shouldBe((false, false, 0))

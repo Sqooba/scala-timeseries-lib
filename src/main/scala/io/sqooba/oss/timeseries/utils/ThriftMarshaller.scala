@@ -16,7 +16,7 @@ import scala.util.Try
   * This class is THREAD SAFE: a new memory buffer is allocated for each function call.
   */
 class ThriftMarshaller[T <: ThriftStruct](
-    companion: ThriftStructCodec[T], // the companion object for this serializer's type
+    companion: ThriftStructCodec[T],  // the companion object for this serializer's type
     protocolFactory: TProtocolFactory // the protocol factory to be used
 ) {
 

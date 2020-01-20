@@ -33,7 +33,7 @@ object ShortMergeBenchmark {
 
   private def printResults(testName: String, avgNanos: Double, stdNanos: Double): Unit = {
     // scalastyle:off println
-    println(f"$testName: Average duration ${avgNanos / 1E9}%2.2fs, std ${stdNanos / 1E9}%2.2fs.")
+    println(f"$testName: Average duration ${avgNanos / 1e9}%2.2fs, std ${stdNanos / 1e9}%2.2fs.")
     // scalastyle:on println
   }
 

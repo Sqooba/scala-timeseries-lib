@@ -99,37 +99,37 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
     assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10))
+          Seq(TSEntry(1, 1, 10))
     )
 
     // Two values, contiguous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10))
     )
 
     // Three values, contiguous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10), TSEntry(21, 3, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10), TSEntry(21, 3, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 10), TSEntry(21, 3, 10))
     )
 
     // Two values, non-contiguous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 3, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 3, 10))
     )
 
     // Three values, non-contiguous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 3, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10), TSEntry(31, 0, 10), TSEntry(41, 3, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10), TSEntry(31, 0, 10), TSEntry(41, 3, 10))
     )
 
     // Three values, two first non-contiguous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(31, 3, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10), TSEntry(31, 3, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 0, 10), TSEntry(21, 2, 10), TSEntry(31, 3, 10))
     )
 
   }
@@ -139,43 +139,43 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
     assert(TimeSeries.fillGaps(Seq(), 0) == Seq())
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10)), 0) ==
-        Seq(TSEntry(1, 1, 10))
+          Seq(TSEntry(1, 1, 10))
     )
 
     // Two values, non-contiguous, fill value extends previous
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 1) ==
-        Seq(TSEntry(1, 1, 20), TSEntry(21, 3, 10))
+          Seq(TSEntry(1, 1, 20), TSEntry(21, 3, 10))
     )
 
     // Two values, non-contiguous, fill value advances next
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 3, 10)), 3) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 3, 20))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 3, 20))
     )
 
     // Two values, non-contiguous, fill value bridges both values
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 1, 10)), 1) ==
-        Seq(TSEntry(1, 1, 30))
+          Seq(TSEntry(1, 1, 30))
     )
 
     // Three values, non-contiguous, extend first and advance last
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 1, 10)), 1) ==
-        Seq(TSEntry(1, 1, 20), TSEntry(21, 2, 10), TSEntry(31, 1, 20))
+          Seq(TSEntry(1, 1, 20), TSEntry(21, 2, 10), TSEntry(31, 1, 20))
     )
 
     // Three values, non-contiguous, both advance and extend middle one
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 2, 10), TSEntry(41, 1, 10)), 2) ==
-        Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 30), TSEntry(41, 1, 10))
+          Seq(TSEntry(1, 1, 10), TSEntry(11, 2, 30), TSEntry(41, 1, 10))
     )
 
     // Three values, non-contiguous, bridge every one
     assert(
       TimeSeries.fillGaps(Seq(TSEntry(1, 1, 10), TSEntry(21, 1, 10), TSEntry(41, 1, 10)), 1) ==
-        Seq(TSEntry(1, 1, 50))
+          Seq(TSEntry(1, 1, 50))
     )
   }
 
@@ -256,10 +256,10 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
 
     assert(
       ts1.fallback(ts2).entries == Seq(
-        TSEntry(1, 'a', 1),
-        TSEntry(2, 'b', 1),
-        TSEntry(3, 'c', 1)
-      )
+            TSEntry(1, 'a', 1),
+            TSEntry(2, 'b', 1),
+            TSEntry(3, 'c', 1)
+          )
     )
   }
 
@@ -297,13 +297,15 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
       Seq(
         TSEntry(1, "hel", 5),
         TSEntry(10, "hel", 5)
-      ))
+      )
+    )
 
     val ts2 = TimeSeries(
       Seq(
         TSEntry(1, "lo", 9),
         TSEntry(12, "lo", 8)
-      ))
+      )
+    )
 
     assert(
       ts1.strictMerge[String, String](_ + _)(ts2).entries == Seq(TSEntry(1, "hello", 5), TSEntry(12, "hello", 3))
@@ -345,7 +347,7 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
 
     assert(
       tsLeft.minus(tsRight, leftHandDefault = Some(2)).entries ==
-        Seq(TSEntry(2, -3, 1), TSEntry(3, -4, 1))
+          Seq(TSEntry(2, -3, 1), TSEntry(3, -4, 1))
     )
   }
 
@@ -364,16 +366,16 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
 
     assert(
       TimeSeries.groupEntries(entries, 10) ===
-        Stream((0L, entries))
+          Stream((0L, entries))
     )
 
     assert(
       TimeSeries.groupEntries(entries, 2) ===
-        Stream(
-          (0L, entries.slice(0, 2)),
-          (120L, entries.slice(2, 4)),
-          (180L, entries.slice(4, 5))
-        )
+          Stream(
+            (0L, entries.slice(0, 2)),
+            (120L, entries.slice(2, 4)),
+            (180L, entries.slice(4, 5))
+          )
     )
   }
 
@@ -454,7 +456,7 @@ class TimeSeriesSpec extends FlatSpec with Matchers {
   }
 
   it should "take the value of the entry that starts closest to the sample point among those entries starting in the " +
-    "window of half a sample period from the sample point" in {
+          "window of half a sample period from the sample point" in {
     val series = TimeSeries(Seq(TSEntry(7, .123, 2), TSEntry(14, .234, 6)))
 
     series.sample(0, 10, useClosestInWindow = true).entries shouldBe Seq(

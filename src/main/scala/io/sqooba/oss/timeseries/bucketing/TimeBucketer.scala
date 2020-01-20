@@ -66,7 +66,7 @@ object TimeBucketer {
       require(
         buckets.head <= entries.head.timestamp,
         f"Bucket Stream MUST start at or before the first entry. First bucket was: ${buckets.head}, " +
-          f"first entry timestamp was: ${entries.head.timestamp}"
+            f"first entry timestamp was: ${entries.head.timestamp}"
       )
 
       // Sort out what's in the bucket and what definitely isn't

@@ -224,7 +224,7 @@ class TimeSeriesMergerSpec extends FlatSpec with Matchers {
           case (None, Some(b))    => Some(s"|$b")
           case (Some(l), None)    => Some(s"$l|")
           case (None, None)       => Some("none")
-      }
+        }
 
     val a = Seq(TSEntry(15, "a1", 10), TSEntry(35, "a2", 10))
     val b = Seq(TSEntry(10, "b1", 10), TSEntry(30, "b2", 10))

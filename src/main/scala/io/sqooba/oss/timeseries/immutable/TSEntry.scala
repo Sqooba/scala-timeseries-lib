@@ -90,7 +90,7 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     *  - 'at' is within the entry (but not equal to the timestamp) and it must not be split in two
     */
   def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
-    if (at >= definedUntil // After the domain: empty in any case
+    if (at >= definedUntil                                      // After the domain: empty in any case
         || (at != timestamp && defined(at) && !includeEntry)) { // within the domain but not on the begin boundary
       EmptyTimeSeries
     } else {

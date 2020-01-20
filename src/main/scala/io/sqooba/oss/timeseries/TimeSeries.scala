@@ -583,12 +583,12 @@ object TimeSeries {
 
             // In useClosest mode we take the currently defined value if the next.
             // entry is out of the window
-            || useClosestInWindow && (
-              samplePoint < current.definedUntil && next.timestamp > samplePoint + sampleRate / 2
+              || useClosestInWindow && (
+                  samplePoint < current.definedUntil && next.timestamp > samplePoint + sampleRate / 2
 
-              // But we also take the value if its start is closer to the next's start.
-              || Math.abs(current.timestamp - samplePoint) < Math.abs(next.timestamp - samplePoint)
-            ) =>
+                  // But we also take the value if its start is closer to the next's start.
+                    || Math.abs(current.timestamp - samplePoint) < Math.abs(next.timestamp - samplePoint)
+                ) =>
           TSEntry(samplePoint, current.value, sampleRate) #:: rec(samplePoint + sampleRate, remaining)
 
         // For the last entry, we only take its value if it is still defined

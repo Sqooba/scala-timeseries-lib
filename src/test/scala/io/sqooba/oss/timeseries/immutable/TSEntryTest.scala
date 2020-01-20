@@ -301,34 +301,34 @@ class TSEntryTest extends JUnitSuite with Matchers {
     // Append without overwrite
     assert(
       Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(12, "Ho", 10))
+          tse.appendEntry(TSEntry(12, "Ho", 10))
     )
 
     assert(
       Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(11, "Ho", 10))
+          tse.appendEntry(TSEntry(11, "Ho", 10))
     )
 
     // With partial overwrite
     assert(
       Seq(TSEntry(1, "Hi", 9), TSEntry(10, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(10, "Ho", 10))
+          tse.appendEntry(TSEntry(10, "Ho", 10))
     )
 
     assert(
       Seq(TSEntry(1, "Hi", 1), TSEntry(2, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(2, "Ho", 10))
+          tse.appendEntry(TSEntry(2, "Ho", 10))
     )
 
     // Complete overwrite
     assert(
       Seq(TSEntry(1, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(1, "Ho", 10))
+          tse.appendEntry(TSEntry(1, "Ho", 10))
     )
 
     assert(
       Seq(TSEntry(0, "Ho", 10)) ==
-        tse.appendEntry(TSEntry(0, "Ho", 10))
+          tse.appendEntry(TSEntry(0, "Ho", 10))
     )
 
   }
@@ -339,30 +339,30 @@ class TSEntryTest extends JUnitSuite with Matchers {
     // Append with a gap in the domain
     assert(
       Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Hi", 10)) ==
-        tse.appendEntry(TSEntry(12, "Hi", 10))
+          tse.appendEntry(TSEntry(12, "Hi", 10))
     )
 
     // No gap
     // perfect contiguity
     assert(
       Seq(TSEntry(1, "Hi", 20)) ==
-        tse.appendEntry(TSEntry(11, "Hi", 10))
+          tse.appendEntry(TSEntry(11, "Hi", 10))
     )
     // overlapping domains
     assert(
       Seq(TSEntry(1, "Hi", 14)) ==
-        tse.appendEntry(TSEntry(5, "Hi", 10))
+          tse.appendEntry(TSEntry(5, "Hi", 10))
     )
 
     // Complete overwrite
     assert(
       Seq(TSEntry(1, "Hi", 10)) ==
-        tse.appendEntry(TSEntry(1, "Hi", 10))
+          tse.appendEntry(TSEntry(1, "Hi", 10))
     )
 
     assert(
       Seq(TSEntry(0, "Hi", 10)) ==
-        tse.appendEntry(TSEntry(0, "Hi", 10))
+          tse.appendEntry(TSEntry(0, "Hi", 10))
     )
 
   }
@@ -374,13 +374,13 @@ class TSEntryTest extends JUnitSuite with Matchers {
     // Case where the values are not equal
     assert(
       Seq(TSEntry(1, "Hi", 5), TSEntry(6, "Ho", 2)) ==
-        TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Ho", 2))
+          TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Ho", 2))
     )
 
     // Case where the values are equal
     assert(
       Seq(TSEntry(1, "Hi", 7)) ==
-        TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Hi", 2))
+          TSEntry(1, "Hi", 10).appendEntry(TSEntry(6, "Hi", 2))
     )
   }
 
@@ -390,34 +390,34 @@ class TSEntryTest extends JUnitSuite with Matchers {
     // Prepend without overwrite
     assert(
       Seq(TSEntry(0, "Hi", 10), TSEntry(11, "Ho", 10)) ==
-        tse.prependEntry(TSEntry(0, "Hi", 10))
+          tse.prependEntry(TSEntry(0, "Hi", 10))
     )
 
     assert(
       Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) ==
-        tse.prependEntry(TSEntry(1, "Hi", 10))
+          tse.prependEntry(TSEntry(1, "Hi", 10))
     )
 
     // With partial overwrite
     assert(
       Seq(TSEntry(2, "Hi", 10), TSEntry(12, "Ho", 9)) ==
-        tse.prependEntry(TSEntry(2, "Hi", 10))
+          tse.prependEntry(TSEntry(2, "Hi", 10))
     )
 
     assert(
       Seq(TSEntry(10, "Hi", 10), TSEntry(20, "Ho", 1)) ==
-        tse.prependEntry(TSEntry(10, "Hi", 10))
+          tse.prependEntry(TSEntry(10, "Hi", 10))
     )
 
     // Complete overwrite
     assert(
       Seq(TSEntry(11, "Hi", 10)) ==
-        tse.prependEntry(TSEntry(11, "Hi", 10))
+          tse.prependEntry(TSEntry(11, "Hi", 10))
     )
 
     assert(
       Seq(TSEntry(12, "Hi", 10)) ==
-        tse.prependEntry(TSEntry(12, "Hi", 10))
+          tse.prependEntry(TSEntry(12, "Hi", 10))
     )
   }
 
