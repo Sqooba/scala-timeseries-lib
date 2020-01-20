@@ -36,7 +36,8 @@ case class MultiSeriesBlock(channel: SliceableByteChannel) {
         channel.readBytesFromEnd(
           2 * Integer.BYTES,
           channel.readIntFromEnd(Integer.BYTES)
-        ))
+        )
+      )
       .get
   }
 

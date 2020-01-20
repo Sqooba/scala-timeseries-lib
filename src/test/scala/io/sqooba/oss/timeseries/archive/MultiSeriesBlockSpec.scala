@@ -34,9 +34,7 @@ class MultiSeriesBlockSpec extends FlatSpec with Matchers {
   private val blocks = series.map { entriesInSeries =>
     TimeBucketer
       .bucketEntries(entriesInSeries.toStream, Stream.from(0, 1000).map(_.toLong), 2)
-      .map(
-        entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity)
-      )
+      .map(entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity))
   }
 
   private def superBlockFiles = blocks.map { block =>

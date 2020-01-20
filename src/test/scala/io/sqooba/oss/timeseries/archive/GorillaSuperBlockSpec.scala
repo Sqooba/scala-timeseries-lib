@@ -24,17 +24,14 @@ class GorillaSuperBlockSpec extends FlatSpec with Matchers {
     .bucketEntries(entries, Stream.from(0, 1000).map(_.toLong), 2)
 
   private val blocks = buckets
-    .map(
-      entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity)
-    )
+    .map(entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity))
 
   private val sampledBlocks = buckets
-    .map(
-      entry =>
-        TSEntry(
-          entry.timestamp,
-          GorillaBlock.compressSampled(entry.value, 100),
-          entry.validity
+    .map(entry =>
+      TSEntry(
+        entry.timestamp,
+        GorillaBlock.compressSampled(entry.value, 100),
+        entry.validity
       )
     )
 

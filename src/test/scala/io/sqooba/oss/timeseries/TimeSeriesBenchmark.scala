@@ -33,8 +33,8 @@ object TimeSeriesBenchmark extends Bench.ForkedTime {
   } yield (createTimeSeriesWithSize(size), createTimeSeriesWithSize(size))
 
   performance of "TimeSeries" config (
-    exec.independentSamples -> 4,
-    exec.benchRuns          -> 4
+        exec.independentSamples -> 4,
+        exec.benchRuns          -> 4
   ) in {
     measure method "merge" in {
       using(ts) in {

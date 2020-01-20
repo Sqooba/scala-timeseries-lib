@@ -205,10 +205,10 @@ object WindowSlider {
     assert(
       remaining.headOption
         .fold(false)(e => e.timestamp == timeCursor)
-      || previousBucket.headOption.fold(false)(_.definedUntil == timeCursor - windowWidth)
-      || previousBucket.lastOption.fold(false)(_.definedUntil == timeCursor),
+        || previousBucket.headOption.fold(false)(_.definedUntil == timeCursor - windowWidth)
+        || previousBucket.lastOption.fold(false)(_.definedUntil == timeCursor),
       "cursor MUST be sitting on the timestamp of the first remaining," +
-        "the end of validity of the first element in the queue, or the end of validity of the last entry in the queue"
+          "the end of validity of the first element in the queue, or the end of validity of the last entry in the queue"
     )
 
     // Cursor reached the end of the domain of definition of the timeseries.
