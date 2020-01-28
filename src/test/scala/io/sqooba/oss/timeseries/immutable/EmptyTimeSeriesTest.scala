@@ -85,4 +85,6 @@ class EmptyTimeSeriesTest extends JUnitSuite {
 
   @Test def testSplit: Unit = assert(ts.split(1) == (EmptyTimeSeries, EmptyTimeSeries))
 
+  @Test def testRollup: Unit = assert(ts.rollup(Stream.empty, _ => throw new IllegalStateException()) == EmptyTimeSeries)
+
 }

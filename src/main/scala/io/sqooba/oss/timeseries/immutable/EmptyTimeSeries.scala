@@ -48,4 +48,6 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
   def supportRatio: Double = 0
 
   def isDomainContinuous: Boolean = false
+
+  override def rollup[O](buckets: Stream[Long], aggregator: TimeSeries[Nothing] => O): TimeSeries[O] = this
 }

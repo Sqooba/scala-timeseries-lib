@@ -1,5 +1,9 @@
 # Change log
 
+## 1.3.1 28.1.19
+* [deps] remove shapeless from the mere (though we still depend on it)
+* [fix] `EmptyTimeSeries.rollup()` now properly returns an `EmptyTimeSeries` instead of throwing with `head of empty Stream`
+
 ## 1.3.0 25.11.19
 * [feature] Add sliding window methods on time series trait.
 * [internal] Reduce number of abstract functions in time series trait and reduce boilerplate.
