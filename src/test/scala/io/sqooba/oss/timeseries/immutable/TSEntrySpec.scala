@@ -2,11 +2,10 @@ package io.sqooba.oss.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
-import org.junit.Test
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitSuite
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should
 
-class TSEntryTest extends JUnitSuite with Matchers {
+class TSEntrySpec extends AnyFlatSpec with should.Matchers {
 
   // Simple summing operator
   def plus(aO: Option[Double], bO: Option[Double]): Option[Double] =
@@ -19,75 +18,79 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   private val single = TSEntry(1L, "Hi", 10L)
 
-  @Test def testCompressed(): Unit = assert(TSEntry(1, 2, 3).isCompressed)
+  "TSEntry" should "correctly do Compressed" in {
+    assert(TSEntry(1, 2, 3).isCompressed)
+  }
 
-  @Test def testContinuous(): Unit = assert(TSEntry(0, 21, 10).isDomainContinuous)
+  it should "correctly do Continuous" in {
+    assert(TSEntry(0, 21, 10).isDomainContinuous)
+  }
 
-  @Test def testMap(): Unit = {
+  it should "correctly do Map" in {
     assert(TSEntry(0, 42, 10).map(_ / 2) == TSEntry(0, 21, 10))
   }
 
-  @Test def testMapWithTime(): Unit = {
+  it should "correctly do MapWithTime" in {
     assert(TSEntry(10, 5, 10).mapWithTime((t, v) => t + v) == TSEntry(10, 15, 10))
   }
 
-  @Test def testFilter: Unit = {
+  it should "correctly do Filter" in {
     val t = TSEntry(10, "Hi", 10)
     assert(t.filter(_.validity == 10) == t)
     assert(t.filter(_.timestamp != 10) == EmptyTimeSeries)
     assert(t.filter(_.value == "Hi") == t)
   }
 
-  @Test def testFilterValues: Unit = {
+  it should "correctly do FilterValues" in {
     val t = TSEntry(10, "Hi", 10)
     assert(t.filterValues(_ == "Hi") == t)
     assert(t.filterValues(_ == "Ho") == EmptyTimeSeries)
   }
 
-  @Test def testFill(): Unit = {
+  it should "correctly do Fill" in {
     assert(TSEntry(10, 5, 10).fill(42) == TSEntry(10, 5, 10))
   }
 
-  @Test def testHead: Unit = {
+  it should "correctly do Head" in {
     assert(TSEntry(10, 5, 10).head == TSEntry(10, 5, 10))
   }
 
-  @Test def testHeadOption: Unit = {
+  it should "correctly do HeadOption" in {
     assert(TSEntry(10, 5, 10).headOption == Some(TSEntry(10, 5, 10)))
   }
 
-  @Test def testHeadValue: Unit = {
+  it should "correctly do HeadValue" in {
     assert(TSEntry(10, 5, 10).headValue == 5)
   }
 
-  @Test def testHeadValueOption: Unit = {
+  it should "correctly do HeadValueOption" in {
     assert(TSEntry(10, 5, 10).headValueOption == Some(5))
   }
 
-  @Test def testLast: Unit = {
+  it should "correctly do Last" in {
     assert(TSEntry(10, 5, 10).last == TSEntry(10, 5, 10))
   }
 
-  @Test def testLastOption: Unit = {
+  it should "correctly do LastOption" in {
     assert(TSEntry(10, 5, 10).lastOption == Some(TSEntry(10, 5, 10)))
   }
 
-  @Test def testLastValue: Unit = {
+  it should "correctly do LastValue" in {
     assert(TSEntry(10, 5, 10).lastValue == 5)
   }
 
-  @Test def testLastValueOption: Unit = {
+  it should "correctly do LastValueOption" in {
     assert(TSEntry(10, 5, 10).lastValueOption == Some(5))
   }
 
-  @Test def testAt(): Unit = {
+  it should "correctly do At" in {
     assert(TSEntry(0, "", 10).at(-1).isEmpty)
     assert(TSEntry(0, "", 10).at(0).contains(""))
     assert(TSEntry(0, "", 10).at(9).contains(""))
     assert(TSEntry(0, "", 10).at(10).isEmpty)
   }
 
-  @Test def testAtNSize() {
+  it should "correctly do AtNSize" in {
     assert(1 == single.size)
     assert(single.at(0).isEmpty)
     assert(single.at(1).contains("Hi"))
@@ -95,14 +98,14 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(single.at(11).isEmpty)
   }
 
-  @Test def testEntryAt(): Unit = {
+  it should "correctly do EntryAt" in {
     assert(TSEntry(0, "", 10).entryAt(-1).isEmpty)
     assert(TSEntry(0, "", 10).entryAt(0).contains(TSEntry(0, "", 10)))
     assert(TSEntry(0, "", 10).entryAt(9).contains(TSEntry(0, "", 10)))
     assert(TSEntry(0, "", 10).entryAt(10).isEmpty)
   }
 
-  @Test def testDefined(): Unit = {
+  it should "correctly do Defined" in {
     assert(!TSEntry(0, "", 10).defined(-1))
     assert(TSEntry(0, "", 10).defined(0))
     assert(TSEntry(0, "", 10).defined(9))
@@ -114,11 +117,11 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(!single.defined(11))
   }
 
-  @Test def testDefinedUntil(): Unit = {
+  it should "correctly do DefinedUntil" in {
     assert(TSEntry(1, "", 10).definedUntil == 11)
   }
 
-  @Test def testTrimRight(): Unit = {
+  it should "correctly do TrimRight" in {
     val tse = TSEntry(0, "", 10)
     assert(tse.trimRight(10) == tse)
     assert(tse.trimRight(9) == TSEntry(0, "", 9))
@@ -139,7 +142,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(EmptyTimeSeries == single.trimRight(0))
   }
 
-  @Test def testTrimRightDiscreteInclude(): Unit = {
+  it should "correctly do TrimRightDiscreteInclude" in {
     val tse = TSEntry(0, "", 10)
     assert(tse.trimRightDiscrete(10, true) == tse)
     assert(tse.trimRightDiscrete(9, true) == tse)
@@ -148,7 +151,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(tse.trimRightDiscrete(-1, true) == EmptyTimeSeries)
   }
 
-  @Test def testTrimRightDiscreteExclude(): Unit = {
+  it should "correctly do TrimRightDiscreteExclude" in {
     val tse = TSEntry(0, "", 10)
     assert(tse.trimRightDiscrete(10, false) == tse)
     assert(tse.trimRightDiscrete(9, false) == EmptyTimeSeries)
@@ -157,7 +160,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(tse.trimRightDiscrete(-1, false) == EmptyTimeSeries)
   }
 
-  @Test def testTrimEntryRight(): Unit = {
+  it should "correctly do TrimEntryRight" in {
     val tse = TSEntry(0, "", 10)
     assert(tse.trimEntryRight(10) == tse)
     assert(tse.trimEntryRight(9) == TSEntry(0, "", 9))
@@ -171,7 +174,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     }
   }
 
-  @Test def testTrimLeft(): Unit = {
+  it should "correctly do TrimLeft" in {
     val tse = TSEntry(1, "", 10)
     assert(tse.trimLeft(0) == tse)
     assert(tse.trimLeft(1) == tse)
@@ -188,7 +191,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(EmptyTimeSeries == single.trimLeft(11))
   }
 
-  @Test def testTrimLeftDiscreteInclude(): Unit = {
+  it should "correctly do TrimLeftDiscreteInclude" in {
     val tse = TSEntry(1, "", 10)
     assert(tse.trimLeftDiscrete(0, true) == tse)
     assert(tse.trimLeftDiscrete(1, true) == tse)
@@ -198,7 +201,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(tse.trimLeftDiscrete(12, true) == EmptyTimeSeries)
   }
 
-  @Test def testTrimLeftDiscreteExclude(): Unit = {
+  it should "correctly do TrimLeftDiscreteExclude" in {
     val tse = TSEntry(1, "", 10)
     assert(tse.trimLeftDiscrete(0, false) == tse)
     assert(tse.trimLeftDiscrete(1, false) == tse)
@@ -208,7 +211,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(tse.trimLeftDiscrete(12, false) == EmptyTimeSeries)
   }
 
-  @Test def testTrimEntryLeft(): Unit = {
+  it should "correctly do TrimEntryLeft" in {
     val tse = TSEntry(1, "", 10)
     assert(tse.trimEntryLeft(0) == tse)
     assert(tse.trimEntryLeft(1) == tse)
@@ -222,7 +225,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     }
   }
 
-  @Test def testSplit(): Unit = {
+  it should "correctly do Split" in {
     val tse = TSEntry(0, "", 10)
     assert(tse.split(0) == (EmptyTimeSeries, tse))
     assert(tse.split(1) == (tse.trimEntryRight(1), tse.trimEntryLeft(1)))
@@ -231,7 +234,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(tse.split(10) == (tse, EmptyTimeSeries))
   }
 
-  @Test def testSlice: Unit = {
+  it should "correctly do Slice" in {
     val t = TSEntry(1, "Hi", 10)
 
     // No effect
@@ -252,7 +255,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(EmptyTimeSeries == t.slice(0, 1))
   }
 
-  @Test def testTrimLeftNRight(): Unit = {
+  it should "correctly do TrimLeftNRight" in {
     val t = TSEntry(1, "Hi", 10)
 
     // No effect
@@ -288,14 +291,14 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   }
 
-  @Test def testOverlaps(): Unit = {
+  it should "correctly do Overlaps" in {
     assert(TSEntry(0, "", 10).overlaps(TSEntry(9, "", 10)))
     assert(TSEntry(9, "", 10).overlaps(TSEntry(0, "", 10)))
     assert(!TSEntry(0, "", 10).overlaps(TSEntry(10, "", 10)))
     assert(!TSEntry(10, "", 10).overlaps(TSEntry(0, "", 10)))
   }
 
-  @Test def testAppendEntryWithoutCompression(): Unit = {
+  it should "correctly do AppendEntryWithoutCompression" in {
     val tse = TSEntry(1, "Hi", 10)
 
     // Append without overwrite
@@ -333,7 +336,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   }
 
-  @Test def testAppendEntryWithCompression(): Unit = {
+  it should "correctly do AppendEntryWithCompression" in {
     val tse = TSEntry(1, "Hi", 10)
 
     // Append with a gap in the domain
@@ -367,7 +370,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   }
 
-  @Test def testAppendEntryWithinDomainAndShorterValidity(): Unit = {
+  it should "correctly do AppendEntryWithinDomainAndShorterValidity" in {
     // The appended entry's end of validity ends before the previous end of validity.
     // This is OK and should be like trimming the previous entry at the end of validity of the second.
 
@@ -384,7 +387,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     )
   }
 
-  @Test def testPrependEntry(): Unit = {
+  it should "correctly do PrependEntry" in {
     val tse = TSEntry(11, "Ho", 10)
 
     // Prepend without overwrite
@@ -421,7 +424,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     )
   }
 
-  @Test def testMergeEntriesSimpleOp(): Unit = {
+  it should "correctly do MergeEntriesSimpleOp" in {
 
     // For two exactly overlapping entries,
     // result contains a single entry
@@ -491,7 +494,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(r9(1) == TSEntry(11, 3.0, 10))
   }
 
-  @Test def testValidityValidation(): Unit = {
+  it should "correctly do ValidityValidation" in {
     intercept[IllegalArgumentException] {
       TSEntry(10, "Duh", -1)
     }
@@ -500,7 +503,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     }
   }
 
-  @Test def appendEntryTs(): Unit = {
+  it should "correctly do appendEntryTs" in {
     val e = TSEntry(1, "Hi", 10)
     assert(Seq(TSEntry(1, "Hi", 10), TSEntry(12, "Ho", 10)) == e.append(TSEntry(12, "Ho", 10)).entries)
     assert(Seq(TSEntry(1, "Hi", 10), TSEntry(11, "Ho", 10)) == e.append(TSEntry(11, "Ho", 10)).entries)
@@ -510,7 +513,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(TSEntry(0, "Ho", 10) == e.append(TSEntry(0, "Ho", 10)))
   }
 
-  @Test def prependEntryTs(): Unit = {
+  it should "correctly do prependEntryTs" in {
     val e = TSEntry(1, "Hi", 10)
     assert(Seq(TSEntry(-10, "Ho", 10), TSEntry(1, "Hi", 10)) == e.prepend(TSEntry(-10, "Ho", 10)).entries)
     assert(Seq(TSEntry(-9, "Ho", 10), TSEntry(1, "Hi", 10)) == e.prepend(TSEntry(-9, "Ho", 10)).entries)
@@ -531,7 +534,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     )
   )
 
-  @Test def appendTs(): Unit = {
+  it should "correctly do appendTs" in {
     // Append a multi-entry TS at various times on the entry
 
     val e = TSEntry(1, "Hu", 10)
@@ -543,7 +546,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   }
 
-  @Test def prependTs(): Unit = {
+  it should "correctly do prependTs" in {
     // Prepend a multi-entry TS at various times on the entry
     val e = TSEntry(1, "Hu", 10)
     assert(testTs(-30).entries :+ e == e.prepend(testTs(-30)).entries)
@@ -555,7 +558,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
 
   }
 
-  @Test def extendValidity(): Unit = {
+  it should "correctly do extendValidity" in {
     val tse = TSEntry(1, "entry", 10)
     assert(tse.extendValidity(10) == TSEntry(1, "entry", 20))
     assert(tse.extendValidity(0) == tse)
@@ -565,7 +568,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     }
   }
 
-  @Test def testIntegral(): Unit = {
+  it should "correctly do Integral" in {
     assert(TSEntry(0, 1, 1000).integral() == 1.0)
     assert(TSEntry(0, 1, 1).integral(TimeUnit.SECONDS) == 1.0)
     assert(TSEntry(0, 1, 1).integral(TimeUnit.MINUTES) == 60.0)
@@ -573,7 +576,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
     assert(TSEntry(0, 1, 1000).integralEntry() == TSEntry(0, 1.0, 1000))
   }
 
-  @Test def testSlidingSum(): Unit = {
+  it should "correctly do SlidingSum" in {
     TSEntry(1, 42, 10)
       .slidingIntegral(10, 10, TimeUnit.SECONDS) shouldBe
       TSEntry(1, 10 * 42, 10)
@@ -584,7 +587,7 @@ class TSEntryTest extends JUnitSuite with Matchers {
       (1 to 10).map(i => TSEntry(i, i * 42, 1))
   }
 
-  @Test def testSliceEntries(): Unit = {
+  it should "correctly do SliceEntries" in {
     assert(
       TSEntry(1, 42, 2).splitEntriesLongerThan(1).entries
         == Seq(TSEntry(1, 42, 1), TSEntry(2, 42, 1))
@@ -599,11 +602,11 @@ class TSEntryTest extends JUnitSuite with Matchers {
     )
   }
 
-  @Test def testEntries(): Unit = {
+  it should "correctly do Entries" in {
     assert(TSEntry(1, 42, 100000).entries == Seq(TSEntry(1, 42, 100000)))
   }
 
-  @Test def testValues(): Unit = {
+  it should "correctly do Values" in {
     assert(TSEntry(1, 42, 100000).values == Seq(42))
   }
 }

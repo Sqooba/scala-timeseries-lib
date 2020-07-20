@@ -27,8 +27,8 @@ libraryDependencies ++= Seq(
   "dev.zio"                    %% "zio-test"                % zioVersion % Test,
   "dev.zio"                    %% "zio-test-sbt"            % zioVersion % Test,
   "junit"                      % "junit"                    % "4.12" % Test,
-  "org.scalactic"              %% "scalactic"               % "3.0.8",
-  "org.scalatest"              %% "scalatest"               % "3.0.8" % Test,
+  "org.scalactic"              %% "scalactic"               % "3.1.2",
+  "org.scalatest"              %% "scalatest"               % "3.1.2" % Test,
   "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
   "io.dropwizard.metrics"      % "metrics-core"             % "4.0.0" % Test
 )

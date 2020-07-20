@@ -1,12 +1,11 @@
 package io.sqooba.oss.timeseries
 
 import io.sqooba.oss.timeseries.immutable.{TSEntry, VectorTimeSeries}
-import org.junit.Test
-import org.scalatest.junit.JUnitSuite
+import org.scalatest.flatspec.AnyFlatSpec
 
-class StrictZipTest extends JUnitSuite {
+class StrictZipSpec extends AnyFlatSpec {
 
-  @Test def testStrictZip(): Unit = {
+  "TimeSeries.strictZip" should "correctly zip dummy values" in {
     // Perfectly aligned, no discontinuities
     // Mix in some Vector with the Seq to check the correct unapply operator is used.
     val tsA = VectorTimeSeries.ofOrderedEntriesUnsafe(Vector(TSEntry(-10, "A1", 10), TSEntry(0, "A2", 10), TSEntry(10, "A3", 10)))
@@ -27,7 +26,7 @@ class StrictZipTest extends JUnitSuite {
     )
   }
 
-  @Test def testProdValues(): Unit = {
+  it should "correctly zip some production values" in {
     // Mix in some Vector with the Seq to check the correct unapply operator is used.
     val vta = TimeSeries.ofOrderedEntriesSafe(Vector(TSEntry(1528943988000L, 468000.0, 660000), TSEntry(1528944588000L, 475000.0, 660000)))
     val vtb = TimeSeries.ofOrderedEntriesSafe(Seq(TSEntry(1528943988000L, -468000.0, 660000), TSEntry(1528944588000L, -475000.0, 660000)))
