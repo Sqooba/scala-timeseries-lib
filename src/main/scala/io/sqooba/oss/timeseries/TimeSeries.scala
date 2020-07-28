@@ -96,7 +96,7 @@ trait TimeSeries[+T] {
     *                 If set to false, timestamps and validities remain unchanged. Defaults to true.
     */
   def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TimeSeries[O] =
-    mapWithTime[O]((_, value) => f(value), compress)
+    mapEntries[O](e => f(e.value), compress)
 
   /** Map the values within the time series. If not compressing, the timestamps and
     * validities of entries remain unchanged, but the time is made available for
@@ -105,14 +105,29 @@ trait TimeSeries[+T] {
     * @param compress controls whether or not compression should occur on the output series.
     *                 Defaults to true.
     */
-  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O]
+  @deprecated("Deprecated in favor of 'mapEntries'.")
+  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
+    mapEntries[O](e => f(e.timestamp, e.value), compress)
 
-  /** Return a time series that will only contain entries for which the passed predicate returned True. */
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T]
+  /** Map the values within the time series. If not compressing, the timestamps and
+    * validities of entries remain unchanged, but they are made available for cases
+    * where the new value would depend on them.
+    *
+    * @param compress controls whether or not compression should occur on the output series.
+    *                 Defaults to true.
+    */
+  def mapEntries[O: WeakTypeTag](f: TSEntry[T] => O, compress: Boolean = true): TimeSeries[O]
 
-  /** Return a time series that will only contain entries containing values for which the passed predicate returned True. */
-  def filterValues(predicate: T => Boolean): TimeSeries[T] =
-    filter(tse => predicate(tse.value))
+  /** Return a time series that will only contain entries for which the passed predicate
+    * returned True.
+    */
+  def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T]
+
+  /** Return a time series that will only contain entries containing values for which
+    * the passed predicate returned True.
+    */
+  def filter(predicate: T => Boolean): TimeSeries[T] =
+    filterEntries(tse => predicate(tse.value))
 
   /** Fill the wholes in the definition domain of this time series with the passed value.
     * The resulting time series will have a single continuous definition domain,

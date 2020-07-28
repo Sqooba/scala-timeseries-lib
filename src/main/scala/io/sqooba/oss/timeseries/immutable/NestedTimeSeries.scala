@@ -60,14 +60,14 @@ case class NestedTimeSeries[+T] private (
     */
   private def mapInnerSeries[O: universe.WeakTypeTag](f: TimeSeries[T] => TimeSeries[O]): TimeSeries[O] =
     NestedTimeSeries.chooseUnderlying(
-      underlying.map(f).filter(_.value.nonEmpty)
+      underlying.map(f).filterEntries(_.value.nonEmpty)
     )
 
-  def mapWithTime[O: universe.WeakTypeTag](f: (Long, T) => O, compress: Boolean): TimeSeries[O] =
-    mapInnerSeries(_.mapWithTime(f, compress))
+  def mapEntries[O: universe.WeakTypeTag](f: TSEntry[T] => O, compress: Boolean): TimeSeries[O] =
+    mapInnerSeries(_.mapEntries(f, compress))
 
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
-    mapInnerSeries(_.filter(predicate))
+  def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+    mapInnerSeries(_.filterEntries(predicate))
 
   override def fill[U >: T](whenUndef: U): TimeSeries[U] =
     mapInnerSeries(_.fill(whenUndef))

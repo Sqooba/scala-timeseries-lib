@@ -8,6 +8,7 @@ import io.sqooba.oss.timeseries.{NumericTimeSeries, TimeSeries, TimeSeriesBuilde
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.TimeUnit
+import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 
 /**
@@ -66,19 +67,32 @@ case class ColumnTimeSeries[+T] private (
 
   def lastOption: Option[TSEntry[T]] = Some(last)
 
-  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] = {
-    val mappedVs = (timestamps, values).zipped.map(f)
+  override def map[O: WeakTypeTag](f: T => O, compress: Boolean): TimeSeries[O] =
+    if (compress) {
+      ColumnTimeSeries.ofOrderedEntriesSafe(
+        (timestamps, values.map(f), validities).zipped.map(TSEntry[O]),
+        compress
+      )
+    } else {
+      ColumnTimeSeries.ofColumnVectorsUnsafe(
+        (timestamps, values.map(f), validities)
+      )
+    }
+
+  def mapEntries[O: WeakTypeTag](f: TSEntry[T] => O, compress: Boolean = true): TimeSeries[O] = {
+    val mappedVs = entries.map(f)
 
     if (compress) {
-      (timestamps, mappedVs, validities).zipped
-        .foldLeft(newBuilder[O]())((builder, triple) => builder += TSEntry(triple))
-        .result()
+      ColumnTimeSeries.ofOrderedEntriesSafe(
+        (timestamps, mappedVs, validities).zipped.map(TSEntry[O]),
+        compress
+      )
     } else {
-      ColumnTimeSeries.ofColumnVectorsUnsafe((timestamps, mappedVs, validities))
+      ColumnTimeSeries.ofColumnVectorsUnsafe((timestamps, mappedVs.toVector, validities))
     }
   }
 
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+  def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
     ColumnTimeSeries.ofColumnVectorsUnsafe(
       (timestamps, values, validities).zipped.filter((ts, value, valid) => predicate(TSEntry(ts, value, valid)))

@@ -46,13 +46,19 @@ object NumericTimeSeries {
 
   // TODO migrate this to the windowed stuff (and check if it's used anyhow)
   @deprecated("Please use the new windowing functions. See WindowSlider.scala")
-  def rolling[T](ts: TimeSeries[T], aggregator: Seq[T] => T, windowMs: Long, compress: Boolean = true)(implicit n: Numeric[T]): TimeSeries[T] =
-    ts.mapWithTime(
-      { (time, currentVal) =>
-        // values from the last `windowMs` milliseconds plus the current val
-        aggregator(
-          ts.slice(time - windowMs, time).entries.map(_.value) :+ currentVal
-        )
+  def rolling[T](
+      ts: TimeSeries[T],
+      aggregator: Seq[T] => T,
+      windowMs: Long,
+      compress: Boolean = true
+  )(implicit n: Numeric[T]): TimeSeries[T] =
+    ts.mapEntries(
+      {
+        case TSEntry(time, currentVal, _) =>
+          // values from the last `windowMs` milliseconds plus the current val
+          aggregator(
+            ts.slice(time - windowMs, time).entries.map(_.value) :+ currentVal
+          )
       },
       compress
     )

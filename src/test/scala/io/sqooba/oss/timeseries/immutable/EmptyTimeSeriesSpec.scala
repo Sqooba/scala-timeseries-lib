@@ -45,17 +45,17 @@ class EmptyTimeSeriesSpec extends AnyFlatSpec with should.Matchers {
   it should "correctly do TrimRightDiscreteExclude" in {
     assert(ts.trimRightDiscrete(1, false) == EmptyTimeSeries)
   }
-  it should "correctly do Map" in {
-    assert(ts.map(n => None) == EmptyTimeSeries)
+  it should "correctly map to empty" in {
+    assert(ts.map(_ => None) == EmptyTimeSeries)
   }
-  it should "correctly do MapWithTime" in {
-    assert(ts.mapWithTime((t, v) => t + v) == EmptyTimeSeries)
+  it should "correctly map Entries" in {
+    assert(ts.mapEntries(e => e.timestamp + e.value) == EmptyTimeSeries)
   }
-  it should "correctly do Filter" in {
+  it should "correctly filter" in {
     assert(ts.filter(_ => true) == EmptyTimeSeries)
   }
-  it should "correctly do FilterValues" in {
-    assert(ts.filterValues(_ => true) == EmptyTimeSeries)
+  it should "correctly filter by entries" in {
+    assert(ts.filterEntries(_ => true) == EmptyTimeSeries)
   }
   it should "correctly do Fill" in {
     assert(ts.fill("None") == EmptyTimeSeries)

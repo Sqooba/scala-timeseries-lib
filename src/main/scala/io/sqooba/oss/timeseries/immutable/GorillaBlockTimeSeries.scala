@@ -41,16 +41,13 @@ case class GorillaBlockTimeSeries private[immutable] (
   lazy val supportRatio: Double =
     entries.map(_.looseDomain.size).sum.toFloat / looseDomain.size
 
-  def mapWithTime[O: WeakTypeTag](f: (Long, Double) => O, compress: Boolean = true): TimeSeries[O] =
-    mapEntries[O](e => f(e.timestamp, e.value), compress)
-
-  private def mapEntries[O: WeakTypeTag](f: TSEntry[Double] => O, compress: Boolean = true): TimeSeries[O] =
+  def mapEntries[O: WeakTypeTag](f: TSEntry[Double] => O, compress: Boolean = true): TimeSeries[O] =
     entries
       .map(e => TSEntry(e.timestamp, f(e), e.validity))
       .foldLeft(newBuilder[O](compress))(_ += _)
       .result()
 
-  def filter(predicate: TSEntry[Double] => Boolean): TimeSeries[Double] =
+  def filterEntries(predicate: TSEntry[Double] => Boolean): TimeSeries[Double] =
     GorillaBlockTimeSeries.ofOrderedEntriesSafe(
       entries.filter(predicate).toStream
     )
