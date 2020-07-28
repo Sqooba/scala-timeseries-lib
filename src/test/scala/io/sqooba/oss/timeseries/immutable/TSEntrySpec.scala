@@ -30,21 +30,21 @@ class TSEntrySpec extends AnyFlatSpec with should.Matchers {
     assert(TSEntry(0, 42, 10).map(_ / 2) == TSEntry(0, 21, 10))
   }
 
-  it should "correctly do MapWithTime" in {
-    assert(TSEntry(10, 5, 10).mapWithTime((t, v) => t + v) == TSEntry(10, 15, 10))
+  it should "correctly map Entries" in {
+    assert(TSEntry(10, 5, 10).mapEntries(e => e.timestamp + e.value) == TSEntry(10, 15, 10))
   }
 
   it should "correctly do Filter" in {
     val t = TSEntry(10, "Hi", 10)
-    assert(t.filter(_.validity == 10) == t)
-    assert(t.filter(_.timestamp != 10) == EmptyTimeSeries)
-    assert(t.filter(_.value == "Hi") == t)
+    assert(t.filterEntries(_.validity == 10) == t)
+    assert(t.filterEntries(_.timestamp != 10) == EmptyTimeSeries)
+    assert(t.filterEntries(_.value == "Hi") == t)
   }
 
   it should "correctly do FilterValues" in {
     val t = TSEntry(10, "Hi", 10)
-    assert(t.filterValues(_ == "Hi") == t)
-    assert(t.filterValues(_ == "Ho") == EmptyTimeSeries)
+    assert(t.filter(_ == "Hi") == t)
+    assert(t.filter(_ == "Ho") == EmptyTimeSeries)
   }
 
   it should "correctly do Fill" in {

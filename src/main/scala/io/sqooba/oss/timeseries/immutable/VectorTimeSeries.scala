@@ -40,12 +40,12 @@ case class VectorTimeSeries[+T] private (
   def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] =
     VectorTimeSeries.dichotomicSearch(data, t)
 
-  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TimeSeries[O] =
+  def mapEntries[O: WeakTypeTag](f: TSEntry[T] => O, compress: Boolean = true): TimeSeries[O] =
     data
-      .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapWithTime(f))
+      .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapEntries(f))
       .result()
 
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+  def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
     TimeSeries.ofOrderedEntriesUnsafe(this.data.filter(predicate))
 

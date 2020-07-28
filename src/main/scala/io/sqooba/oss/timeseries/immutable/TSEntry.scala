@@ -142,10 +142,10 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
   override def map[O: WeakTypeTag](f: T => O, compress: Boolean = true): TSEntry[O] =
     TSEntry(timestamp, f(value), validity)
 
-  def mapWithTime[O: WeakTypeTag](f: (Long, T) => O, compress: Boolean = true): TSEntry[O] =
-    TSEntry(timestamp, f(timestamp, value), validity)
+  def mapEntries[O: WeakTypeTag](f: TSEntry[T] => O, compress: Boolean = true): TSEntry[O] =
+    this.copy(value = f(this))
 
-  def filter(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
+  def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     if (predicate(this)) this else EmptyTimeSeries
 
   override def fill[U >: T](whenUndef: U): TimeSeries[U] = this

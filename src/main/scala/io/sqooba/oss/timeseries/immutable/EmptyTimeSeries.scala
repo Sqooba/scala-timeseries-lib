@@ -27,9 +27,9 @@ case object EmptyTimeSeries extends TimeSeries[Nothing] {
 
   def trimRightDiscrete(at: Long, includeEntry: Boolean): TimeSeries[Nothing] = this
 
-  def mapWithTime[O: WeakTypeTag](f: (Long, Nothing) => O, compress: Boolean = true): TimeSeries[O] = this
+  def mapEntries[O: WeakTypeTag](f: TSEntry[Nothing] => O, compress: Boolean = true): TimeSeries[O] = this
 
-  def filter(predicate: TSEntry[Nothing] => Boolean): TimeSeries[Nothing] = this
+  def filterEntries(predicate: TSEntry[Nothing] => Boolean): TimeSeries[Nothing] = this
 
   override def fill[U >: Nothing](whenUndef: U): TimeSeries[U] = this
 

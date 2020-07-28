@@ -362,7 +362,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     }
 
     it should "correctly map with time a timeseries of three entries" in {
-      val up = anotherThree.mapWithTime((t, s) => s.toString + "_" + t)
+      val up = anotherThree.mapEntries(e => e.value.toString + "_" + e.timestamp)
       assert(3 === up.size)
       assert(up.at(1).contains("111.0_1"))
       assert(up.at(10).contains("222.0_10"))
@@ -370,23 +370,23 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     }
 
     it should "correctly map with time a timeseries of three entries without compression" in {
-      val up = anotherThree.mapWithTime((_, _) => 42, compress = false)
+      val up = anotherThree.mapEntries(_ => 42, compress = false)
       assert(up.entries === Seq(TSEntry(1, 42, 9), TSEntry(10, 42, 10), TSEntry(20, 42, 10)))
     }
 
     it should "correctly filter a timeseries of three entries" in {
       val ts = newTs(Seq(TSEntry(1, 111d, 9), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
       assert(
-        ts.filter(_.timestamp < 15) === TSEntry(1, 111d, 9)
+        ts.filterEntries(_.timestamp < 15) === TSEntry(1, 111d, 9)
       )
       assert(
-        ts.filter(_.validity > 10).entries === Seq(TSEntry(15, 222d, 15), TSEntry(30, 444d, 20))
+        ts.filterEntries(_.validity > 10).entries === Seq(TSEntry(15, 222d, 15), TSEntry(30, 444d, 20))
       )
       assert(
-        ts.filter(_.value > 10).entries === ts.entries
+        ts.filterEntries(_.value > 10).entries === ts.entries
       )
       assert(
-        ts.filter(_.value < 0) === EmptyTimeSeries
+        ts.filterEntries(_.value < 0) === EmptyTimeSeries
       )
     }
 
@@ -394,10 +394,10 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       val ts = newTs(Seq(TSEntry(1, 111d, 9), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
 
       assert(
-        ts.filterValues(_ > 10).entries === ts.entries
+        ts.filter(_ > 10).entries === ts.entries
       )
       assert(
-        ts.filterValues(_ < 0) === EmptyTimeSeries
+        ts.filter(_ < 0) === EmptyTimeSeries
       )
     }
 
@@ -766,7 +766,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         )
       )
 
-      assert(ts.filter(_ => false) === EmptyTimeSeries)
+      assert(ts.filterEntries(_ => false) === EmptyTimeSeries)
     }
 
     it should "return a correct loose domain" in {
@@ -802,8 +802,8 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(up.at(20).contains("HU"))
     }
 
-    it should "correctly map with time a timeseries of three strings" in {
-      val up = threeStrings.mapWithTime((t, s) => s.toUpperCase() + t)
+    it should "correctly map the entries of a timeseries of three strings" in {
+      val up = threeStrings.mapEntries(e => e.value.toUpperCase() + e.timestamp)
       assert(3 === up.size)
       assert(up.at(0).contains("HI0"))
       assert(up.at(10).contains("HO10"))
@@ -814,10 +814,10 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       val ts = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(15, "Ho", 15), TSEntry(30, "Hu", 20)))
 
       assert(
-        ts.filter(_.value.startsWith("H")).entries === ts.entries
+        ts.filterEntries(_.value.startsWith("H")).entries === ts.entries
       )
       assert(
-        ts.filter(_.value.endsWith("H")) === EmptyTimeSeries
+        ts.filterEntries(_.value.endsWith("H")) === EmptyTimeSeries
       )
     }
 
@@ -887,7 +887,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "correctly map with time a timeseries of three entries with compression" in {
       val ts = anotherThree
 
-      val up = ts.mapWithTime((_, _) => 42, compress = true)
+      val up = ts.mapEntries(_ => 42, compress = true)
       assert(up.entries === Seq(TSEntry(1, 42, 29)))
     }
 
