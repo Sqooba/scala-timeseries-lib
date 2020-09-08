@@ -1,5 +1,7 @@
 package io.sqooba.oss.timeseries.validation
 
+import zio.ZIO
+
 /**
   * This object specifies and checks all the different types of constraints that
   * are imposed on timestamps of timeseries.

@@ -9,28 +9,27 @@ organizationName := "Sqooba"
 organizationHomepage := Some(url("https://sqooba.io"))
 
 scalaVersion := "2.13.0"
-crossScalaVersions := Seq("2.13.0", "2.12.10")
+crossScalaVersions := Seq("2.12.12", "2.13.3")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val zioVersion = "1.0.0-RC17"
+val zioVersion = "1.0.1"
 
 libraryDependencies ++= Seq(
-  "com.storm-enroute"          %% "scalameter"              % "0.19",
-  "fi.iki.yak"                 % "compression-gorilla"      % "2.1.1",
-  "com.typesafe.scala-logging" %% "scala-logging"           % "3.9.2",
-  "org.apache.thrift"          % "libthrift"                % "0.12.0",
+  "fi.iki.yak"                  % "compression-gorilla"     % "2.1.1",
+  "org.apache.thrift"           % "libthrift"               % "0.12.0",
   "com.twitter"                %% "scrooge-core"            % "19.10.0",
+  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
   "dev.zio"                    %% "zio"                     % zioVersion,
   "dev.zio"                    %% "zio-streams"             % zioVersion,
+  "com.storm-enroute"          %% "scalameter"              % "0.19"     % Test,
   "dev.zio"                    %% "zio-test"                % zioVersion % Test,
   "dev.zio"                    %% "zio-test-sbt"            % zioVersion % Test,
-  "junit"                      % "junit"                    % "4.12" % Test,
-  "org.scalactic"              %% "scalactic"               % "3.1.2",
-  "org.scalatest"              %% "scalatest"               % "3.1.2" % Test,
-  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
-  "io.dropwizard.metrics"      % "metrics-core"             % "4.0.0" % Test
+  "junit"                       % "junit"                   % "4.12"     % Test,
+  "org.scalactic"              %% "scalactic"               % "3.1.2"    % Test,
+  "org.scalatest"              %% "scalatest"               % "3.1.2"    % Test,
+  "io.dropwizard.metrics"       % "metrics-core"            % "4.0.0"    % Test
 )
 
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
