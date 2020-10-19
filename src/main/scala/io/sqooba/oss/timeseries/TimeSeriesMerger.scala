@@ -105,7 +105,6 @@ object TimeSeriesMerger {
     *       the `tsC` has value `vc`. The contained tuple now corresponds to the
     *       argument of the `mergeOp`; it can simply be applied.
     *
-    *
     * @param in       sequence of entries that can overlap in time by are strictly ordered by timestamp
     * @param mergeOp  operator from the entry type to the final type or None
     * @param allNone  the value to use for the merge operator when no entry is defined

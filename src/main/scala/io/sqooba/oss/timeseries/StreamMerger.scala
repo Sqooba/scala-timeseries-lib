@@ -1,6 +1,5 @@
 package io.sqooba.oss.timeseries
 
-
 object StreamMerger {
 
   /** Same as [[TimeSeriesMerger.mergeOrderedSeqs]] but for ZIO streams.

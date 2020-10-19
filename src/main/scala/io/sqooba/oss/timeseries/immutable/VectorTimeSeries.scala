@@ -191,7 +191,6 @@ object VectorTimeSeries {
     *    - the correct index
     *    - the correct index + 1
     *    - 0 if the search fails, or if the result is 0.
-    *
     */
   @tailrec
   private def dichotomic[T](

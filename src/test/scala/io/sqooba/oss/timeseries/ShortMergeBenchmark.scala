@@ -26,10 +26,11 @@ object ShortMergeBenchmark {
     (avgTime, std)
   }
 
-  private def createFixture: (TimeSeries[Int], TimeSeries[Int]) = (
-    TimeSeriesBenchmark.createTimeSeriesWithSize(100000),
-    TimeSeriesBenchmark.createTimeSeriesWithSize(2 * 100000)
-  )
+  private def createFixture: (TimeSeries[Int], TimeSeries[Int]) =
+    (
+      TimeSeriesBenchmark.createTimeSeriesWithSize(100000),
+      TimeSeriesBenchmark.createTimeSeriesWithSize(2 * 100000)
+    )
 
   private def printResults(testName: String, avgNanos: Double, stdNanos: Double): Unit = {
     // scalastyle:off println

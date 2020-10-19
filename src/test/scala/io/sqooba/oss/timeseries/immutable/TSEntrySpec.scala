@@ -94,7 +94,7 @@ class TSEntrySpec extends AnyFlatSpec with should.Matchers {
     assert(1 == single.size)
     assert(single.at(0).isEmpty)
     assert(single.at(1).contains("Hi"))
-    assert(single.at(10).contains(("Hi")))
+    assert(single.at(10).contains("Hi"))
     assert(single.at(11).isEmpty)
   }
 
@@ -524,15 +524,16 @@ class TSEntrySpec extends AnyFlatSpec with should.Matchers {
     assert(TSEntry(3, "Ho", 10) == e.prepend(TSEntry(3, "Ho", 10)))
   }
 
-  def testTs(startsAt: Long): VectorTimeSeries[String] = VectorTimeSeries.ofOrderedEntriesUnsafe(
-    Seq(
-      TSEntry(startsAt, "Hi", 10L),
-      TSEntry(startsAt + 10, "Ho", 10L),
-      // scalastyle:off non.ascii.character.disallowed
-      TSEntry(startsAt + 20, "Hé", 10L)
-      // scalastyle:on non.ascii.character.disallowed
+  def testTs(startsAt: Long): VectorTimeSeries[String] =
+    VectorTimeSeries.ofOrderedEntriesUnsafe(
+      Seq(
+        TSEntry(startsAt, "Hi", 10L),
+        TSEntry(startsAt + 10, "Ho", 10L),
+        // scalastyle:off non.ascii.character.disallowed
+        TSEntry(startsAt + 20, "Hé", 10L)
+        // scalastyle:on non.ascii.character.disallowed
+      )
     )
-  )
 
   it should "correctly do appendTs" in {
     // Append a multi-entry TS at various times on the entry

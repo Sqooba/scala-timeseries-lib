@@ -146,41 +146,49 @@ trait TimeSeries[+T] {
 
   /** Return the first (chronological) entry in this time series.
     *
-    * @throws NoSuchElementException if this time series is empty. */
+    * @throws NoSuchElementException if this time series is empty.
+    */
   def head: TSEntry[T] = headOption.get
 
   /** Return a filled option containing the first (chronological) entry in this
     * time series.
-    * None if this time series is empty. */
+    * None if this time series is empty.
+    */
   def headOption: Option[TSEntry[T]]
 
   /** Return the first (chronological) value in this time series.
     *
-    * @throws NoSuchElementException if this time series is empty. */
+    * @throws NoSuchElementException if this time series is empty.
+    */
   def headValue: T = head.value
 
   /** Return a filled option containing the first (chronological) value in this
     * time series.
-    * None if this time series is empty. */
+    * None if this time series is empty.
+    */
   def headValueOption: Option[T] = headOption.map(_.value)
 
   /** Return the last (chronological) entry in this time series.
     *
-    * @throws NoSuchElementException if this time series is empty. */
+    * @throws NoSuchElementException if this time series is empty.
+    */
   def last: TSEntry[T] = lastOption.get
 
   /** Return a filled option containing the last (chronological) entry in this
     * time series.
-    * None if this time series is empty. */
+    * None if this time series is empty.
+    */
   def lastOption: Option[TSEntry[T]]
 
   /** Return the last (chronological) value in this time series.
     *
-    * @throws NoSuchElementException if this time series is empty. */
+    * @throws NoSuchElementException if this time series is empty.
+    */
   def lastValue: T = last.value
 
   /** Return a filled option containing the last (chronological) value in this time series.
-    * None if this time series is empty. */
+    * None if this time series is empty.
+    */
   def lastValueOption: Option[T] = lastOption.map(_.value)
 
   /** Append the 'other' time series to this one at exactly the first of other's entries timestamp.
@@ -470,7 +478,7 @@ trait TimeSeries[+T] {
     */
   def rollup[R](buckets: Stream[Long], aggregator: TimeSeries[T] => R): TimeSeries[R] =
     bucket(buckets)
-    // Slide so that we may have the end of the bucket in context
+      // Slide so that we may have the end of the bucket in context
       .sliding(2)
       // Build a (bucketStart, bucketEnd, relevantValue) triple
       .map(pair => (pair.head._1, pair.tail.head._1, aggregator(pair.head._2)))

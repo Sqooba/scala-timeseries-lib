@@ -76,7 +76,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     }
 
   /** Move this entry's timestamp to 'at' and shorten the validity accordingly,
-    * if this entry is defined at 'at'. */
+    * if this entry is defined at 'at'.
+    */
   def trimLeft(at: Long): TimeSeries[T] =
     if (at >= definedUntil) { // Nothing left from the value on the right side of the trim
       EmptyTimeSeries
@@ -90,8 +91,10 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     *  - 'at' is within the entry (but not equal to the timestamp) and it must not be split in two
     */
   def trimLeftDiscrete(at: Long, includeEntry: Boolean): TimeSeries[T] =
-    if (at >= definedUntil                                      // After the domain: empty in any case
-        || (at != timestamp && defined(at) && !includeEntry)) { // within the domain but not on the begin boundary
+    if (
+      at >= definedUntil // After the domain: empty in any case
+      || (at != timestamp && defined(at) && !includeEntry)
+    ) { // within the domain but not on the begin boundary
       EmptyTimeSeries
     } else {
       this
@@ -111,7 +114,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
     }
 
   /** Equivalent to calling trimEntryLeft(l).trimEntryRight(r)
-    * without the intermediary step. */
+    * without the intermediary step.
+    */
   def trimEntryLeftNRight(l: Long, r: Long): TSEntry[T] =
     if (l >= definedUntil) {
       throw new IllegalArgumentException(s"Attempting to trim left at $l after entry's domain has ended ($definedUntil)")
@@ -134,7 +138,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
   def definedUntil: Long = timestamp + validity
 
   /** return true if this and the other entry have an overlapping domain of definition.
-    * False if the domains are only contiguous. */
+    * False if the domains are only contiguous.
+    */
   def overlaps[O](other: TSEntry[O]): Boolean =
     this.timestamp < other.definedUntil && this.definedUntil > other.timestamp
 
@@ -194,7 +199,8 @@ case class TSEntry[@specialized +T](timestamp: Long, value: T, validity: Long) e
 
   /** Prepend the other entry to this one.
     * Any part of this entry that is defined at t < other.definedUntil will be overwritten by the
-    * other entry, or not be defined if t < other.timestamp */
+    * other entry, or not be defined if t < other.timestamp
+    */
   def prependEntry[U >: T](other: TSEntry[U]): Seq[TSEntry[U]] =
     if (other.timestamp >= definedUntil) { // Complete overwrite, return the other.
       Seq(other)
@@ -363,7 +369,8 @@ object TSEntry {
 
   /** Convenience function to merge the values present in the entries at time 'at' and
     * create an entry valid until 'until' from the result, if the merge operation is defined
-    * for the input. */
+    * for the input.
+    */
   private def mergeValues[A, B, R](a: TSEntry[A], b: TSEntry[B])(at: Long, until: Long)(op: (Option[A], Option[B]) => Option[R]): Seq[TSEntry[R]] =
     op(a.at(at), b.at(at)).map(TSEntry(at, _, until - at)).toSeq
 

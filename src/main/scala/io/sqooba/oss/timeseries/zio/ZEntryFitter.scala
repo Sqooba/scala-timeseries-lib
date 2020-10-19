@@ -10,11 +10,13 @@ import zio.{Ref, Task, UIO, ZIO}
   *
   * @param compress Whether consecutive entries of equal value should be compressed into one or not.
   */
-class ZEntryFitter[T](compress: Boolean,
-                      // Contains the last added entry: we need to keep it around
-                      // as it may be subject to trimming or extension
-                      lastAddedRef: Ref[Option[TSEntry[T]]],
-                      isDomainContRef: Ref[Boolean]) {
+class ZEntryFitter[T](
+    compress: Boolean,
+    // Contains the last added entry: we need to keep it around
+    // as it may be subject to trimming or extension
+    lastAddedRef: Ref[Option[TSEntry[T]]],
+    isDomainContRef: Ref[Boolean]
+) {
 
   /**
     * Trim or extend the previous entry based on the passed entry and depending
@@ -24,18 +26,19 @@ class ZEntryFitter[T](compress: Boolean,
     */
   def addAndFitLast(addMe: TSEntry[T]): Task[Option[TSEntry[T]]] = {
     for {
-      previouslyAdded <- lastAddedRef.get
-      previouslyContinuous <- isDomainContRef.get
+      previouslyAdded                  <- lastAddedRef.get
+      previouslyContinuous             <- isDomainContRef.get
       (newlyAdded, fitted, continuous) <- trimOrExpand(previouslyAdded, addMe)
-      _ <- lastAddedRef.set(newlyAdded) *>
-        isDomainContRef.set(previouslyContinuous && continuous)
+      _ <-
+        lastAddedRef.set(newlyAdded) *>
+            isDomainContRef.set(previouslyContinuous && continuous)
     } yield fitted
   }
 
   private def trimOrExpand(last: Option[TSEntry[T]], added: TSEntry[T])
   // Return a triple of: 'last added entry', 'fitted entry', 'domain continuous
   // (Or a failed task if the added entry is invalid)
-    : Task[(Option[TSEntry[T]], Option[TSEntry[T]], Boolean)] = {
+      : Task[(Option[TSEntry[T]], Option[TSEntry[T]], Boolean)] = {
     last match {
       // First Entry: save it and return no fitted entry
       case None => ZIO.succeed((Some(added), None, true))
@@ -96,7 +99,7 @@ object ZEntryFitter {
   def init[T](compress: Boolean): UIO[ZEntryFitter[T]] =
     for {
       initPrevious <- Ref.make[Option[TSEntry[T]]](None)
-      continuous <- Ref.make(true)
+      continuous   <- Ref.make(true)
     } yield new ZEntryFitter[T](compress, initPrevious, continuous)
 
 }

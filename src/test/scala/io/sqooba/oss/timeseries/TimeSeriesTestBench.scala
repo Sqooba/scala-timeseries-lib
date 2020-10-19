@@ -40,7 +40,7 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       assert(contig2.at(0).isEmpty)
       assert(contig2.at(1).contains(111d))
       assert(contig2.at(10).contains(111d))
-      assert(contig2.at(11).contains((222d)))
+      assert(contig2.at(11).contains(222d))
       assert(contig2.at(20).contains(222d))
       assert(contig2.at(21).isEmpty)
 
@@ -576,13 +576,14 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
         Seq(TSEntry(22, "Hy", 10))
     }
 
-    def testTs(startsAt: Long): TimeSeries[Double] = newTs(
-      Seq(
-        TSEntry(startsAt, 123d, 10),
-        TSEntry(startsAt + 10, 234d, 10),
-        TSEntry(startsAt + 20, 345d, 10)
+    def testTs(startsAt: Long): TimeSeries[Double] =
+      newTs(
+        Seq(
+          TSEntry(startsAt, 123d, 10),
+          TSEntry(startsAt + 10, 234d, 10),
+          TSEntry(startsAt + 20, 345d, 10)
+        )
       )
-    )
 
     it should "append a multi-entry TS at various times on the entry" in {
       val tri =
@@ -1027,13 +1028,14 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       )
     }
 
-    def testTs(startsAt: Long): TimeSeries[Double] = newTs(
-      Seq(
-        TSEntry(startsAt, 123d, 10),
-        TSEntry(startsAt + 10, 234d, 10),
-        TSEntry(startsAt + 20, 345d, 10)
+    def testTs(startsAt: Long): TimeSeries[Double] =
+      newTs(
+        Seq(
+          TSEntry(startsAt, 123d, 10),
+          TSEntry(startsAt + 10, 234d, 10),
+          TSEntry(startsAt + 20, 345d, 10)
+        )
       )
-    )
 
     it should "append a multi-entry TS at various times on the entry with compression" in {
       val tri =

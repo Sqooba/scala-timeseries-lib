@@ -10,7 +10,6 @@ import scala.reflect.runtime.universe
   * needs to have at least two entries and the inner timeseries cannot by empty.
   * Also, the looseDomain of each TSEntry should correspond to the looseDomain of the
   * series it contains.
-  *
   */
 case class NestedTimeSeries[+T] private (
     underlying: TimeSeries[TimeSeries[T]]

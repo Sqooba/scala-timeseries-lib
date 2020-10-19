@@ -5,9 +5,9 @@ import zio.stream._
 import zio.{Queue, Task, UIO, ZIO}
 
 class AppendableEntryStream[T](
-  finalizedSink: Queue[Take[Nothing, TSEntry[T]]],
-  val finalizedEntries: Stream[Nothing, TSEntry[T]],
-  fitter: ZEntryFitter[T]
+    finalizedSink: Queue[Take[Nothing, TSEntry[T]]],
+    val finalizedEntries: Stream[Nothing, TSEntry[T]],
+    fitter: ZEntryFitter[T]
 ) {
 
   def +=(elem: TSEntry[T]): Task[Unit] = addOne(elem)

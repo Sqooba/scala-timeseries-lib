@@ -37,11 +37,12 @@ class MultiSeriesBlockSpec extends FlatSpec with Matchers {
       .map(entry => TSEntry(entry.timestamp, GorillaBlock.compress(entry.value), entry.validity))
   }
 
-  private def superBlockFiles = blocks.map { block =>
-    val file = getTempFile
-    GorillaSuperBlock.write(block, Files.newOutputStream(file))
-    SliceableByteChannel(getChannel(file))
-  }
+  private def superBlockFiles =
+    blocks.map { block =>
+      val file = getTempFile
+      GorillaSuperBlock.write(block, Files.newOutputStream(file))
+      SliceableByteChannel(getChannel(file))
+    }
 
   private def getMultiSeriesChannel(names: Option[Seq[String]] = None) = {
     val outputFile = getTempFile

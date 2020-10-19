@@ -8,7 +8,6 @@ import scala.util.Success
 
 /** A GorillaBlock represents a compressed/encoded TimeSeries as defined in this
   * library. It is the unit of compression/decompression for series data.
-  *
   */
 trait GorillaBlock {
 

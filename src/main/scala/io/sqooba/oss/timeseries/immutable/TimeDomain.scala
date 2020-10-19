@@ -76,17 +76,19 @@ case class ContiguousTimeDomain(start: Long, until: Long) extends TimeDomain {
 
   def contains(p: Long): Boolean = p >= start && p < until
 
-  def looseUnion(other: TimeDomain): TimeDomain = other match {
-    case EmptyTimeDomain => this
-    case ContiguousTimeDomain(otherStart, otherUntil) =>
-      ContiguousTimeDomain(min(start, otherStart), max(until, otherUntil))
-  }
+  def looseUnion(other: TimeDomain): TimeDomain =
+    other match {
+      case EmptyTimeDomain => this
+      case ContiguousTimeDomain(otherStart, otherUntil) =>
+        ContiguousTimeDomain(min(start, otherStart), max(until, otherUntil))
+    }
 
-  def intersect(other: TimeDomain): TimeDomain = other match {
-    case EmptyTimeDomain => EmptyTimeDomain
-    case ContiguousTimeDomain(otherStart, otherUntil) =>
-      TimeDomain.fromUnsafeInterval(max(start, otherStart), min(until, otherUntil))
-  }
+  def intersect(other: TimeDomain): TimeDomain =
+    other match {
+      case EmptyTimeDomain => EmptyTimeDomain
+      case ContiguousTimeDomain(otherStart, otherUntil) =>
+        TimeDomain.fromUnsafeInterval(max(start, otherStart), min(until, otherUntil))
+    }
 
   def size: Long = until - start
 
