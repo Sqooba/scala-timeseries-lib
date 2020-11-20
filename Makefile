@@ -1,4 +1,3 @@
-
 VERSION=HEAD-SNAPSHOT
 
 .PHONY: build test release release-local

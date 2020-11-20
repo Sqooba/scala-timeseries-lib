@@ -8,13 +8,13 @@ organization := "io.sqooba.oss"
 organizationName := "Sqooba"
 organizationHomepage := Some(url("https://sqooba.io"))
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.3"
 crossScalaVersions := Seq("2.12.12", "2.13.3")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val zioVersion = "1.0.1"
+val zioVersion = "1.0.3"
 
 libraryDependencies ++= Seq(
   "fi.iki.yak"                  % "compression-gorilla"     % "2.1.1",
