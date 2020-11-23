@@ -661,7 +661,7 @@ object TimeSeries {
     *                          well-formed (no duplicated timestamps)
     * @param isCompressed      Flags whether the xs' have been compressed in their construction.
     *                          Will be passed to the underlying implementation.
-    * @param isDomainContinous Flags whether all the entries span a continuous time domain without holes.
+    * @param isDomainContinuous Flags whether all the entries span a continuous time domain without holes.
     *                          Will be passed to the underlying implementation.
     * @tparam T The underlying type of the time series
     * @return A time series with a correct implementation
@@ -669,7 +669,7 @@ object TimeSeries {
   def ofOrderedEntriesUnsafe[T](
       xs: Seq[TSEntry[T]],
       isCompressed: Boolean = false,
-      isDomainContinous: Boolean = false
+      isDomainContinuous: Boolean = false
   ): TimeSeries[T] = {
     val size = xs.size
 
@@ -678,7 +678,7 @@ object TimeSeries {
     } else if (size == 1) {
       xs.head
     } else {
-      VectorTimeSeries.ofOrderedEntriesUnsafe(xs, isCompressed, isDomainContinous)
+      VectorTimeSeries.ofOrderedEntriesUnsafe(xs, isCompressed, isDomainContinuous)
     }
   }
 

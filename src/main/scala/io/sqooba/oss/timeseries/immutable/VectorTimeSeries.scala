@@ -62,7 +62,7 @@ case class VectorTimeSeries[+T] private (
         data.splitAt(idx) match {
           // First of the last elements is valid and may need trimming. Others can be forgotten.
           case (noChange, _) =>
-            new VectorTimeSeries(noChange :+ e.trimEntryRight(t))
+            new VectorTimeSeries(noChange :+ e.trimEntryRight(t), isCompressed, isDomainContinuous)
         }
       case _ => EmptyTimeSeries
     }
@@ -76,7 +76,7 @@ case class VectorTimeSeries[+T] private (
         data.splitAt(idx) match {
           case (noChange, _) =>
             // First of the last elements must either be kept entirely or discarded
-            TimeSeries.ofOrderedEntriesUnsafe(noChange ++ e.trimRightDiscrete(at, includeEntry).entries)
+            TimeSeries.ofOrderedEntriesUnsafe(noChange ++ e.trimRightDiscrete(at, includeEntry).entries, isCompressed, isDomainContinuous)
         }
       case _ => EmptyTimeSeries
     }
@@ -90,9 +90,9 @@ case class VectorTimeSeries[+T] private (
           data.splitAt(idx) match {
             case (_, _ +: keep) =>
               if (e.defined(t)) {
-                TimeSeries.ofOrderedEntriesUnsafe(e.trimEntryLeft(t) +: keep)
+                TimeSeries.ofOrderedEntriesUnsafe(e.trimEntryLeft(t) +: keep, isCompressed, isDomainContinuous)
               } else if (keep.nonEmpty) {
-                TimeSeries.ofOrderedEntriesUnsafe(keep)
+                TimeSeries.ofOrderedEntriesUnsafe(keep, isCompressed, isDomainContinuous)
               } else {
                 EmptyTimeSeries
               }
@@ -110,7 +110,9 @@ case class VectorTimeSeries[+T] private (
           data.splitAt(idx) match {
             case (_, _ +: keep) =>
               TimeSeries.ofOrderedEntriesUnsafe(
-                e.trimLeftDiscrete(at, includeEntry).entries ++ keep
+                e.trimLeftDiscrete(at, includeEntry).entries ++ keep,
+                isCompressed,
+                isDomainContinuous
               )
           }
         case _ => EmptyTimeSeries
