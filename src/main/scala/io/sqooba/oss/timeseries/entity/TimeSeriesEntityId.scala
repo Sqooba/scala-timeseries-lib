@@ -22,5 +22,5 @@ trait TimeSeriesEntityId {
   //   we need to keep it in mind. If at some point we want to do things allocation-free,
   //   have a look at https://docs.scala-lang.org/overviews/core/value-classes.html under
   //   the extension methods paragraph
-  def buildTsId(signal: TsLabel): TsId = TsId(this, signal)
+  def buildTsId(signal: TsLabel): TsId[this.type] = TsId(this, signal)
 }

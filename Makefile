@@ -14,6 +14,7 @@ release:
 snapshot:
 	@echo No snapshot releases for this lib
 
-# Do a +publishLocal if you need it in your local .ivy2 repo
+# +publishLocal for your local .ivy2 repo
+# +publishM2 for your local .m2 repo
 release-local:
-	sbt 'set version := "$(VERSION)"' +publishM2
+	sbt 'set version := "$(VERSION)"' +publishLocal +publishM2
