@@ -7,4 +7,4 @@ package io.sqooba.oss.timeseries.entity
  * @param label specifies the signal
  * @tparam I serves to specify a certain implementation of entity id
  */
-final case class TsId[I <: TimeSeriesEntityId](entityId: I, label: TsLabel)
+final case class TsId[+I <: TimeSeriesEntityId](entityId: I, label: TsLabel)
