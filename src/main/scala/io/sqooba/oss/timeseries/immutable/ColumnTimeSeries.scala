@@ -12,18 +12,18 @@ import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 
 /**
-  * TimeSeries implementation based on a column-store of three Vectors, one for each field of TSEntry.
-  * This implementation should be more memory-efficient than the vanilla VectorTimeSeries.
-  *
-  * @note the entries of the three vectors must be ordered in the same way. The element at the same index in the three
-  *       of them represents a TSEntry.
-  */
+ * TimeSeries implementation based on a column-store of three Vectors, one for each field of TSEntry.
+ * This implementation should be more memory-efficient than the vanilla VectorTimeSeries.
+ *
+ * @note the entries of the three vectors must be ordered in the same way. The element at the same index in the three
+ *       of them represents a TSEntry.
+ */
 case class ColumnTimeSeries[+T] private (
-    timestamps: Vector[Long],
-    override val values: Vector[T],
-    validities: Vector[Long],
-    isCompressed: Boolean = false,
-    isDomainContinuous: Boolean = false
+  timestamps: Vector[Long],
+  override val values: Vector[T],
+  validities: Vector[Long],
+  isCompressed: Boolean = false,
+  isDomainContinuous: Boolean = false
 ) extends TimeSeries[T] {
 
   require(
@@ -40,18 +40,18 @@ case class ColumnTimeSeries[+T] private (
   def entries: Stream[TSEntry[T]] = (timestamps, values, validities).zipped.toStream.map(TSEntry[T])
 
   /**
-    * Dichotomic search for the element in the time series for the entry
-    * with the biggest timestamp lowerBound or equal to 't'.
-    * If an entry exists and it is valid at 't', Some(value) is returned.
-    */
+   * Dichotomic search for the element in the time series for the entry
+   * with the biggest timestamp lowerBound or equal to 't'.
+   * If an entry exists and it is valid at 't', Some(value) is returned.
+   */
   def at(t: Long): Option[T] = entryAt(t).map(_.value)
 
   def entryAt(t: Long): Option[TSEntry[T]] = lastEntryAt(t).flatMap(_._1.entryAt(t))
 
   /**
-    * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
-    * along with its index in the vector.
-    */
+   * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
+   * along with its index in the vector.
+   */
   def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] =
     ColumnTimeSeries
       .dichotomicSearch(timestamps, t)
@@ -92,6 +92,14 @@ case class ColumnTimeSeries[+T] private (
     }
   }
 
+  override def filterMapEntries[O](f: TSEntry[T] => Option[O], compress: Boolean): TimeSeries[O] =
+    ColumnTimeSeries.ofOrderedEntriesSafe(
+      (timestamps, entries.map(f), validities).zipped.collect {
+        case (ts, Some(v), valid) => TSEntry(ts, v, valid)
+      }.toSeq,
+      compress
+    )
+
   def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
     // We are not updating entries: no need to order or trim them
     ColumnTimeSeries.ofColumnVectorsUnsafe(
@@ -113,9 +121,9 @@ case class ColumnTimeSeries[+T] private (
       case Some((elem, idx)) =>
         // Trim the element on the cut and append it to the elements on the left of it
         val trimmedRightMostElem = elem.trimEntryRight(at)
-        val (leftTs, _)          = timestamps.splitAt(idx)
-        val (leftValues, _)      = values.splitAt(idx)
-        val (leftDs, _)          = validities.splitAt(idx)
+        val (leftTs, _) = timestamps.splitAt(idx)
+        val (leftValues, _) = values.splitAt(idx)
+        val (leftDs, _) = validities.splitAt(idx)
 
         ColumnTimeSeries.ofColumnVectorsUnsafe(
           (
@@ -138,9 +146,9 @@ case class ColumnTimeSeries[+T] private (
       case Some((elem, idx)) =>
         // Trim the element on the cut and append it to the elements on the left of it
         val trimmedRightMostSeries = elem.trimRightDiscrete(at, includeEntry)
-        val (leftTs, _)            = timestamps.splitAt(idx)
-        val (leftValues, _)        = values.splitAt(idx)
-        val (leftDs, _)            = validities.splitAt(idx)
+        val (leftTs, _) = timestamps.splitAt(idx)
+        val (leftValues, _) = values.splitAt(idx)
+        val (leftDs, _) = validities.splitAt(idx)
 
         ColumnTimeSeries.ofColumnVectorsUnsafe(
           (
@@ -225,32 +233,32 @@ case class ColumnTimeSeries[+T] private (
 object ColumnTimeSeries {
 
   /**
-    * Construct a timeseries using the ColumnTimeSeries.Builder given an ordered
-    * list of entries. The correct underlying implementation will be chosen
-    * (EmptyTimeSeries, TSEntry or ColumnTimeSeries).
-    *
-    * @param entries A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
-    *           well-formed (no duplicated timestamps)
-    * @param compress A flag specifying whether the entries should be compressed or not.
-    * @tparam T The underlying type of the time series
-    */
+   * Construct a timeseries using the ColumnTimeSeries.Builder given an ordered
+   * list of entries. The correct underlying implementation will be chosen
+   * (EmptyTimeSeries, TSEntry or ColumnTimeSeries).
+   *
+   * @param entries A sequence of TSEntries which HAS to be chronologically ordered (w.r.t. their timestamps) and
+   *           well-formed (no duplicated timestamps)
+   * @param compress A flag specifying whether the entries should be compressed or not.
+   * @tparam T The underlying type of the time series
+   */
   def ofOrderedEntriesSafe[T](
-      entries: Seq[TSEntry[T]],
-      compress: Boolean = true
+    entries: Seq[TSEntry[T]],
+    compress: Boolean = true
   ): TimeSeries[T] =
     entries.foldLeft(newBuilder[T](compress))(_ addOne _).result()
 
   /**
-    * @param columns the built, SORTED and valid column vectors representing the entries of the timeseries. The first
-    *                vector contains the timestamps, the second the values and the third the validities.
-    * @param isCompressed A flag saying whether the elems have been compressed during construction.
-    * @return a ColumnTimeSeries built from the passed entries, applying strictly no sanity check:
-    *         use at your own risk.
-    */
+   * @param columns the built, SORTED and valid column vectors representing the entries of the timeseries. The first
+   *                vector contains the timestamps, the second the values and the third the validities.
+   * @param isCompressed A flag saying whether the elems have been compressed during construction.
+   * @return a ColumnTimeSeries built from the passed entries, applying strictly no sanity check:
+   *         use at your own risk.
+   */
   private[timeseries] def ofColumnVectorsUnsafe[T](
-      columns: (Vector[Long], Vector[T], Vector[Long]),
-      isCompressed: Boolean = false,
-      isDomainContinuous: Boolean = false
+    columns: (Vector[Long], Vector[T], Vector[Long]),
+    isCompressed: Boolean = false,
+    isDomainContinuous: Boolean = false
   ): TimeSeries[T] = {
     val (timestamps, values, validities) = columns
 
@@ -262,14 +270,14 @@ object ColumnTimeSeries {
   }
 
   /**
-    * Run a dichotomic search on the passed sequence of timestamps to find the highest
-    * timestamp that is lower or equal to 'ts'.
-    *
-    * @param timestamps an indexed sequence of timestamps
-    * @param targetTimestamp the timestamp to search for
-    * @return Some(index) where index is the position of the timetamp in the sequence
-    *         if such a timestamp exists, None otherwise.
-    */
+   * Run a dichotomic search on the passed sequence of timestamps to find the highest
+   * timestamp that is lower or equal to 'ts'.
+   *
+   * @param timestamps an indexed sequence of timestamps
+   * @param targetTimestamp the timestamp to search for
+   * @return Some(index) where index is the position of the timetamp in the sequence
+   *         if such a timestamp exists, None otherwise.
+   */
   def dichotomicSearch(timestamps: IndexedSeq[Long], targetTimestamp: Long): Option[Int] =
     dichotomic(timestamps, targetTimestamp, 0, timestamps.size - 1) match {
       // the result is 0, or the search failed
@@ -283,21 +291,21 @@ object ColumnTimeSeries {
     }
 
   /**
-    * Dichotomic search within the passed Seq of timestamps.
-    *
-    * @return the index for an entry having a timestamp less or equal to the targetTimestamp.
-    *         This may be:
-    *           - the correct index
-    *           - the correct index + 1
-    *           - 0 if the search fails, or if the result is 0.
-    */
+   * Dichotomic search within the passed Seq of timestamps.
+   *
+   * @return the index for an entry having a timestamp less or equal to the targetTimestamp.
+   *         This may be:
+   *           - the correct index
+   *           - the correct index + 1
+   *           - 0 if the search fails, or if the result is 0.
+   */
   @tailrec
   private def dichotomic[T](
-      timestamps: IndexedSeq[Long],
-      targetTimestamp: Long,
-      lowerBound: Int,
-      upperBound: Int,
-      previousPivot: Int = 0 // Default to 0 for initial call
+    timestamps: IndexedSeq[Long],
+    targetTimestamp: Long,
+    lowerBound: Int,
+    upperBound: Int,
+    previousPivot: Int = 0 // Default to 0 for initial call
   ): Int = {
     if (lowerBound > upperBound) {
       previousPivot
@@ -317,15 +325,15 @@ object ColumnTimeSeries {
   }
 
   /**
-    * @return the builder for column-base timeseries
-    */
+   * @return the builder for column-base timeseries
+   */
   def newBuilder[T](compress: Boolean = true): TimeSeriesBuilder[T] = new ColumnTimeSeries.Builder[T](compress)
 
   private class Builder[T](compress: Boolean = true) extends TimeSeriesBuilder[T] {
 
     // Contains finalized entries
     private val resultBuilder = (new VectorBuilder[Long], new VectorBuilder[T], new VectorBuilder[Long])
-    private val entryBuilder  = new TSEntryFitter[T](compress)
+    private val entryBuilder = new TSEntryFitter[T](compress)
 
     private var resultCalled = false
 

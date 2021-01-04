@@ -8,14 +8,14 @@ import scala.collection.immutable.VectorBuilder
 import scala.reflect.runtime.universe._
 
 /**
-  * TimeSeries implementation based on a Vector.
-  *
-  * @note data needs to be SORTED
-  */
+ * TimeSeries implementation based on a Vector.
+ *
+ * @note data needs to be SORTED
+ */
 case class VectorTimeSeries[+T] private (
-    data: Vector[TSEntry[T]],
-    isCompressed: Boolean = false,
-    isDomainContinuous: Boolean = false
+  data: Vector[TSEntry[T]],
+  isCompressed: Boolean = false,
+  isDomainContinuous: Boolean = false
 ) extends TimeSeries[T] {
 
   require(
@@ -24,25 +24,33 @@ case class VectorTimeSeries[+T] private (
   )
 
   /**
-    * Dichotomic search for the element in the time series for the entry
-    * with the biggest timestamp lower or equal to 't'.
-    * If an entry exists and it is valid at 't', Some(value) is returned.
-    */
+   * Dichotomic search for the element in the time series for the entry
+   * with the biggest timestamp lower or equal to 't'.
+   * If an entry exists and it is valid at 't', Some(value) is returned.
+   */
   def at(t: Long): Option[T] =
     entryAt(t).map(_.value)
 
   def entryAt(t: Long): Option[TSEntry[T]] = lastEntryAt(t).flatMap(_._1.entryAt(t))
 
   /**
-    * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
-    * along with its index in the vector.
-    */
+   * Return the entry in the timeseries with the highest timestamp lower or equal to 't',
+   * along with its index in the vector.
+   */
   def lastEntryAt(t: Long): Option[(TSEntry[T], Int)] =
     VectorTimeSeries.dichotomicSearch(data, t)
 
   def mapEntries[O: WeakTypeTag](f: TSEntry[T] => O, compress: Boolean = true): TimeSeries[O] =
     data
       .foldLeft(newBuilder[O](compress))((b, n) => b += n.mapEntries(f))
+      .result()
+
+  override def filterMapEntries[O](f: TSEntry[T] => Option[O], compress: Boolean): TimeSeries[O] =
+    data
+      .foldLeft(newBuilder[O](compress)) { (b, entry) =>
+        f(entry).map(v => entry.copy(value = v)).foreach(b += _)
+        b
+      }
       .result()
 
   def filterEntries(predicate: TSEntry[T] => Boolean): TimeSeries[T] =
@@ -135,16 +143,16 @@ case class VectorTimeSeries[+T] private (
 object VectorTimeSeries {
 
   /**
-    * Construct a VectorTimeSeries using its own builder given an ordered list of
-    * at least 2 entries.
-    *
-    * @param elems A well-formed sequence of TSEntries which has at least 2 elements
-    * @param compress specifies whether the entries should be compressed or not
-    * @return a vector backed timeseries
-    */
+   * Construct a VectorTimeSeries using its own builder given an ordered list of
+   * at least 2 entries.
+   *
+   * @param elems A well-formed sequence of TSEntries which has at least 2 elements
+   * @param compress specifies whether the entries should be compressed or not
+   * @return a vector backed timeseries
+   */
   private[timeseries] def ofOrderedEntriesSafe[T](
-      elems: Seq[TSEntry[T]],
-      compress: Boolean = true
+    elems: Seq[TSEntry[T]],
+    compress: Boolean = true
   ): VectorTimeSeries[T] = {
     require(elems.size >= 2, "To build a VectorTimeSeries, at least two elements must be given.")
 
@@ -153,25 +161,25 @@ object VectorTimeSeries {
   }
 
   /**
-    * @param elems The entries of the series.
-    * @param isCompressed A flag saying whether the elems have been compressed during construction.
-    * @param isDomainContinuous Flags whether the elems span a continuous time domain without holes.
-    * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:
-    *         use at your own risk.
-    */
+   * @param elems The entries of the series.
+   * @param isCompressed A flag saying whether the elems have been compressed during construction.
+   * @param isDomainContinuous Flags whether the elems span a continuous time domain without holes.
+   * @return a VectorTimeSeries built from the passed entries, applying strictly no sanity check:
+   *         use at your own risk.
+   */
   private[timeseries] def ofOrderedEntriesUnsafe[T](
-      elems: Seq[TSEntry[T]],
-      isCompressed: Boolean = false,
-      isDomainContinuous: Boolean = false
+    elems: Seq[TSEntry[T]],
+    isCompressed: Boolean = false,
+    isDomainContinuous: Boolean = false
   ): VectorTimeSeries[T] =
     new VectorTimeSeries(elems.toVector, isCompressed, isDomainContinuous)
 
   /**
-    * Run a dichotomic search on the passed sequence to find the entry in the
-    * sequence that has the highest timestamp that is lower or equal to 'ts'.
-    *
-    * Some(entry, index) is returned if such an entry exists, None otherwise.
-    */
+   * Run a dichotomic search on the passed sequence to find the entry in the
+   * sequence that has the highest timestamp that is lower or equal to 'ts'.
+   *
+   * Some(entry, index) is returned if such an entry exists, None otherwise.
+   */
   def dichotomicSearch[T](data: IndexedSeq[TSEntry[T]], ts: Long): Option[(TSEntry[T], Int)] =
     // Dichotomic search for a candidate
     dichotomic(data, ts, 0, data.size - 1) match {
@@ -185,22 +193,22 @@ object VectorTimeSeries {
     }
 
   /**
-    * Dichotomic search within the passed Seq.
-    *
-    * Returns the index for an entry having a timestamp less or equal to the target.
-    *
-    *  - The returned value may be:
-    *    - the correct index
-    *    - the correct index + 1
-    *    - 0 if the search fails, or if the result is 0.
-    */
+   * Dichotomic search within the passed Seq.
+   *
+   * Returns the index for an entry having a timestamp less or equal to the target.
+   *
+   *  - The returned value may be:
+   *    - the correct index
+   *    - the correct index + 1
+   *    - 0 if the search fails, or if the result is 0.
+   */
   @tailrec
   private def dichotomic[T](
-      data: IndexedSeq[TSEntry[T]],
-      target: Long,
-      lower: Int,
-      upper: Int,
-      previousPivot: Int = 0 // Default to 0 for initial call
+    data: IndexedSeq[TSEntry[T]],
+    target: Long,
+    lower: Int,
+    upper: Int,
+    previousPivot: Int = 0 // Default to 0 for initial call
   ): Int = {
     if (lower > upper) {
       previousPivot
@@ -218,7 +226,7 @@ object VectorTimeSeries {
   private[timeseries] class Builder[T](compress: Boolean = true) extends TimeSeriesBuilder[T] {
     // Contains finalized entries
     private val resultBuilder = new VectorBuilder[TSEntry[T]]
-    private val entryBuilder  = new TSEntryFitter[T](compress)
+    private val entryBuilder = new TSEntryFitter[T](compress)
 
     private var resultCalled = false
 
