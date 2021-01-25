@@ -47,6 +47,13 @@ class TSEntrySpec extends AnyFlatSpec with should.Matchers {
     assert(t.filter(_ == "Ho") == EmptyTimeSeries)
   }
 
+  it should "filter & map its own entry" in {
+    val t = TSEntry(10, "Hi", 10)
+
+    t.filterMapEntries(e => if (e.value == "Hi") Some("yes") else None) shouldBe TSEntry(10, "Yes", 10)
+    t.filterMapEntries(e => if (e.value == "Ho") Some("yes") else None) shouldBe EmptyTimeSeries
+  }
+
   it should "correctly do Fill" in {
     assert(TSEntry(10, 5, 10).fill(42) == TSEntry(10, 5, 10))
   }

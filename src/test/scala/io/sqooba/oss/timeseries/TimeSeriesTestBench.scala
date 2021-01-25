@@ -1,22 +1,25 @@
 package io.sqooba.oss.timeseries
 
 import java.util.concurrent.TimeUnit
-
 import io.sqooba.oss.timeseries.immutable.{ContiguousTimeDomain, EmptyTimeSeries, TSEntry}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should
 
-trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
+// scalastyle:off magic.number
+// scalastyle:off file.size.limit
+
+trait TimeSeriesTestBench extends should.Matchers { this: AnyFlatSpec =>
 
   /**
-    * *Main test bench* for a timeseries implementation. This tests all the functions
-    * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
-    * timeseries implementation. All the tests use double valued series.
-    *
-    * @note The mapping functions are only tested without compression. Use
-    *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
-    *
-    * @param newTs constructor method for the timeseries implementation to test
-    */
+   * *Main test bench* for a timeseries implementation. This tests all the functions
+   * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
+   * timeseries implementation. All the tests use double valued series.
+   *
+   * @note The mapping functions are only tested without compression. Use
+   *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
+   *
+   * @param newTs constructor method for the timeseries implementation to test
+   */
   def nonEmptyNonSingletonDoubleTimeSeries(newTs: Seq[TSEntry[Double]] => TimeSeries[Double]): Unit = {
 
     // Two contiguous entries
@@ -401,9 +404,27 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
       )
     }
 
+    it should "filter & map the values of a timeseries of three entries" in {
+      val ts = newTs(Seq(TSEntry(1, 111d, 9), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
+      ts.filterMap(
+          v => if (v > 300) Some(2 * v) else None,
+          compress = false
+        )
+        .entries shouldBe Seq(TSEntry(30, 888d, 20))
+    }
+
+    it should "filter & map the entries of a timeseries of three entries" in {
+      val ts = newTs(Seq(TSEntry(1, 111d, 9), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
+
+      ts.filterMapEntries(
+          entry => if ((entry.value - entry.validity) % 2 == 0) Some(entry.timestamp) else None,
+          compress = false
+        )
+        .entries shouldBe Seq(TSEntry(1, 1L, 9), TSEntry(30, 30L, 20))
+    }
+
     it should "not fill a contiguous timeseries of three entries" in {
       val tri = anotherThree
-
       assert(tri.fill(333d).entries === tri.entries)
     }
 
@@ -781,17 +802,17 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
   }
 
   /**
-    * Tests the functions defined by the trait TimeSeries for a given implementation
-    * that is capable of taking generic values. (It is tested by Strings here.)
-    *
-    * @note The mapping functions are only tested without compression. Use
-    *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
-    *
-    * @param newTsString constructor method for the timeseries implementation that
-    *                     shall be tested
-    */
+   * Tests the functions defined by the trait TimeSeries for a given implementation
+   * that is capable of taking generic values. (It is tested by Strings here.)
+   *
+   * @note The mapping functions are only tested without compression. Use
+   *       'nonEmptyNonSingletonDoubleTimeSeriesWithCompression' to test that.
+   *
+   * @param newTsString constructor method for the timeseries implementation that
+   *                     shall be tested
+   */
   def nonEmptyNonSingletonGenericTimeSeries(
-      newTsString: Seq[TSEntry[String]] => TimeSeries[String]
+    newTsString: Seq[TSEntry[String]] => TimeSeries[String]
   ): Unit = {
     val threeStrings = newTsString(Seq(TSEntry(0, "Hi", 10), TSEntry(10, "Ho", 10), TSEntry(20, "Hu", 10)))
 
@@ -868,14 +889,14 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
   }
 
   /**
-    * *Main test bench* for a timeseries implementation. This tests all the functions
-    * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
-    * timeseries implementation. All the tests use double valued series.
-    *
-    * @param newTs constructor method for the timeseries implementation to test
-    */
+   * *Main test bench* for a timeseries implementation. This tests all the functions
+   * defined by the TimeSeries trait for a non empty and non singleton (TSEntry)
+   * timeseries implementation. All the tests use double valued series.
+   *
+   * @param newTs constructor method for the timeseries implementation to test
+   */
   def nonEmptyNonSingletonDoubleTimeSeriesWithCompression(
-      newTs: Seq[TSEntry[Double]] => TimeSeries[Double]
+    newTs: Seq[TSEntry[Double]] => TimeSeries[Double]
   ): Unit = {
 
     val anotherThree = newTs(Seq(TSEntry(1, 111d, 9), TSEntry(10, 222d, 10), TSEntry(20, 444d, 10)))
@@ -883,6 +904,16 @@ trait TimeSeriesTestBench extends Matchers { this: FlatSpec =>
     it should "correctly map a timeseries of three entries with compression" in {
       val up = anotherThree.map(s => 42, compress = true)
       up.entries shouldBe Seq(TSEntry(1, 42, 29))
+    }
+
+    it should "filter & map the entries of a timeseries of three entries" in {
+      val ts = newTs(Seq(TSEntry(1, 111d, 15), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
+
+      ts.filterMapEntries(
+          entry => if (entry.timestamp < 25) Some(123.456) else None,
+          compress = true
+        )
+        .entries shouldBe Seq(TSEntry(1, 123.456, 30))
     }
 
     it should "correctly map with time a timeseries of three entries with compression" in {
