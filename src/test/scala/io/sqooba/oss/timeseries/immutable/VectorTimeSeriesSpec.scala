@@ -1,9 +1,10 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.TimeSeriesTestBench
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-class VectorTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBench {
+class VectorTimeSeriesSpec extends AnyFlatSpec with Matchers with TimeSeriesTestBench {
 
   "A VectorTimeSeries (unsafe)" should behave like nonEmptyNonSingletonDoubleTimeSeries(
         VectorTimeSeries.ofOrderedEntriesUnsafe(_)

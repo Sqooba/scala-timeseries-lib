@@ -1,9 +1,10 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.TimeSeriesTestBench
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-class ColumnTimeSeriesSpec extends FlatSpec with Matchers with TimeSeriesTestBench {
+class ColumnTimeSeriesSpec extends AnyFlatSpec with Matchers with TimeSeriesTestBench {
 
   "A ColumnTimeSeries" should behave like nonEmptyNonSingletonDoubleTimeSeries(
         ColumnTimeSeries.ofOrderedEntriesSafe[Double](_)

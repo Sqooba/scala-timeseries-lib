@@ -1,18 +1,19 @@
 package io.sqooba.oss.timeseries
 
 import io.sqooba.oss.timeseries.immutable.{EmptyTimeSeries, TSEntry}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-trait TimeSeriesBuilderTestBench extends Matchers { this: FlatSpec =>
+trait TimeSeriesBuilderTestBench extends Matchers { this: AnyFlatSpec =>
 
-  private val overlappingEntries: Seq[TSEntry[Double]]        = Seq(TSEntry(10, 42, 10), TSEntry(15, 22, 10), TSEntry(20, 21, 10))
-  private val nonOverlappingEntries: Seq[TSEntry[Double]]     = Seq(TSEntry(10, 42, 10), TSEntry(25, 42, 10), TSEntry(40, 42, 10))
-  private val equalContiguousEntries: Seq[TSEntry[Double]]    = Seq(TSEntry(10, 42, 10), TSEntry(15, 42, 10), TSEntry(20, 42, 10))
+  private val overlappingEntries: Seq[TSEntry[Double]] = Seq(TSEntry(10, 42, 10), TSEntry(15, 22, 10), TSEntry(20, 21, 10))
+  private val nonOverlappingEntries: Seq[TSEntry[Double]] = Seq(TSEntry(10, 42, 10), TSEntry(25, 42, 10), TSEntry(40, 42, 10))
+  private val equalContiguousEntries: Seq[TSEntry[Double]] = Seq(TSEntry(10, 42, 10), TSEntry(15, 42, 10), TSEntry(20, 42, 10))
   private val notEqualContiguousEntries: Seq[TSEntry[Double]] = Seq(TSEntry(10, -1, 10), TSEntry(15, 2, 10), TSEntry(20, 42, 10))
 
   def aTimeSeriesBuilder(newBuilderFromCompression: Boolean => TimeSeriesBuilder[Double]) {
 
-    def newTimeSeriesBuilder           = newBuilderFromCompression(true)
+    def newTimeSeriesBuilder = newBuilderFromCompression(true)
     def newTimeSeriesBuilderNoCompress = newBuilderFromCompression(false)
 
     it should "return an empty timeseries if nothing was added" in {
@@ -107,7 +108,7 @@ trait TimeSeriesBuilderTestBench extends Matchers { this: FlatSpec =>
 
     it should "be the given TSEntry if there is only one appended" in {
       val entry = TSEntry(1, 1d, 1)
-      val b     = newTimeSeriesBuilder
+      val b = newTimeSeriesBuilder
 
       b += entry
       b.result() should equal(entry)

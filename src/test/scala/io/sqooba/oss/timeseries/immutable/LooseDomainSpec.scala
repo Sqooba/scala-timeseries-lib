@@ -1,9 +1,11 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.TimeSeries
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class LooseDomainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
 
   private def assertDomain(looseDomain: TimeDomain, start: Long, until: Long) = {
     // Check internal bounds
@@ -19,7 +21,7 @@ class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach wit
 
   private val niceAndLongTimeSeries: TimeSeries[None.type] = {
     val smallestEntry = TSEntry(start, None, validity)
-    val biggestEntry  = TSEntry(end, None, validity)
+    val biggestEntry = TSEntry(end, None, validity)
 
     val builder = TimeSeries.newBuilder[None.type]()
 
@@ -52,7 +54,7 @@ class LooseDomainSpec extends FlatSpec with Matchers with BeforeAndAfterEach wit
   }
 
   it should "contains the bounds of a multi-value TimeSeries" in {
-    val ts          = niceAndLongTimeSeries
+    val ts = niceAndLongTimeSeries
     val looseDomain = ts.looseDomain
 
     val untilDomain = end + validity

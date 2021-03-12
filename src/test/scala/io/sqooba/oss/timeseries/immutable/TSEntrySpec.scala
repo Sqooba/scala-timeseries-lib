@@ -2,10 +2,10 @@ package io.sqooba.oss.timeseries.immutable
 
 import java.util.concurrent.TimeUnit
 
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should
 
-class TSEntrySpec extends AnyFlatSpec with should.Matchers {
+class TSEntrySpec extends AnyFlatSpec with Matchers {
 
   // Simple summing operator
   def plus(aO: Option[Double], bO: Option[Double]): Option[Double] =
@@ -50,8 +50,8 @@ class TSEntrySpec extends AnyFlatSpec with should.Matchers {
   it should "filter & map its own entry" in {
     val t = TSEntry(10, "Hi", 10)
 
-    t.filterMapEntries(e => if (e.value == "Hi") Some("yes") else None) shouldBe TSEntry(10, "Yes", 10)
-    t.filterMapEntries(e => if (e.value == "Ho") Some("yes") else None) shouldBe EmptyTimeSeries
+    t.filterMapEntries(e => if (e.value == "Hi") Some("Yes") else None) shouldBe TSEntry(10, "Yes", 10)
+    t.filterMapEntries(e => if (e.value == "Ho") Some("Yes") else None) shouldBe EmptyTimeSeries
   }
 
   it should "correctly do Fill" in {

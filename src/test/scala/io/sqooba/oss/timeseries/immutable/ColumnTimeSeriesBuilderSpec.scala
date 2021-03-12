@@ -1,9 +1,10 @@
 package io.sqooba.oss.timeseries.immutable
 
 import io.sqooba.oss.timeseries.TimeSeriesBuilderTestBench
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-class ColumnTimeSeriesBuilderSpec extends FlatSpec with Matchers with TimeSeriesBuilderTestBench {
+class ColumnTimeSeriesBuilderSpec extends AnyFlatSpec with Matchers with TimeSeriesBuilderTestBench {
 
   "A ColumnTimeSeriesBuilder" should "return an empty collection when nothing was added" in {
     ColumnTimeSeries.newBuilder().result() shouldBe EmptyTimeSeries

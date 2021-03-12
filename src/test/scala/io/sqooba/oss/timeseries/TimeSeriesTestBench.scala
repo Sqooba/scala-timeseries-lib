@@ -906,14 +906,14 @@ trait TimeSeriesTestBench extends should.Matchers { this: AnyFlatSpec =>
       up.entries shouldBe Seq(TSEntry(1, 42, 29))
     }
 
-    it should "filter & map the entries of a timeseries of three entries" in {
+    it should "filter & map the entries of a timeseries of three entries correctly" in {
       val ts = newTs(Seq(TSEntry(1, 111d, 15), TSEntry(15, 222d, 15), TSEntry(30, 444d, 20)))
 
       ts.filterMapEntries(
           entry => if (entry.timestamp < 25) Some(123.456) else None,
           compress = true
         )
-        .entries shouldBe Seq(TSEntry(1, 123.456, 30))
+        .entries shouldBe Seq(TSEntry(1, 123.456, 29))
     }
 
     it should "correctly map with time a timeseries of three entries with compression" in {
