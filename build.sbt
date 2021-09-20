@@ -9,27 +9,28 @@ organizationName := "Sqooba"
 organizationHomepage := Some(url("https://sqooba.io"))
 
 scalaVersion := "2.13.3"
-crossScalaVersions := Seq("2.12.12", "2.13.3")
+crossScalaVersions := Seq("2.12.14", "2.13.4")
 
 resolvers += Resolver.bintrayRepo("twittercsl", "sbt-plugins")
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val zioVersion = "1.0.3"
+val zioVersion = "1.0.11"
 
 libraryDependencies ++= Seq(
-  "fi.iki.yak"                  % "compression-gorilla"     % "2.1.1",
-  "org.apache.thrift"           % "libthrift"               % "0.12.0",
-  "com.twitter"                %% "scrooge-core"            % "19.10.0",
-  "org.scala-lang.modules"     %% "scala-collection-compat" % "2.1.2",
-  "dev.zio"                    %% "zio"                     % zioVersion,
-  "dev.zio"                    %% "zio-streams"             % zioVersion,
-  "com.storm-enroute"          %% "scalameter"              % "0.19"     % Test,
-  "dev.zio"                    %% "zio-test"                % zioVersion % Test,
-  "dev.zio"                    %% "zio-test-sbt"            % zioVersion % Test,
-  "junit"                       % "junit"                   % "4.12"     % Test,
-  "org.scalactic"              %% "scalactic"               % "3.1.2"    % Test,
-  "org.scalatest"              %% "scalatest"               % "3.1.2"    % Test,
-  "io.dropwizard.metrics"       % "metrics-core"            % "4.0.0"    % Test
+  "fi.iki.yak" % "compression-gorilla" % "2.1.1",
+  "org.apache.thrift" % "libthrift" % "0.12.0",
+  "com.twitter" %% "scrooge-core" % "19.10.0",
+  "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
+  "dev.zio" %% "zio" % zioVersion,
+  "dev.zio" %% "zio-streams" % zioVersion,
+  "com.storm-enroute" %% "scalameter" % "0.19" % Test,
+  "dev.zio" %% "zio-test" % zioVersion % Test,
+  "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+  "dev.zio" %% "zio-test-junit" % zioVersion % Test,
+  "junit" % "junit" % "4.12" % Test,
+  "org.scalactic" %% "scalactic" % "3.1.2" % Test,
+  "org.scalatest" %% "scalatest" % "3.1.2" % Test,
+  "io.dropwizard.metrics" % "metrics-core" % "4.0.0" % Test
 )
 
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
@@ -63,29 +64,29 @@ publishTo := {
   }
 }
 
-// SBT Microsite settings
-enablePlugins(MicrositesPlugin)
-enablePlugins(SiteScaladocPlugin)
-
-micrositeHomepage := "https://sqooba.github.io/scala-timeseries-lib/"
-micrositeUrl := "https://sqooba.github.io"
-micrositeBaseUrl := "scala-timeseries-lib"
-micrositeCompilingDocsTool := WithMdoc
-micrositeGithubOwner := "Sqooba"
-micrositeGithubRepo := "scala-timeseries-lib"
-micrositeDescription := "A lightweight, functional time series library for Scala"
-micrositeDocumentationUrl := "latest/api/io/sqooba/oss/timeseries"
-micrositePalette := Map(
-  "brand-primary"   -> "#00C0F3",
-  "brand-secondary" -> "#207692",
-  "brand-tertiary"  -> "#0f3e4d",
-  "gray-dark"       -> "#49494B",
-  "gray"            -> "#69696A",
-  "gray-light"      -> "#E5E5E6",
-  "gray-lighter"    -> "#F4F3F4",
-  "white-color"     -> "#FFFFFF"
-)
-micrositeImgDirectory := (resourceDirectory in Compile).value / "docs" / "img"
+//// SBT Microsite settings
+//enablePlugins(MicrositesPlugin)
+//enablePlugins(SiteScaladocPlugin)
+//
+//micrositeHomepage := "https://sqooba.github.io/scala-timeseries-lib/"
+//micrositeUrl := "https://sqooba.github.io"
+//micrositeBaseUrl := "scala-timeseries-lib"
+//micrositeCompilingDocsTool := WithMdoc
+//micrositeGithubOwner := "Sqooba"
+//micrositeGithubRepo := "scala-timeseries-lib"
+//micrositeDescription := "A lightweight, functional time series library for Scala"
+//micrositeDocumentationUrl := "latest/api/io/sqooba/oss/timeseries"
+//micrositePalette := Map(
+//  "brand-primary" -> "#00C0F3",
+//  "brand-secondary" -> "#207692",
+//  "brand-tertiary" -> "#0f3e4d",
+//  "gray-dark" -> "#49494B",
+//  "gray" -> "#69696A",
+//  "gray-light" -> "#E5E5E6",
+//  "gray-lighter" -> "#F4F3F4",
+//  "white-color" -> "#FFFFFF"
+//)
+//micrositeImgDirectory := (resourceDirectory in Compile).value / "docs" / "img"
 
 developers := List(
   Developer("shastick", "Shastick", "", url("https://github.com/Shastick")),
