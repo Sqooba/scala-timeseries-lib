@@ -1,0 +1,15 @@
+# Generated file: please only edit with care.
+# Some effort will be done to conserve comments if they are added,
+# but there is no strong guarantee.
+id: io.sqooba.oss:scala-timeseries-lib
+module-type: Makefile
+versioning: SemVer
+# Version identifiers have the following format:
+# <epoch seconds>|<commit ID>
+versions:
+    0.0.0: 1970-01-01T00:00:00Z|INIT
+    1.0.0: 2019-10-16T17:23:32Z|eed05544d4e92a3fa499fe4753df36c5e426c96b
+    1.1.0: 2019-10-22T15:50:27Z|e9dddd28522590eb5f465c0cf8d2bf5c7f92b112
+    1.2.0: 2019-11-06T14:07:13Z|398a95dd9711d0b56adcb2327945e61661cea828
+    1.3.0: 2019-11-25T15:16:19Z|afe6f72ed3265801ce7fbbab6c4719eb73290b05
+    1.3.1: 2010-01-28T23:52:48Z|4d9de4194dce5835c3eca51d303529d23f51a89f
